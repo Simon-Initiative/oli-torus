@@ -1,6 +1,6 @@
 # User Preview — Feature traceability
 
-The eight Features in the [User Preview Nov 2026 Handoff](https://docs.google.com/document/d/1XrwiN86AETdRxxyoGanQE2pAvl484RHPM6w0prWKk6c/edit?tab=t.0#heading=h.4opxhmxw54d6) each map to one epic Story. Preview-user management and preview-record identification have additional active Stories. Shared accessibility and authorization requirements apply to the affected Stories; F-009 / MER-6219 is closed. Technical implementation is migrated once under a primary owner; related Features cross-link that work. The [epic](docs/exec-plans/current/epics/user-preview/epic.md) retains the full requirements and acceptance traceability.
+The eight Features in the [User Preview Nov 2026 Handoff](https://docs.google.com/document/d/1XrwiN86AETdRxxyoGanQE2pAvl484RHPM6w0prWKk6c/edit?tab=t.0#heading=h.4opxhmxw54d6) each map to one epic Story. Preview-user management has an additional active Story. Preview-record identification is accepted within the owning user and section Stories; F-011 / MER-6221 remains a closed reference. Shared accessibility and authorization requirements apply to the affected Stories; F-009 / MER-6219 and F-011 / MER-6221 are closed. Technical implementation is migrated once under a primary owner; related Features cross-link that work. The [epic](docs/exec-plans/current/epics/user-preview/epic.md) retains the full requirements and acceptance traceability.
 
 ## Handoff features
 
@@ -21,7 +21,7 @@ The eight Features in the [User Preview Nov 2026 Handoff](https://docs.google.co
 | --- | --- | --- |
 | [R-008] | Shared epic expectations; MER-6219 Closed Won’t Do | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md), [F-002](docs/exec-plans/current/epics/user-preview/tickets/F-002.md), [F-003](docs/exec-plans/current/epics/user-preview/tickets/F-003.md), [F-004](docs/exec-plans/current/epics/user-preview/tickets/F-004.md), [F-005](docs/exec-plans/current/epics/user-preview/tickets/F-005.md), [F-006](docs/exec-plans/current/epics/user-preview/tickets/F-006.md), [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md), [F-008](docs/exec-plans/current/epics/user-preview/tickets/F-008.md), [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md), [F-011](docs/exec-plans/current/epics/user-preview/tickets/F-011.md) |
 | [R-010] | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) / [MER-6220](https://eliterate.atlassian.net/browse/MER-6220) | [T-019](docs/exec-plans/current/epics/user-preview/tickets/T-019.md), [T-020](docs/exec-plans/current/epics/user-preview/tickets/T-020.md), [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md), [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) |
-| [R-011] | [F-011](docs/exec-plans/current/epics/user-preview/tickets/F-011.md) / [MER-6221](https://eliterate.atlassian.net/browse/MER-6221) | [T-014](docs/exec-plans/current/epics/user-preview/tickets/T-014.md), [T-016](docs/exec-plans/current/epics/user-preview/tickets/T-016.md), [T-019](docs/exec-plans/current/epics/user-preview/tickets/T-019.md), [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md), [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) |
+| [R-011] | Shared classification acceptance; [F-011](docs/exec-plans/current/epics/user-preview/tickets/F-011.md) / [MER-6221](https://eliterate.atlassian.net/browse/MER-6221) Closed Won’t Do | [T-014](docs/exec-plans/current/epics/user-preview/tickets/T-014.md), [T-016](docs/exec-plans/current/epics/user-preview/tickets/T-016.md), [T-019](docs/exec-plans/current/epics/user-preview/tickets/T-019.md), [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md), [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) |
 
 ## Project publication preview contributions
 
@@ -59,7 +59,7 @@ Ten Stories and 20 sub-tasks remain active. F-009 / MER-6219 is Closed Won’t D
 | [F-008 — Instructor Guidance on Switching Views](docs/exec-plans/current/epics/user-preview/tickets/F-008.md) | R-009 | S-006 | [MER-6218](https://eliterate.atlassian.net/browse/MER-6218) | Created and verified |
 | [F-009 — Keep preview controls accessible and authorized](docs/exec-plans/current/epics/user-preview/tickets/F-009.md) | R-008 | Cross-linked primary owners | [MER-6219](https://eliterate.atlassian.net/browse/MER-6219) | Closed Won’t Do |
 | [F-010 — Manage and reset the author-linked preview user](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | R-010 | S-015 | [MER-6220](https://eliterate.atlassian.net/browse/MER-6220) | Created and verified |
-| [F-011 — Identify preview users and sections](docs/exec-plans/current/epics/user-preview/tickets/F-011.md) | R-011 | Cross-linked primary owners | [MER-6221](https://eliterate.atlassian.net/browse/MER-6221) | Created and verified |
+| [F-011 — Identify preview users and sections](docs/exec-plans/current/epics/user-preview/tickets/F-011.md) | R-011 | Cross-linked primary owners | [MER-6221](https://eliterate.atlassian.net/browse/MER-6221) | Closed Won’t Do; acceptance in owning Stories |
 
 ## Ticket recreation migration
 

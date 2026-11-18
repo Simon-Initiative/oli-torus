@@ -2,7 +2,7 @@
 
 Epic/source: [MER-6158](https://eliterate.atlassian.net/browse/MER-6158) and the existing local overview
 Review: all 11 feature/requirement Stories and 20 sub-task descriptions approved
-Filing: verified; 10 active Stories and one Closed Won’t Do Story (F-009), 20 sub-tasks, 17 embedded screenshots, and 21 dependencies; old work items Closed Won’t Do and removed from epic; repository changes remain local
+Filing: verified; 9 active Stories and two Closed Won’t Do Stories (F-009 and F-011), 20 sub-tasks, 17 embedded screenshots, and 21 dependencies; old work items Closed Won’t Do and removed from epic; repository changes remain local
 
 ## Outcomes and scope
 
@@ -361,9 +361,9 @@ No product decision remains open. The scope, Q10 interpretation, account reset, 
 
 ## Child work items
 
-The eight handoff Features each have one active Story, with two additional active Stories for preview-user management and preview-record identification. F-009 / MER-6219 is Closed Won’t Do: shared accessibility and authorization requirements are acceptance conditions of the affected Stories, not a separate work item. Technical implementation has one primary owner; related Features cross-link that work. Full source requirements, original design links, screenshots, and migrated technical guidance are in the linked documents. Each Description is the verified Jira description; metadata above it stays local. Proposed implementation details remain provisional within approved behavior, scope, acceptance criteria, and binding constraints.
+The eight handoff Features each have one active Story, with one additional active Story for preview-user management. Preview-record identification remains an acceptance requirement of its owning user and section Stories; F-011 / MER-6221 is a closed reference, not a separate delivery or verification task. F-009 / MER-6219 is Closed Won’t Do: shared accessibility and authorization requirements are acceptance conditions of the affected Stories, not a separate work item. Technical implementation has one primary owner; related Features cross-link that work. Full source requirements, original design links, screenshots, and migrated technical guidance are in the linked documents. Each Description is the verified Jira description; metadata above it stays local. Proposed implementation details remain provisional within approved behavior, scope, acceptance criteria, and binding constraints.
 
-The single active ticket set is `docs/exec-plans/current/epics/user-preview/tickets/`, containing 10 active F-Story documents, 20 T-sub-task documents, and the closed F-009 record. Old S-Story documents are removed from the active tree; their committed history and Closed Won’t Do Jira issues remain available through [feature_tracability.md](docs/exec-plans/current/epics/user-preview/feature_tracability.md).
+The single active ticket set is `docs/exec-plans/current/epics/user-preview/tickets/`, containing 9 active F-Story documents, 20 T-sub-task documents, and the closed F-009 and F-011 records. Old S-Story documents are removed from the active tree; their committed history and Closed Won’t Do Jira issues remain available through [feature_tracability.md](docs/exec-plans/current/epics/user-preview/feature_tracability.md).
 
 | Story and document | Requirement | Implementation sub-tasks | Lane | Status | Jira |
 | --- | --- | --- | --- | --- | --- |
@@ -377,7 +377,7 @@ The single active ticket set is `docs/exec-plans/current/epics/user-preview/tick
 | [F-008 — Instructor Guidance on Switching Views](docs/exec-plans/current/epics/user-preview/tickets/F-008.md) | R-009 | None; guidance in Story | B | Created and verified | [MER-6218](https://eliterate.atlassian.net/browse/MER-6218) |
 | [F-009 — Keep preview controls accessible and authorized](docs/exec-plans/current/epics/user-preview/tickets/F-009.md) | R-008 | None; guidance in Story | Shared acceptance | Closed Won’t Do | [MER-6219](https://eliterate.atlassian.net/browse/MER-6219) |
 | [F-010 — Manage and reset the author-linked preview user](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) | R-010 | [T-019](docs/exec-plans/current/epics/user-preview/tickets/T-019.md) | A | Created and verified | [MER-6220](https://eliterate.atlassian.net/browse/MER-6220) |
-| [F-011 — Identify preview users and sections](docs/exec-plans/current/epics/user-preview/tickets/F-011.md) | R-011 | None; guidance in Story | Shared acceptance | Created and verified | [MER-6221](https://eliterate.atlassian.net/browse/MER-6221) |
+| [F-011 — Identify preview users and sections](docs/exec-plans/current/epics/user-preview/tickets/F-011.md) | R-011 | None; acceptance in owning Stories | Shared acceptance | Closed Won’t Do | [MER-6221](https://eliterate.atlassian.net/browse/MER-6221) |
 
 ### Implementation sub-tasks
 
@@ -432,7 +432,7 @@ This is planned acceptance coverage, not proof of implemented behavior. Criterio
 The 11 Stories and 20 sub-tasks cover the approved requirements with verified ticket content and relationships. Q11 defines first-use dedicated preview-user provisioning. Q10 defines the latest-publication boundary while preserving ordinary attempt behavior. Implementation and runtime acceptance remain future work. Deferred/excluded scope remains Make-prototype-only behavior, broader bank editor/filter redesign, unsupported activity capabilities, draft display in full-course preview, automatic progress reset, cleanup jobs, and retention policy.
 
 
-Accessibility and authorization acceptance is owned by the affected Stories and the shared expectations above. F-009 / MER-6219 is Closed Won’t Do and is not a delivery or verification task. [F-011](docs/exec-plans/current/epics/user-preview/tickets/F-011.md) tracks preview-record classification; implementation stays with its primary owners. Feature-to-requirement and previous-to-new ticket mappings are in [feature_tracability.md](docs/exec-plans/current/epics/user-preview/feature_tracability.md).
+Accessibility and authorization acceptance is owned by the affected Stories and the shared expectations above. F-009 / MER-6219 is Closed Won’t Do and is not a delivery or verification task. [F-011](docs/exec-plans/current/epics/user-preview/tickets/F-011.md) / MER-6221 is Closed Won’t Do. Preview-record classification is implemented and verified within its owning user and section Stories; no separate verification task is created. Feature-to-requirement and previous-to-new ticket mappings are in [feature_tracability.md](docs/exec-plans/current/epics/user-preview/feature_tracability.md).
 
 ## Lanes
 
@@ -474,7 +474,7 @@ flowchart TB
   A ~~~ B ~~~ C ~~~ D ~~~ E
 ```
 
-Solid arrows are the seven Story-level prerequisites; dashed arrows are scheduling only. Invisible links arrange the lane blocks. F-011 tracks classification acceptance in its linked implementation; F-009 is closed. The Story graph and the complete work-item graph are acyclic. Fourteen same-Story sub-task links preserve implementation order; the full list is in feature_tracability.md. No feature flag is introduced.
+Solid arrows are the seven Story-level prerequisites; dashed arrows are scheduling only. Invisible links arrange the lane blocks. F-009 and F-011 are closed references; their shared requirements are accepted within the affected implementation Stories. The Story graph and the complete work-item graph are acyclic. Fourteen same-Story sub-task links preserve implementation order; the full list is in feature_tracability.md. No feature flag is introduced.
 
 ## Jira filing and next work
 
