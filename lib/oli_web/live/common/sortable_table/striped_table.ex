@@ -68,7 +68,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
       data-sort-order={if @sorted?, do: to_string(@model.sort_order || :desc), else: "desc"}
     >
       <div class="flex items-center gap-1">
-        {@column_spec.header_info}
+        {Map.get(@column_spec, :header_info)}
         <%= if @sort_button? do %>
           <button
             type="button"
