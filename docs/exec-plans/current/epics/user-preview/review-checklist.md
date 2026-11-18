@@ -21,15 +21,17 @@ Review scope: MER-6158 and its 11 Stories (including closed MER-6219) and 20 sub
 - [x] **7. Separate bank-note and gating-note completion.** Clarify MER-6212's note presentation/bank usage and MER-6213's gating integration so neither duplicates the other's delivery commitment.
 - [x] **8. Resolve MER-6221's tracking role.** Its implementation is already assigned elsewhere. Propose retaining it explicitly as a tracking Story or treating classification as a shared requirement, without inventing extra work. Obtain approval before changing its disposition.
 - [x] **9. Remove drafting residue and restore incomplete policy text.** Replace MER-6215's unresolved broader-redesign question with the settled scope. Restore explicit retained-attempt behavior in MER-6236–MER-6239 and any other occurrences of the same damaged wording.
-- [ ] **10. Simplify technical guidance.** Remove repeated analysis/process prose and define unclear terms through concrete components, actors, actions, and outcomes. Preserve useful code pointers, design sources, required behavior, and provisional implementation choices.
+- [x] **10. Simplify technical guidance.** Remove repeated analysis/process prose and define unclear terms through concrete components, actors, actions, and outcomes. Preserve useful code pointers, design sources, required behavior, and provisional implementation choices.
 
 ## Current item
 
-Findings 1–9 are approved and verified in Jira. Finding 10 is next: substantially simplify all ticket technical guidance and sub-task descriptions locally. Preserve Story content outside Technical Guidance. Leave the cleanup uncommitted for operator review.
+Findings 1–10 are approved and verified in Jira. All 31 ticket descriptions use the approved concise guidance; Story product/UX requirements remain unchanged. Regular instructors retain their logged-in user in both views. Admin-owned preview users receive instructor enrollment, regular authors receive student/learner enrollment, and promotion upgrades the existing preview user's enrollments while preserving identity and progress. Sub-task titles and epic/traceability references match the final ticket set.
+
+Read-back checks confirmed exact description text, headings, paragraphs, nested lists, code formatting, links, all 17 screenshots, unchanged statuses and parent relationships, 21 Relates links, and 21 acyclic Blocks links with no cross-Story sub-task dependencies. MER-6219 and MER-6221 remain Closed Won’t Do. Independent security, performance, and UI fidelity reviews found no material omissions. Repository changes are committed locally without pushing; implementation and runtime verification remain future work.
 
 ## Completion checks
 
-- [ ] Each approved change is committed locally and verified in Jira.
-- [ ] Epic coverage and feature traceability match the final ticket ownership.
-- [ ] Story and sub-task dependencies remain acyclic, with no cross-Story sub-task dependency links.
-- [ ] No repository commits have been pushed.
+- [x] Each approved change is committed locally and verified in Jira.
+- [x] Epic coverage and feature traceability match the final ticket ownership.
+- [x] Story and sub-task dependencies remain acyclic, with no cross-Story sub-task dependency links.
+- [x] No repository commits have been pushed.
