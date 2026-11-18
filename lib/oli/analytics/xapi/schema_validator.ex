@@ -98,7 +98,7 @@ defmodule Oli.Analytics.XAPI.SchemaValidator do
 
     with {:ok, raw} <- File.read(schema_path),
          {:ok, decoded} <- Jason.decode(raw) do
-      {:ok, ExJsonSchema.Schema.resolve(decoded)}
+      {:ok, Oli.Utils.JSONValidation.build!(decoded)}
     else
       {:error, reason} when is_atom(reason) ->
         {:error, "failed to read schema #{schema_path}: #{inspect(reason)}"}
@@ -123,7 +123,7 @@ defmodule Oli.Analytics.XAPI.SchemaValidator do
 
         case Jason.decode(trimmed) do
           {:ok, decoded} ->
-            case ExJsonSchema.Validator.validate(schema, decoded) do
+            case Oli.Utils.JSONValidation.validate(schema, decoded) do
               :ok ->
                 {total + 1, valid + 1, invalid_json, mismatch, stored_error_count, errors}
 

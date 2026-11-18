@@ -4,8 +4,6 @@ defmodule Oli.Validation.ContentValidator do
   content-element.schema.json specification.
   """
 
-  @content_schema_path "priv/schemas/v0-1-0/content-element.schema.json"
-
   @doc """
   Validates all content elements within an activity model.
 
@@ -40,18 +38,7 @@ defmodule Oli.Validation.ContentValidator do
   # Private functions
 
   defp load_content_schema do
-    schema_path = Path.join(File.cwd!(), @content_schema_path)
-
-    case File.read(schema_path) do
-      {:ok, content} ->
-        case Jason.decode(content) do
-          {:ok, schema} -> ExJsonSchema.Schema.resolve(schema)
-          {:error, reason} -> raise "Failed to decode content schema: #{inspect(reason)}"
-        end
-
-      {:error, reason} ->
-        raise "Failed to read content schema from #{schema_path}: #{inspect(reason)}"
-    end
+    Oli.Utils.SchemaResolver.resolve("content-element.schema.json")
   end
 
   defp validate_stem_content(activity_map, schema) do

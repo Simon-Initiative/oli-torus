@@ -222,11 +222,15 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
       assert validation_tool.function.name == "activity_validation"
 
       assert validation_tool.function.description ==
-               "Validate activity JSON content against schema requirements"
+               "Validate an activity by exact type: JSON schema followed by separate domain checks"
 
       assert validation_tool.function.parameters["type"] == "object"
       assert validation_tool.function.parameters["properties"]["activity_json"]
-      assert validation_tool.function.parameters["required"] == ["activity_json"]
+
+      assert validation_tool.function.parameters["required"] == [
+               "activity_json",
+               "activity_type_slug"
+             ]
     end
 
     test "converts to Anthropic-style tool specs when needed" do
@@ -350,7 +354,7 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
 
     test "handles timeout for long-running tools" do
       # Test with an actual MCP tool that will fail
-      args = %{"activity_json" => "invalid json"}
+      args = %{"activity_json" => "invalid json", "activity_type_slug" => "oli_multiple_choice"}
       ctx = %{}
 
       # This should return an error for invalid JSON

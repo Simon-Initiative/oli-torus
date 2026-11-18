@@ -1,0 +1,265 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/adaptive-page-components.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Adaptive Page components",
+  "$ref": "#/$defs/deck-group",
+  "$defs": {
+    "deck-group": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "group"
+        },
+        "id": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        },
+        "layout": {
+          "const": "deck"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/adaptive-page-components.schema.json#/$defs/sequence-reference"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "layout",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "sequence-reference": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "activity-reference"
+        },
+        "id": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        },
+        "activity_id": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        },
+        "activityId": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        },
+        "activitySlug": {
+          "type": "string"
+        },
+        "custom": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/adaptive-page-components.schema.json#/$defs/sequence-custom"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "activity_id"
+          ]
+        },
+        {
+          "required": [
+            "activityId"
+          ]
+        },
+        {
+          "required": [
+            "activitySlug"
+          ]
+        }
+      ],
+      "description": "Persisted IDs, authoring revision slugs, and legacy activityId references. Sequence custom metadata is required to be complete when present; ID-only legacy references remain supported."
+    },
+    "sequence-custom": {
+      "type": "object",
+      "properties": {
+        "sequenceId": {
+          "type": "string"
+        },
+        "sequenceName": {
+          "type": "string"
+        },
+        "layerRef": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "isBank": {
+          "type": "boolean"
+        },
+        "isLayer": {
+          "type": "boolean"
+        },
+        "bankShowCount": {
+          "type": "number"
+        },
+        "bankEndTarget": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "sequenceId",
+        "sequenceName"
+      ],
+      "additionalProperties": false,
+      "if": {
+        "required": [
+          "isBank"
+        ],
+        "properties": {
+          "isBank": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "bankShowCount",
+          "bankEndTarget"
+        ]
+      }
+    },
+    "lesson-custom": {
+      "type": "object",
+      "properties": {
+        "defaultScreenWidth": {
+          "type": "number"
+        },
+        "defaultScreenHeight": {
+          "type": "number"
+        },
+        "totalScore": {
+          "type": "number"
+        },
+        "maxScore": {
+          "type": "number"
+        },
+        "responsiveLayout": {
+          "type": "boolean"
+        },
+        "enableHistory": {
+          "type": "boolean"
+        },
+        "allowNavigation": {
+          "type": "boolean"
+        },
+        "displayRefreshWarningPopup": {
+          "type": "boolean"
+        },
+        "darkModeSetting": {
+          "type": "boolean"
+        },
+        "backgroundImageScaleContent": {
+          "type": "boolean"
+        },
+        "scoreFixed": {
+          "type": "boolean"
+        },
+        "enableLessonMax": {
+          "type": "boolean"
+        },
+        "grid": {
+          "type": "boolean"
+        },
+        "centerpoint": {
+          "type": "boolean"
+        },
+        "columnGuides": {
+          "type": "boolean"
+        },
+        "rowGuides": {
+          "type": "boolean"
+        },
+        "insightsStageOnlyPreview": {
+          "type": "boolean"
+        },
+        "contentMode": {
+          "type": "string"
+        },
+        "themeId": {
+          "type": "string"
+        },
+        "viewerSkin": {
+          "type": "string"
+        },
+        "logoutMessage": {
+          "type": "string"
+        },
+        "logoutPanelImageURL": {
+          "type": "string"
+        },
+        "backgroundImageURL": {
+          "type": "string"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "expression": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "everApps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "iconUrl": {
+                "type": "string"
+              },
+              "isVisible": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "url",
+              "iconUrl",
+              "isVisible"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": true,
+      "description": "Known lesson settings are typed. The client persists custom:any, including legacy and integration fields, so unrecognized extension keys and their values remain opaque."
+    }
+  }
+}

@@ -8,7 +8,7 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
 
   use Anubis.Server.Component, type: :tool
 
-  alias Oli.Validation
+  alias Oli.MCP.ActivityInput
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Accounts
   alias Anubis.Server.Response
@@ -53,11 +53,21 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
             {:reply, Response.text(Response.tool(), response_text), frame}
 
           {:error, reason} ->
-            error_message = format_error(reason)
             UsageTracker.track_tool_usage("create_activity", frame, "error")
 
-            {:reply,
-             Response.error(Response.tool(), "Activity creation failed: #{error_message}"), frame}
+            response =
+              case reason do
+                %{stage: _, errors: _} ->
+                  ActivityInput.error_response(reason, "Activity creation failed: ")
+
+                _ ->
+                  Response.error(
+                    Response.tool(),
+                    "Activity creation failed: #{format_error(reason)}"
+                  )
+              end
+
+            {:reply, response, frame}
         end
 
       {:error, reason} ->
@@ -68,7 +78,7 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
 
   # Creates the activity after validation
   defp create_activity(project_slug, activity_json, activity_type_slug, author_id) do
-    with {:ok, activity_model} <- validate_activity_json(activity_json),
+    with {:ok, activity_model} <- ActivityInput.validate_json(activity_type_slug, activity_json),
          {:ok, author} <- get_author(author_id),
          {:ok, {activity_revision, _content}} <-
            create_activity_in_project(
@@ -87,23 +97,6 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
     else
       {:error, reason} -> {:error, reason}
       error -> {:error, inspect(error)}
-    end
-  end
-
-  # Validates the activity JSON
-  defp validate_activity_json(activity_json) do
-    with {:ok, activity_model} <- Jason.decode(activity_json),
-         {:ok, _parsed_model} <- Validation.validate_activity(activity_model) do
-      {:ok, activity_model}
-    else
-      {:error, %Jason.DecodeError{} = error} ->
-        {:error, "Invalid JSON: #{Exception.message(error)}"}
-
-      {:error, reason} ->
-        {:error, "Activity validation failed: #{format_validation_error(reason)}"}
-
-      error ->
-        {:error, "Validation error: #{inspect(error)}"}
     end
   end
 
@@ -147,7 +140,10 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
         preview_text
 
       %{"stem" => %{"content" => content}} when is_list(content) ->
-        extract_text_from_content(content) |> String.slice(0, 50)
+        case extract_text_from_content(content) |> String.trim() do
+          "" -> "Generated Activity"
+          text -> String.slice(text, 0, 50)
+        end
 
       _ ->
         "Generated Activity"
@@ -178,14 +174,6 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
 
   defp extract_text_from_node(_), do: ""
 
-  # Formats validation error messages
-  defp format_validation_error({path, errors}) when is_binary(path) and is_list(errors) do
-    "At #{path}: #{Enum.join(errors, ", ")}"
-  end
-
-  defp format_validation_error(error) when is_binary(error), do: error
-  defp format_validation_error(error), do: inspect(error)
-
   # Formats success response as JSON
   defp format_success_response(%{
          resource_id: resource_id,
@@ -208,6 +196,7 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
   end
 
   # Formats error messages
+  defp format_error(%{stage: _, errors: _} = error), do: ActivityInput.format_error(error)
   defp format_error(error) when is_binary(error), do: error
   defp format_error(error), do: inspect(error)
 end

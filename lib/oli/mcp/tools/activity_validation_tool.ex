@@ -2,14 +2,14 @@ defmodule Oli.MCP.Tools.ActivityValidationTool do
   @moduledoc """
   MCP tool for validating activity JSON.
 
-  This tool allows external AI agents to validate activity JSON content
-  using the Oli.Validation module to ensure it meets the expected schema
-  and structure requirements.
+  Requires an exact Basic Page activity type. Runs explicit JSON decoding,
+  JSON Schema validation, and separate domain validation stages, returning
+  stage-specific structured errors without writing content.
   """
 
   use Anubis.Server.Component, type: :tool
 
-  alias Oli.Validation
+  alias Oli.MCP.ActivityInput
   alias Anubis.Server.Response
   alias Oli.GenAI.Agent.MCPToolRegistry
   alias Oli.MCP.UsageTracker
@@ -20,45 +20,24 @@ defmodule Oli.MCP.Tools.ActivityValidationTool do
 
   schema do
     field :activity_json, :string, required: true, description: @activity_json_desc
+
+    field :activity_type_slug, :string,
+      required: true,
+      description: "Exact activity manifest slug"
   end
 
   @impl true
-  def execute(%{activity_json: activity_json}, frame) do
+  def execute(%{activity_json: activity_json} = params, frame) do
     # Track tool usage
     UsageTracker.track_tool_usage("activity_validation", frame)
 
-    case validate_activity_json(activity_json) do
+    case ActivityInput.validate_json(Map.get(params, :activity_type_slug), activity_json) do
       {:ok, _parsed_model} ->
         {:reply, Response.text(Response.tool(), "Activity JSON is valid"), frame}
 
       {:error, reason} ->
         UsageTracker.track_tool_usage("activity_validation", frame, "error")
-        error_message = format_error(reason)
-        {:reply, Response.error(Response.tool(), "Validation failed: #{error_message}"), frame}
+        {:reply, ActivityInput.error_response(reason, "Validation failed: "), frame}
     end
-  end
-
-  # Validates activity JSON by decoding and running through Oli.Validation
-  defp validate_activity_json(json_string) do
-    case Jason.decode(json_string) do
-      {:ok, activity_map} ->
-        Validation.validate_activity(activity_map)
-
-      {:error, reason} ->
-        {:error, "Invalid JSON: #{inspect(reason)}"}
-    end
-  end
-
-  # Formats validation error messages for display
-  defp format_error({path, errors}) when is_binary(path) and is_list(errors) do
-    "At #{path}: #{Enum.join(errors, ", ")}"
-  end
-
-  defp format_error(error) when is_binary(error) do
-    error
-  end
-
-  defp format_error(error) do
-    inspect(error)
   end
 end

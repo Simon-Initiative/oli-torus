@@ -1,0 +1,190 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/multi-input.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Multi Input activity model",
+  "description": "Strict authored Multi Input model. Response matchConfig.math is an opaque object leaf.",
+  "type": "object",
+  "properties": {
+    "stem": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/content"
+    },
+    "choices": {
+      "type": "array",
+      "items": {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/choice"
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/input"
+      }
+    },
+    "submitPerPart": {
+      "type": "boolean"
+    },
+    "customScoring": {
+      "type": "boolean"
+    },
+    "scoringStrategy": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part/properties/scoringStrategy"
+    },
+    "authoring": {
+      "type": "object",
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config"
+          }
+        },
+        "transformations": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/transformation"
+          }
+        },
+        "previewText": {
+          "type": "string"
+        },
+        "targeted": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/choice-response-association"
+          }
+        },
+        "responses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "part_id": {
+                "type": "string"
+              },
+              "count": {
+                "type": "number"
+              },
+              "users": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "text",
+              "type",
+              "part_id",
+              "count",
+              "users"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "parts",
+        "transformations",
+        "previewText",
+        "targeted"
+      ],
+      "additionalProperties": false
+    },
+    "id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/id"
+    },
+    "activity_id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activity_id"
+    },
+    "resourceId": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/resourceId"
+    },
+    "learningLanguage": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/learningLanguage"
+    },
+    "bibrefs": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/bibrefs"
+    },
+    "activityType": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activityType"
+    },
+    "content": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/content"
+    }
+  },
+  "required": [
+    "stem",
+    "choices",
+    "inputs",
+    "submitPerPart",
+    "authoring"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "partId": {
+          "type": "string"
+        },
+        "size": {
+          "enum": [
+            "small",
+            "medium",
+            "large",
+            "100pct"
+          ]
+        },
+        "choiceIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Required for dropdowns; optional on fill-in inputs because existing editor transitions retain previous dropdown choice IDs."
+        },
+        "inputType": {
+          "enum": [
+            "dropdown",
+            "text",
+            "numeric",
+            "math",
+            "math_expression"
+          ]
+        },
+        "itemConfig": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/short-answer-config.schema.json#/$defs/item-config"
+        }
+      },
+      "required": [
+        "id",
+        "partId",
+        "inputType"
+      ],
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "inputType": {
+            "const": "dropdown"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "choiceIds"
+        ],
+        "properties": {
+          "itemConfig": false
+        }
+      }
+    }
+  }
+}

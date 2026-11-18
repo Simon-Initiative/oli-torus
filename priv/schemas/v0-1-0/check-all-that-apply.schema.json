@@ -1,0 +1,155 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/check-all-that-apply.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Check All That Apply activity model",
+  "type": "object",
+  "properties": {
+    "stem": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/content"
+    },
+    "choices": {
+      "type": "array",
+      "items": {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/choice"
+      },
+      "minItems": 1
+    },
+    "authoring": {
+      "type": "object",
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part"
+          },
+          "minItems": 1,
+          "maxItems": 1
+        },
+        "transformations": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/transformation"
+          }
+        },
+        "previewText": {
+          "type": "string"
+        },
+        "version": {
+          "const": 2
+        },
+        "correct": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/choice-response-association"
+        },
+        "targeted": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/choice-response-association"
+          }
+        },
+        "incorrect": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/choice-response-association"
+        }
+      },
+      "required": [
+        "parts",
+        "transformations",
+        "previewText",
+        "correct"
+      ],
+      "additionalProperties": false
+    },
+    "type": {
+      "enum": [
+        "SimpleCATA",
+        "TargetedCATA"
+      ]
+    },
+    "id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/id"
+    },
+    "activity_id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activity_id"
+    },
+    "resourceId": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/resourceId"
+    },
+    "learningLanguage": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/learningLanguage"
+    },
+    "bibrefs": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/bibrefs"
+    },
+    "activityType": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activityType"
+    },
+    "content": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/content"
+    }
+  },
+  "required": [
+    "stem",
+    "choices",
+    "authoring"
+  ],
+  "additionalProperties": false,
+  "description": "Strict authored Check All That Apply model: tagged V1 or versioned V2, selected explicitly without inferring activity type from shape.",
+  "if": {
+    "properties": {
+      "authoring": {
+        "required": [
+          "version"
+        ]
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "type": false,
+      "authoring": {
+        "required": [
+          "targeted"
+        ],
+        "properties": {
+          "incorrect": false
+        }
+      }
+    }
+  },
+  "else": {
+    "required": [
+      "type"
+    ],
+    "if": {
+      "properties": {
+        "type": {
+          "const": "TargetedCATA"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "authoring": {
+          "required": [
+            "targeted"
+          ]
+        }
+      }
+    },
+    "else": {
+      "properties": {
+        "authoring": {
+          "properties": {
+            "targeted": false
+          }
+        }
+      }
+    },
+    "properties": {
+      "authoring": {
+        "required": [
+          "incorrect"
+        ]
+      }
+    }
+  }
+}

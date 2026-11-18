@@ -1,0 +1,608 @@
+{
+  "ordering": {
+    "stem": {
+      "id": "ordering-8",
+      "content": [
+        {
+          "id": "ordering-9",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "choices": [
+      {
+        "id": "ordering-1",
+        "content": [
+          {
+            "id": "ordering-2",
+            "children": [
+              {
+                "text": "Choice 1"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      },
+      {
+        "id": "ordering-3",
+        "content": [
+          {
+            "id": "ordering-4",
+            "children": [
+              {
+                "text": "Choice 2"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      }
+    ],
+    "authoring": {
+      "version": 2,
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "ordering-5",
+              "rule": "input like {ordering-1 ordering-3}",
+              "score": 1,
+              "feedback": {
+                "id": "ordering-6",
+                "content": [
+                  {
+                    "id": "ordering-7",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "ordering-10",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "ordering-11",
+                "content": [
+                  {
+                    "id": "ordering-12",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "ordering-13",
+              "content": [
+                {
+                  "id": "ordering-14",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "ordering-15",
+              "content": [
+                {
+                  "id": "ordering-16",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "ordering-17",
+              "content": [
+                {
+                  "id": "ordering-18",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [],
+          "explanation": {
+            "id": "ordering-20",
+            "content": [
+              {
+                "id": "ordering-21",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        }
+      ],
+      "targeted": [],
+      "correct": [
+        [
+          "ordering-1",
+          "ordering-3"
+        ],
+        "ordering-5"
+      ],
+      "transformations": [
+        {
+          "id": "ordering-19",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true
+        }
+      ],
+      "previewText": ""
+    }
+  },
+  "check-all-that-apply": {
+    "stem": {
+      "id": "check-all-that-apply-8",
+      "content": [
+        {
+          "id": "check-all-that-apply-9",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "choices": [
+      {
+        "id": "check-all-that-apply-1",
+        "content": [
+          {
+            "id": "check-all-that-apply-2",
+            "children": [
+              {
+                "text": "Choice 1"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      },
+      {
+        "id": "check-all-that-apply-3",
+        "content": [
+          {
+            "id": "check-all-that-apply-4",
+            "children": [
+              {
+                "text": "Choice 2"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      }
+    ],
+    "authoring": {
+      "version": 2,
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "check-all-that-apply-5",
+              "rule": "(!(input like {check-all-that-apply-3})) && (input like {check-all-that-apply-1})",
+              "score": 1,
+              "feedback": {
+                "id": "check-all-that-apply-6",
+                "content": [
+                  {
+                    "id": "check-all-that-apply-7",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "check-all-that-apply-10",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "check-all-that-apply-11",
+                "content": [
+                  {
+                    "id": "check-all-that-apply-12",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "check-all-that-apply-13",
+              "content": [
+                {
+                  "id": "check-all-that-apply-14",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "check-all-that-apply-15",
+              "content": [
+                {
+                  "id": "check-all-that-apply-16",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "check-all-that-apply-17",
+              "content": [
+                {
+                  "id": "check-all-that-apply-18",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [],
+          "explanation": {
+            "id": "check-all-that-apply-20",
+            "content": [
+              {
+                "id": "check-all-that-apply-21",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        }
+      ],
+      "correct": [
+        [
+          "check-all-that-apply-1"
+        ],
+        "check-all-that-apply-5"
+      ],
+      "targeted": [],
+      "transformations": [
+        {
+          "id": "check-all-that-apply-19",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true
+        }
+      ],
+      "previewText": ""
+    }
+  },
+  "likert": {
+    "stem": {
+      "id": "likert-9",
+      "content": [
+        {
+          "id": "likert-10",
+          "children": [
+            {
+              "text": "Prompt (optional)"
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "choices": [
+      {
+        "id": "likert-1",
+        "content": [
+          {
+            "id": "likert-2",
+            "children": [
+              {
+                "text": "Agree"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr",
+        "value": {
+          "type": 0
+        }
+      },
+      {
+        "id": "likert-3",
+        "content": [
+          {
+            "id": "likert-4",
+            "children": [
+              {
+                "text": "Neither Agree Nor Disagree"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr",
+        "value": {
+          "type": 0
+        }
+      },
+      {
+        "id": "likert-5",
+        "content": [
+          {
+            "id": "likert-6",
+            "children": [
+              {
+                "text": "Disagree"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr",
+        "value": {
+          "type": 0
+        }
+      }
+    ],
+    "orderDescending": false,
+    "items": [
+      {
+        "id": "likert-7",
+        "content": [
+          {
+            "id": "likert-8",
+            "children": [
+              {
+                "text": "item 1"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr",
+        "required": false
+      }
+    ],
+    "authoring": {
+      "parts": [
+        {
+          "id": "likert-7",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "likert-11",
+              "rule": "input like {likert-1}",
+              "score": 1,
+              "feedback": {
+                "id": "likert-12",
+                "content": [
+                  {
+                    "id": "likert-13",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "likert-14",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "likert-15",
+                "content": [
+                  {
+                    "id": "likert-16",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "likert-17",
+              "content": [
+                {
+                  "id": "likert-18",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "likert-19",
+              "content": [
+                {
+                  "id": "likert-20",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "likert-21",
+              "content": [
+                {
+                  "id": "likert-22",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [],
+          "explanation": {
+            "id": "likert-23",
+            "content": [
+              {
+                "id": "likert-24",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        }
+      ],
+      "transformations": [],
+      "targeted": [],
+      "previewText": ""
+    },
+    "activityTitle": ""
+  }
+}

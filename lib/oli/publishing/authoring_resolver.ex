@@ -62,6 +62,31 @@ defmodule Oli.Publishing.AuthoringResolver do
   end
 
   @doc """
+  Resolves resource IDs to type names in one compact, project-scoped query.
+
+  Uses current working-publication mappings and excludes deleted and non-project revisions.
+  Missing or inaccessible IDs are omitted. No revision content is loaded. This
+  implements the bulk resolver contract for `Oli.Validation.validate_page_domain/2`
+  when wrapped as `&{:ok, resource_types(project_slug, &1)}`.
+  """
+  @spec resource_types(String.t(), [pos_integer()]) :: %{pos_integer() => String.t()}
+  def resource_types(_project_slug, []), do: %{}
+
+  def resource_types(project_slug, resource_ids) when is_list(resource_ids) do
+    from(mapping in PublishedResource,
+      join: revision in Revision,
+      on: revision.id == mapping.revision_id and revision.resource_id == mapping.resource_id,
+      where:
+        mapping.publication_id in subquery(project_working_publication(project_slug)) and
+          mapping.resource_id in ^resource_ids and revision.deleted == false and
+          revision.resource_scope == :project,
+      select: {mapping.resource_id, revision.resource_type_id}
+    )
+    |> Repo.all()
+    |> Map.new(fn {id, type} -> {id, Oli.Resources.ResourceType.get_type_by_id(type)} end)
+  end
+
+  @doc """
   Returns the subset of resource ids that resolve to current project activities.
 
   This projection is intended for callers that need existence and type validation

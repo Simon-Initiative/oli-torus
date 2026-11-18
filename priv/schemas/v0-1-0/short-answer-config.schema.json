@@ -1,0 +1,241 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/short-answer-config.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Short Answer item and match configuration",
+  "$ref": "#/$defs/item-config",
+  "$defs": {
+    "item-config": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "type": {
+          "const": "math_expression"
+        },
+        "subtype": {
+          "enum": [
+            "numeric",
+            "algebraic",
+            "number_with_units",
+            "expression_with_units",
+            "integer",
+            "decimal",
+            "fraction",
+            "simplified_fraction",
+            "latex_direct"
+          ]
+        },
+        "config": {
+          "$ref": "#/$defs/question-config"
+        }
+      },
+      "required": [
+        "version",
+        "type",
+        "subtype"
+      ],
+      "additionalProperties": false
+    },
+    "question-config": {
+      "type": "object",
+      "properties": {
+        "numeric": {
+          "type": "object",
+          "properties": {
+            "integerOnly": {
+              "type": "boolean"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "validation": {
+          "$ref": "#/$defs/validation"
+        },
+        "unitPolicy": {
+          "$ref": "#/$defs/unit-policy"
+        },
+        "sampling": {
+          "$ref": "#/$defs/sampling"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "allowedVariables": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/variable-domain"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "variable-domain": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "lower": {
+          "$ref": "#/$defs/bound"
+        },
+        "upper": {
+          "$ref": "#/$defs/bound"
+        },
+        "exclusions": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "integerOnly": {
+          "type": "boolean"
+        },
+        "preferredValues": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "lower",
+        "upper"
+      ],
+      "additionalProperties": false
+    },
+    "bound": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "inclusive": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "value",
+        "inclusive"
+      ],
+      "additionalProperties": false
+    },
+    "sampling": {
+      "type": "object",
+      "properties": {
+        "seed": {
+          "type": "number"
+        },
+        "desiredCount": {
+          "type": "number"
+        },
+        "maxAttempts": {
+          "type": "number"
+        },
+        "includeSpecialPoints": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "seed",
+        "desiredCount",
+        "maxAttempts",
+        "includeSpecialPoints"
+      ],
+      "additionalProperties": false
+    },
+    "unit-policy": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "ignored",
+            "accepted_units",
+            "convertible_units",
+            "strict_unit"
+          ]
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unit": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "accepted_units",
+                  "convertible_units"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "units"
+            ],
+            "properties": {
+              "unit": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "strict_unit"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "unit"
+            ],
+            "properties": {
+              "units": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ignored"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "unit": false,
+              "units": false
+            }
+          }
+        }
+      ]
+    }
+  }
+}

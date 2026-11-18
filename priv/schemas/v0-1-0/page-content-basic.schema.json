@@ -11,34 +11,209 @@
     "model": {
       "type": "array",
       "items": {
-        "oneOf": [
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-block.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-group.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-survey.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-alternatives.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-break.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-reference.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-bank-selection.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-sequence.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/learning-objectives.schema.json"
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "content",
+              "group",
+              "survey",
+              "alternatives",
+              "break",
+              "activity-reference",
+              "selection",
+              "learning_objectives",
+              "report"
+            ]
           }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "content"
+                }
+              },
+              "type": "object",
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-block.schema.json"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "group"
+                }
+              },
+              "type": "object",
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-group.schema.json"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "survey"
+                }
+              },
+              "type": "object",
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-survey.schema.json"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "alternatives"
+                }
+              },
+              "type": "object",
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-alternatives.schema.json"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "break"
+                }
+              },
+              "type": "object",
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-break.schema.json"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "activity-reference"
+                }
+              },
+              "type": "object",
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "oneOf": [
+                {
+                  "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-reference.schema.json"
+                },
+                {
+                  "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-sequence.schema.json"
+                }
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "selection"
+                }
+              },
+              "type": "object",
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-bank-selection.schema.json"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "learning_objectives"
+                }
+              },
+              "type": "object",
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/learning-objectives.schema.json"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "report"
+                }
+              },
+              "type": "object",
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-report.schema.json"
+            }
+          }
+        ]
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "trigger"
+        },
+        "id": {
+          "type": "string"
+        },
+        "trigger_type": {
+          "const": "page"
+        },
+        "prompt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "trigger_type",
+        "prompt"
+      ]
+    },
+    "bibrefs": {
+      "type": "array",
+      "items": {
+        "type": [
+          "string",
+          "integer"
         ]
       }
     }

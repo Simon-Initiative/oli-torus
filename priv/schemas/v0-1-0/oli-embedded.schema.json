@@ -1,0 +1,112 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/oli-embedded.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "OLI Embedded activity model",
+  "description": "Authored OLI Embedded structure with shared content. Domain evaluation and readiness checks are separate.",
+  "type": "object",
+  "properties": {
+    "base": {
+      "type": "string"
+    },
+    "src": {
+      "type": "string"
+    },
+    "modelXml": {
+      "type": "string"
+    },
+    "resourceBase": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "resourceURLs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "stem": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/content"
+    },
+    "suppressReviewInteraction": {
+      "type": "boolean"
+    },
+    "resourceVerification": {
+      "type": "object",
+      "additionalProperties": {
+        "enum": [
+          "verified",
+          "missing"
+        ]
+      }
+    },
+    "bundleStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "additionalProperties": false
+    },
+    "authoring": {
+      "type": "object",
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config"
+          }
+        },
+        "previewText": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "parts",
+        "previewText"
+      ],
+      "additionalProperties": false
+    },
+    "id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/id"
+    },
+    "activity_id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activity_id"
+    },
+    "resourceId": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/resourceId"
+    },
+    "learningLanguage": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/learningLanguage"
+    },
+    "bibrefs": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/bibrefs"
+    },
+    "activityType": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activityType"
+    },
+    "content": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/content"
+    }
+  },
+  "required": [
+    "base",
+    "src",
+    "modelXml",
+    "resourceBase",
+    "resourceURLs",
+    "stem",
+    "title",
+    "authoring"
+  ],
+  "additionalProperties": false
+}

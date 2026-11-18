@@ -177,7 +177,7 @@ defmodule Oli.MixProject do
       {:ex_cldr_plugs, "~> 1.3"},
       {:ex_cldr_calendars, "~> 1.26"},
       {:ex_cldr_dates_times, "~> 2.20"},
-      {:ex_json_schema, "~> 0.11.0"},
+      {:jsv, "~> 0.27.0"},
       {:ex_machina, "~> 2.7.0", only: [:test]},
       {:ex_money, "~> 5.17"},
       {:ex_money_sql, "~> 1.7"},

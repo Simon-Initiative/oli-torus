@@ -1,0 +1,727 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Shared activity model components",
+  "description": "Reusable activity structure. Rich text is referenced from the same schema used by Basic Page content; no content-element definitions are copied.",
+  "$ref": "#/$defs/content",
+  "$defs": {
+    "content": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "content": {
+          "$ref": "#/$defs/rich-text"
+        },
+        "editor": {
+          "enum": [
+            "slate",
+            "markdown"
+          ]
+        },
+        "textDirection": {
+          "enum": [
+            "ltr",
+            "rtl"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "content"
+      ],
+      "additionalProperties": false
+    },
+    "response": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rule": {
+          "type": "string"
+        },
+        "score": {
+          "type": "number"
+        },
+        "feedback": {
+          "$ref": "#/$defs/content"
+        },
+        "correct": {
+          "type": "boolean"
+        },
+        "showPage": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "matchStyle": {
+          "enum": [
+            "any",
+            "all",
+            "none"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "rule",
+        "score",
+        "feedback"
+      ],
+      "additionalProperties": false
+    },
+    "part": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/response"
+          },
+          "minItems": 1
+        },
+        "hints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/content"
+          }
+        },
+        "explanation": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/content"
+            }
+          ]
+        },
+        "scoringStrategy": {
+          "enum": [
+            "average",
+            "best",
+            "most_recent",
+            "total"
+          ]
+        },
+        "gradingApproach": {
+          "enum": [
+            "automatic",
+            "manual"
+          ]
+        },
+        "outOf": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "incorrectScore": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "triggers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trigger"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "responses",
+        "hints",
+        "scoringStrategy"
+      ],
+      "additionalProperties": false
+    },
+    "trigger": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "const": "trigger"
+        },
+        "trigger_type": {
+          "enum": [
+            "correct_answer",
+            "incorrect_answer",
+            "explanation",
+            "targeted_feedback",
+            "hint"
+          ]
+        },
+        "prompt": {
+          "type": "string"
+        },
+        "ref_id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "trigger_type",
+        "prompt"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "trigger_type": {
+                "const": "hint"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "ref_id"
+            ],
+            "properties": {
+              "ref_id": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "trigger_type": {
+                "const": "targeted_feedback"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "ref_id"
+            ],
+            "properties": {
+              "ref_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "transformation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation": {
+          "enum": [
+            "shuffle",
+            "variable_substitution"
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "partId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "firstAttemptOnly": {
+          "type": "boolean"
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/variable"
+          }
+        }
+      },
+      "required": [
+        "operation"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "shuffle"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "path"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "variable_substitution"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "data"
+            ]
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "variable": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "const": "variable"
+        },
+        "name": {
+          "type": "string"
+        },
+        "variable": {
+          "type": "string"
+        },
+        "expression": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "variable",
+        "expression"
+      ],
+      "additionalProperties": false
+    },
+    "rich-text": {
+      "description": "Current rich-text arrays and legacy editor envelopes share the Basic Page rich-text array definition.",
+      "if": {
+        "type": "array"
+      },
+      "then": {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-element.schema.json#/$defs/rich-text"
+      },
+      "else": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "properties": {
+          "model": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-element.schema.json#/$defs/rich-text"
+          },
+          "selection": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/selection"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "choice": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/content/properties/id"
+        },
+        "content": {
+          "$ref": "#/$defs/content/properties/content"
+        },
+        "editor": {
+          "$ref": "#/$defs/content/properties/editor"
+        },
+        "textDirection": {
+          "$ref": "#/$defs/content/properties/textDirection"
+        },
+        "frequency": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "content"
+      ],
+      "additionalProperties": false
+    },
+    "selection-point": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "path",
+        "offset"
+      ],
+      "additionalProperties": false
+    },
+    "selection": {
+      "type": "object",
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/selection-point"
+        },
+        "focus": {
+          "$ref": "#/$defs/selection-point"
+        }
+      },
+      "required": [
+        "anchor",
+        "focus"
+      ],
+      "additionalProperties": false
+    },
+    "choice-response-association": {
+      "type": "array",
+      "items": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        {
+          "type": "string",
+          "minLength": 1
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2,
+      "additionalItems": false
+    },
+    "maybe-number": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "value": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "type": {
+            "const": 1
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "value"
+        ]
+      },
+      "else": {
+        "properties": {
+          "value": false
+        }
+      }
+    },
+    "maybe-string": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "type": {
+            "const": 1
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "value"
+        ]
+      },
+      "else": {
+        "properties": {
+          "value": false
+        }
+      }
+    },
+    "likert-choice": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/choice/properties/id"
+        },
+        "content": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/choice/properties/content"
+        },
+        "editor": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/choice/properties/editor"
+        },
+        "textDirection": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/choice/properties/textDirection"
+        },
+        "frequency": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/choice/properties/frequency"
+        },
+        "value": {
+          "$ref": "#/$defs/maybe-number"
+        }
+      },
+      "required": [
+        "id",
+        "content"
+      ],
+      "additionalProperties": false
+    },
+    "likert-item": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/content/properties/id"
+        },
+        "content": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/content/properties/content"
+        },
+        "editor": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/content/properties/editor"
+        },
+        "textDirection": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/content/properties/textDirection"
+        },
+        "group": {
+          "$ref": "#/$defs/maybe-string"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "content"
+      ],
+      "additionalProperties": false
+    },
+    "model-metadata": {
+      "description": "Fields inherited from the client ActivityModelSchema. The two any-typed fields remain opaque JSON metadata; they do not select the activity validator.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "activity_id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "resourceId": {
+          "type": "integer"
+        },
+        "learningLanguage": {
+          "type": "string"
+        },
+        "bibrefs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "activityType": {},
+        "content": {}
+      },
+      "additionalProperties": false
+    },
+    "response-match-config": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "type": {
+          "enum": [
+            "always",
+            "math_expression"
+          ]
+        },
+        "math": {
+          "type": "object",
+          "description": "Opaque math-expression JSON payload. Intentionally no properties, additionalProperties, items, references, or recursive expression validation."
+        }
+      },
+      "required": [
+        "version",
+        "type"
+      ],
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "type": {
+            "const": "math_expression"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "math"
+        ]
+      },
+      "else": {
+        "properties": {
+          "math": false
+        }
+      }
+    },
+    "response-with-match-config": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/response/properties/id"
+        },
+        "rule": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/response/properties/rule"
+        },
+        "score": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/response/properties/score"
+        },
+        "feedback": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/response/properties/feedback"
+        },
+        "correct": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/response/properties/correct"
+        },
+        "showPage": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/response/properties/showPage"
+        },
+        "matchStyle": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/response/properties/matchStyle"
+        },
+        "matchConfig": {
+          "$ref": "#/$defs/response-match-config"
+        }
+      },
+      "required": [
+        "id",
+        "score",
+        "feedback"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "rule"
+          ]
+        },
+        {
+          "required": [
+            "matchConfig"
+          ]
+        }
+      ]
+    },
+    "part-with-match-config": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part/properties/id"
+        },
+        "responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/response-with-match-config"
+          }
+        },
+        "hints": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part/properties/hints"
+        },
+        "explanation": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part/properties/explanation"
+        },
+        "scoringStrategy": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part/properties/scoringStrategy"
+        },
+        "gradingApproach": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part/properties/gradingApproach"
+        },
+        "outOf": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part/properties/outOf"
+        },
+        "incorrectScore": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part/properties/incorrectScore"
+        },
+        "targets": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part/properties/targets"
+        },
+        "triggers": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part/properties/triggers"
+        }
+      },
+      "required": [
+        "id",
+        "responses",
+        "hints",
+        "scoringStrategy"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

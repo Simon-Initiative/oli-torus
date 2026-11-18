@@ -11,7 +11,7 @@ defmodule Oli.Scenarios.Schema do
 
   @external_resource @schema_path
   @raw_schema @schema_path |> File.read!() |> Jason.decode!()
-  @resolved_schema ExJsonSchema.Schema.resolve(@raw_schema)
+  @resolved_schema Oli.Utils.JSONValidation.build!(@raw_schema)
 
   @type validation_error :: %{message: String.t(), path: String.t()}
 
@@ -20,7 +20,7 @@ defmodule Oli.Scenarios.Schema do
 
   @spec validate_data(term()) :: :ok | {:error, [validation_error()]}
   def validate_data(data) do
-    case ExJsonSchema.Validator.validate(@resolved_schema, data) do
+    case Oli.Utils.JSONValidation.validate(@resolved_schema, data) do
       :ok ->
         :ok
 

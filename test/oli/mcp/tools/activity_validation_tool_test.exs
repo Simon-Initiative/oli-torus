@@ -1,97 +1,52 @@
 defmodule Oli.MCP.Tools.ActivityValidationToolTest do
   use ExUnit.Case, async: true
-
   alias Oli.MCP.Tools.ActivityValidationTool
+  @model "test/support/fixtures/multiple_choice_model.json" |> File.read!() |> Jason.decode!()
 
-  describe "activity validation tool" do
-    test "validates valid activity JSON" do
-      valid_activity = %{
-        "stem" => %{
-          "content" => [%{"type" => "p", "children" => [%{"text" => "Question text"}]}],
-          "editor" => "slate",
-          "id" => "123",
-          "textDirection" => "ltr"
-        },
-        "choices" => [
-          %{
-            "content" => [%{"type" => "p", "children" => [%{"text" => "Choice A"}]}],
-            "editor" => "slate",
-            "id" => "456",
-            "textDirection" => "ltr"
-          }
-        ],
-        "authoring" => %{
-          "parts" => [
-            %{
-              "id" => "1",
-              "hints" => [],
-              "responses" => [
-                %{
-                  "id" => "response1",
-                  "rule" => "input like {456}",
-                  "score" => 1,
-                  "correct" => true,
-                  "feedback" => %{
-                    "content" => [%{"type" => "p", "children" => [%{"text" => "Correct"}]}],
-                    "editor" => "slate",
-                    "id" => "feedback1",
-                    "textDirection" => "ltr"
-                  }
-                }
-              ],
-              "gradingApproach" => "automatic",
-              "scoringStrategy" => "average",
-              "targets" => []
-            }
-          ],
-          "previewText" => "Question text",
-          "targeted" => [],
-          "transformations" => [],
-          "version" => 2
-        }
-      }
+  test "validates an explicit Basic Page type through both stages" do
+    assert {:reply, response, %{}} =
+             ActivityValidationTool.execute(
+               %{activity_json: Jason.encode!(@model), activity_type_slug: "oli_multiple_choice"},
+               %{}
+             )
 
-      json_string = Jason.encode!(valid_activity)
+    assert response.content == [%{"type" => "text", "text" => "Activity JSON is valid"}]
+    refute response.isError
+  end
 
-      frame = %{}
-      result = ActivityValidationTool.execute(%{activity_json: json_string}, frame)
+  test "returns structured stage-specific errors without conflating schema and domain" do
+    bad_rule =
+      put_in(
+        @model,
+        ["authoring", "parts", Access.at(0), "responses", Access.at(0), "rule"],
+        "invalid"
+      )
 
-      assert {:reply, response, ^frame} = result
-      assert response.content == [%{"type" => "text", "text" => "Activity JSON is valid"}]
+    for {stage, json} <- [
+          {"json", "{ invalid json"},
+          {"schema", Jason.encode!(Map.delete(@model, "stem"))},
+          {"domain", Jason.encode!(bad_rule)}
+        ] do
+      assert {:reply, response, %{}} =
+               ActivityValidationTool.execute(
+                 %{activity_json: json, activity_type_slug: "oli_multiple_choice"},
+                 %{}
+               )
+
+      assert response.isError
+      assert response.structured_content.stage == stage
+      assert [%{path: _, code: _, message: _} | _] = response.structured_content.errors
+      assert [%{"text" => text}] = response.content
+      assert text =~ "Validation failed"
     end
+  end
 
-    test "returns error for invalid JSON" do
-      invalid_json = "{ invalid json"
+  test "does not guess an activity type" do
+    assert {:reply, response, %{}} =
+             ActivityValidationTool.execute(%{activity_json: Jason.encode!(@model)}, %{})
 
-      frame = %{}
-      result = ActivityValidationTool.execute(%{activity_json: invalid_json}, frame)
-
-      assert {:reply, response, ^frame} = result
-      assert response.isError == true
-      assert [%{"type" => "text", "text" => error_text}] = response.content
-      assert String.contains?(error_text, "Invalid JSON")
-    end
-
-    test "returns error for activity that fails validation" do
-      # Activity with invalid content structure that should fail content validation
-      invalid_activity = %{
-        "stem" => %{
-          "content" => [%{"type" => "invalid_type", "children" => "not_an_array"}],
-          "editor" => "slate",
-          "id" => "123",
-          "textDirection" => "ltr"
-        }
-      }
-
-      json_string = Jason.encode!(invalid_activity)
-
-      frame = %{}
-      result = ActivityValidationTool.execute(%{activity_json: json_string}, frame)
-
-      assert {:reply, response, ^frame} = result
-      assert response.isError == true
-      assert [%{"type" => "text", "text" => error_text}] = response.content
-      assert String.contains?(error_text, "Validation failed")
-    end
+    assert response.isError
+    assert response.structured_content.stage == "schema"
+    assert hd(response.structured_content.errors).code == "unsupported_activity_type"
   end
 end

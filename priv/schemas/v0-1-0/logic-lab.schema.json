@@ -1,0 +1,198 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/logic-lab.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Logic Lab activity model",
+  "description": "Authored Logic Lab structure with shared content. Domain evaluation and readiness checks are separate.",
+  "type": "object",
+  "properties": {
+    "activity": {
+      "if": {
+        "type": "string"
+      },
+      "then": {
+        "type": "string"
+      },
+      "else": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "created": {
+            "type": "string"
+          },
+          "modified": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "spec": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "enum": [
+                  "parse_tree",
+                  "chase_truth",
+                  "truth_table",
+                  "truth_tree",
+                  "derivation",
+                  "argument_diagram"
+                ]
+              },
+              "objectives": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "category": {
+                      "type": "string"
+                    },
+                    "required": {
+                      "enum": [
+                        "required",
+                        "optional",
+                        "as_required",
+                        "provided",
+                        "absent"
+                      ]
+                    },
+                    "mode": {
+                      "enum": [
+                        "novice",
+                        "expert"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "category",
+                    "required"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "maximumScore": {
+                "type": "number"
+              },
+              "preview": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "objectives"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "version",
+          "keywords",
+          "spec"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "additionalProperties": false
+    },
+    "feedback": {
+      "type": "array",
+      "items": {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/content"
+      }
+    },
+    "authoring": {
+      "type": "object",
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/part-with-match-config"
+          }
+        },
+        "version": {
+          "const": 1
+        },
+        "transformations": {
+          "type": "array",
+          "items": {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/transformation"
+          }
+        },
+        "previewText": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "parts",
+        "version",
+        "transformations",
+        "previewText"
+      ],
+      "additionalProperties": false
+    },
+    "id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/id"
+    },
+    "activity_id": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activity_id"
+    },
+    "resourceId": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/resourceId"
+    },
+    "learningLanguage": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/learningLanguage"
+    },
+    "bibrefs": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/bibrefs"
+    },
+    "activityType": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/activityType"
+    },
+    "content": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-components.schema.json#/$defs/model-metadata/properties/content"
+    }
+  },
+  "required": [
+    "activity",
+    "authoring",
+    "feedback"
+  ],
+  "additionalProperties": false
+}

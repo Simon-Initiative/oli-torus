@@ -3,315 +3,599 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "title": "Content Element",
   "description": "A content model element",
-  "anyOf": [
-    {
-      "$ref": "#/$defs/top-level"
-    },
-    {
-      "$ref": "#/$defs/block"
-    },
-    {
-      "$ref": "#/$defs/inline"
-    }
-  ],
+  "if": {
+    "required": [
+      "type"
+    ]
+  },
+  "then": {
+    "$ref": "#/$defs/typed-element"
+  },
+  "else": {
+    "$ref": "#/$defs/text"
+  },
   "$defs": {
-    "top-level": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/text-block"
-        },
-        {
-          "$ref": "#/$defs/list"
-        },
-        {
-          "$ref": "#/$defs/description-list"
-        },
-        {
-          "$ref": "#/$defs/media"
-        },
-        {
-          "$ref": "#/$defs/table"
-        },
-        {
-          "$ref": "#/$defs/math"
-        },
-        {
-          "$ref": "#/$defs/code-v1"
-        },
-        {
-          "$ref": "#/$defs/code-v2"
-        },
-        {
-          "$ref": "#/$defs/blockquote"
-        },
-        {
-          "$ref": "#/$defs/formula"
-        },
-        {
-          "$ref": "#/$defs/semantic"
-        },
-        {
-          "$ref": "#/$defs/page-link"
-        }
-      ]
-    },
-    "block": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/table-row"
-        },
-        {
-          "$ref": "#/$defs/table-cell"
-        },
-        {
-          "$ref": "#/$defs/list-item"
-        },
-        {
-          "$ref": "#/$defs/math-line"
-        },
-        {
-          "$ref": "#/$defs/code-line"
-        },
-        {
-          "$ref": "#/$defs/formula"
-        }
-      ]
-    },
-    "inline": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/text"
-        },
-        {
-          "$ref": "#/$defs/hyperlink"
-        },
-        {
-          "$ref": "#/$defs/citation"
-        },
-        {
-          "$ref": "#/$defs/popup"
-        },
-        {
-          "$ref": "#/$defs/input-ref"
-        },
-        {
-          "$ref": "#/$defs/image-inline"
-        },
-        {
-          "$ref": "#/$defs/formula-inline"
-        },
-        {
-          "$ref": "#/$defs/callout-inline"
-        },
-        {
-          "$ref": "#/$defs/foreign"
-        }
-      ]
-    },
-    "semantic": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/callout"
-        },
-        {
-          "$ref": "#/$defs/definition"
-        },
-        {
-          "$ref": "#/$defs/figure"
-        },
-        {
-          "$ref": "#/$defs/dialog"
-        },
-        {
-          "$ref": "#/$defs/conjugation"
-        }
-      ]
-    },
-    "text-block": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/paragraph"
-        },
-        {
-          "$ref": "#/$defs/heading"
-        }
-      ]
-    },
-    "paragraph": {
+    "audio": {
       "type": "object",
       "properties": {
         "type": {
-          "const": "p"
+          "const": "audio"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "caption": {
+          "$ref": "#/$defs/caption"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "src": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "x-torus-dispatch": true
+    },
+    "block": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "tr",
+            "th",
+            "td",
+            "tc",
+            "li",
+            "math_line",
+            "code_line",
+            "formula",
+            "dd",
+            "dt",
+            "trigger"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "allOf": [
+        {
+          "$ref": "#/$defs/typed-element"
+        }
+      ]
+    },
+    "blockquote": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "blockquote"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/blockquote-content"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "blockquote-content": {
+      "if": {
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "p"
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "allOf": [
+          {
+            "$ref": "#/$defs/typed-element"
+          }
+        ]
+      },
+      "else": {
+        "$ref": "#/$defs/text"
+      }
+    },
+    "callout": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "callout"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semantic-element-content"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "callout-inline": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "callout_inline"
         },
         "children": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/inline"
           }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "text": {
-      "type": "object",
-      "properties": {
-        "text": {
-          "type": "string"
-        }
-      },
-      "required": ["text"]
-    },
-    "input-ref": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "input_ref"
         },
-        "children": {
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "caption": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/text"
+            "$ref": "#/$defs/description-title-content"
           }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "heading": {
-      "oneOf": [
-        {
-          "$ref": "#/$defs/heading-one"
-        },
-        {
-          "$ref": "#/$defs/heading-two"
-        },
-        {
-          "$ref": "#/$defs/heading-three"
-        },
-        {
-          "$ref": "#/$defs/heading-four"
-        },
-        {
-          "$ref": "#/$defs/heading-five"
-        },
-        {
-          "$ref": "#/$defs/heading-six"
         }
       ]
     },
-    "heading-one": {
+    "citation": {
       "type": "object",
       "properties": {
         "type": {
-          "const": "h1"
+          "const": "cite"
+        },
+        "bibref": {
+          "type": [
+            "string",
+            "number"
+          ]
         },
         "children": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/text"
           }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "slug": {
+          "type": "string"
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "bibref",
+        "children"
+      ],
+      "x-torus-dispatch": true
     },
-    "heading-two": {
+    "code-line": {
       "type": "object",
       "properties": {
         "type": {
-          "const": "h2"
+          "const": "code_line"
         },
         "children": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/text"
           }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
     },
-    "heading-three": {
+    "code-v1": {
       "type": "object",
       "properties": {
         "type": {
-          "const": "h3"
+          "const": "code"
+        },
+        "caption": {
+          "$ref": "#/$defs/caption"
         },
         "children": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/text"
+            "$ref": "#/$defs/code-line"
           }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "language": {
+          "type": "string"
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "language",
+        "children"
+      ],
+      "not": {
+        "required": [
+          "code"
+        ]
+      },
+      "x-torus-dispatch": true
     },
-    "heading-four": {
+    "code-v2": {
       "type": "object",
       "properties": {
         "type": {
-          "const": "h4"
+          "const": "code"
+        },
+        "caption": {
+          "$ref": "#/$defs/caption"
         },
         "children": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/text"
           }
+        },
+        "code": {
+          "type": "string"
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "language": {
+          "type": "string"
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "code",
+        "language"
+      ],
+      "x-torus-dispatch": true,
+      "x-torus-dispatch-when": {
+        "required": [
+          "code"
+        ]
+      }
     },
-    "heading-five": {
+    "command-button": {
       "type": "object",
       "properties": {
         "type": {
-          "const": "h5"
+          "const": "command_button"
         },
         "children": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/text"
           }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "style": {
+          "oneOf": [
+            {
+              "const": "link"
+            },
+            {
+              "const": "button"
+            }
+          ]
+        },
+        "target": {
+          "type": "string"
+        },
+        "toggleStates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "message"
+            ]
+          }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
     },
-    "heading-six": {
+    "conjugation": {
       "type": "object",
       "properties": {
+        "title": {
+          "type": "string"
+        },
         "type": {
-          "const": "h6"
+          "const": "conjugation"
         },
         "children": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/text"
           }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "pronunciation": {
+          "$ref": "#/$defs/pronunciation"
+        },
+        "table": {
+          "$ref": "#/$defs/table"
+        },
+        "verb": {
+          "type": "string"
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "definition": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "definition"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "meanings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/definition-meaning"
+          }
+        },
+        "pronunciation": {
+          "$ref": "#/$defs/pronunciation"
+        },
+        "term": {
+          "type": "string"
+        },
+        "translations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/definition-translation"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "term"
+      ],
+      "x-torus-dispatch": true
+    },
+    "definition-meaning": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "meaning"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semantic-element-content"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": false
+    },
+    "definition-translation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "translation"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text-block"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": false
     },
     "description-list": {
       "type": "object",
       "properties": {
-        "type": {
-          "const": "dl"
-        },
         "title": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/inline"
+            "$ref": "#/$defs/description-title-content"
           }
+        },
+        "type": {
+          "const": "dl"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
         },
         "items": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/desription-list-item"
           }
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#"
-          }
         }
+      },
+      "required": [
+        "type",
+        "items"
+      ],
+      "x-torus-dispatch": true
+    },
+    "description-title-content": {
+      "if": {
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "a",
+              "cite",
+              "popup",
+              "input_ref",
+              "img_inline",
+              "formula_inline",
+              "callout_inline",
+              "foreign",
+              "command_button",
+              "p",
+              "h1",
+              "h2",
+              "h3",
+              "h4",
+              "h5",
+              "h6"
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "allOf": [
+          {
+            "$ref": "#/$defs/typed-element"
+          }
+        ]
+      },
+      "else": {
+        "$ref": "#/$defs/text"
       }
     },
     "desription-list-item": {
@@ -332,16 +616,787 @@
           "items": {
             "$ref": "#/$defs/semantic-element-content"
           }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
         }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "dialog": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "type": {
+          "const": "dialog"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dialog-line"
+          }
+        },
+        "speakers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dialog-speaker"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "x-torus-dispatch": true
+    },
+    "dialog-line": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "dialog_line"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semantic-element-content"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "speaker": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "children",
+        "speaker"
+      ],
+      "x-torus-dispatch": false
+    },
+    "dialog-speaker": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "image"
+      ]
+    },
+    "ecl": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "ecl"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "code": {
+          "type": "string"
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "code",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "figure": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semantic-element-content"
+          }
+        },
+        "type": {
+          "const": "figure"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semantic-element-content"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children",
+        "title"
+      ],
+      "x-torus-dispatch": true
+    },
+    "foreign": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "foreign"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inline"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "lang": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "formula": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "formula"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "legacyBlockRendered": {
+          "type": "boolean"
+        },
+        "src": {
+          "type": "string"
+        },
+        "subtype": {
+          "enum": [
+            "mathml",
+            "latex"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "subtype",
+        "src"
+      ],
+      "x-torus-dispatch": true
+    },
+    "formula-inline": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "formula_inline"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "legacyBlockRendered": {
+          "type": "boolean"
+        },
+        "src": {
+          "type": "string"
+        },
+        "subtype": {
+          "enum": [
+            "mathml",
+            "latex"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "subtype",
+        "src"
+      ],
+      "x-torus-dispatch": true
+    },
+    "heading": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "allOf": [
+        {
+          "$ref": "#/$defs/typed-element"
+        }
+      ]
+    },
+    "heading-five": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h5"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "heading-four": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h4"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "heading-one": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h1"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "heading-six": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h6"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "heading-three": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h3"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "heading-two": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h2"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "hyperlink": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "a"
+        },
+        "anchor": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "href": {
+          "type": "string"
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "linkType": {
+          "oneOf": [
+            {
+              "const": "page"
+            },
+            {
+              "const": "url"
+            },
+            {
+              "const": "media_library"
+            }
+          ]
+        },
+        "target": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "img"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "caption": {
+          "$ref": "#/$defs/caption"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "display": {
+          "type": "string"
+        },
+        "height": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "src": {
+          "type": "string"
+        },
+        "width": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "x-torus-dispatch": true
+    },
+    "image-inline": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "img_inline"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "height": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "src": {
+          "type": "string"
+        },
+        "width": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "x-torus-dispatch": true
+    },
+    "inline": {
+      "if": {
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "a",
+              "cite",
+              "popup",
+              "input_ref",
+              "img_inline",
+              "formula_inline",
+              "callout_inline",
+              "foreign",
+              "command_button"
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "allOf": [
+          {
+            "$ref": "#/$defs/typed-element"
+          }
+        ]
+      },
+      "else": {
+        "$ref": "#/$defs/text"
       }
     },
-    "list": {
-      "oneOf": [
-        {
-          "$ref": "#/$defs/ordered-list"
+    "input-ref": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "input_ref"
         },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "list": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "ol",
+            "ul"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "allOf": [
         {
-          "$ref": "#/$defs/unordered-list"
+          "$ref": "#/$defs/typed-element"
+        }
+      ]
+    },
+    "list-content": {
+      "if": {
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "li",
+              "ol",
+              "ul"
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "allOf": [
+          {
+            "$ref": "#/$defs/typed-element"
+          }
+        ]
+      },
+      "else": {
+        "$ref": "#/$defs/text"
+      }
+    },
+    "list-item": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "li"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "math": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "math"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/math-line"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "math-line": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "math_line"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "media": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "img",
+            "img_inline",
+            "youtube",
+            "video",
+            "audio",
+            "iframe"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "allOf": [
+        {
+          "$ref": "#/$defs/typed-element"
         }
       ]
     },
@@ -350,6 +1405,18 @@
       "properties": {
         "type": {
           "const": "ol"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/list-content"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
         },
         "style": {
           "oneOf": [
@@ -381,28 +1448,1486 @@
               "const": "upper-latin"
             }
           ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "page-link": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "page_link"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "idref": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        },
+        "purpose": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
+        }
+      },
+      "required": [
+        "type",
+        "idref",
+        "purpose"
+      ],
+      "x-torus-dispatch": true
+    },
+    "paragraph": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "p"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/paragraph-content"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "paragraph-content": {
+      "if": {
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "a",
+              "cite",
+              "popup",
+              "input_ref",
+              "img_inline",
+              "formula_inline",
+              "callout_inline",
+              "foreign",
+              "command_button",
+              "img"
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "allOf": [
+          {
+            "$ref": "#/$defs/typed-element"
+          }
+        ]
+      },
+      "else": {
+        "$ref": "#/$defs/text"
+      }
+    },
+    "popup": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "popup"
+        },
+        "audioSrc": {
+          "type": "string"
+        },
+        "audioType": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "content": {
+          "$ref": "#/$defs/rich-text"
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "trigger": {
+          "enum": [
+            "hover",
+            "click",
+            "focus"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "content",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "pronunciation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "pronunciation"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text-block"
+          }
+        },
+        "contenttype": {
+          "type": "string"
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "src": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": false
+    },
+    "rich-text": {
+      "type": "array",
+      "items": {
+        "$ref": "#"
+      }
+    },
+    "semantic": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "callout",
+            "definition",
+            "figure",
+            "dialog",
+            "conjugation"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "allOf": [
+        {
+          "$ref": "#/$defs/typed-element"
+        }
+      ]
+    },
+    "semantic-element-content": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "p",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "ol",
+            "ul",
+            "dl",
+            "img",
+            "img_inline",
+            "youtube",
+            "video",
+            "audio",
+            "iframe",
+            "table",
+            "math",
+            "code",
+            "blockquote",
+            "formula",
+            "callout",
+            "definition",
+            "figure",
+            "dialog",
+            "conjugation",
+            "page_link",
+            "ecl",
+            "trigger",
+            "tr",
+            "th",
+            "td",
+            "tc",
+            "li",
+            "math_line",
+            "code_line",
+            "dd",
+            "dt"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "allOf": [
+        {
+          "$ref": "#/$defs/typed-element"
+        }
+      ]
+    },
+    "table": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "table"
+        },
+        "border": {
+          "enum": [
+            "hidden",
+            "solid"
+          ]
+        },
+        "caption": {
+          "$ref": "#/$defs/caption"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/table-row"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "rowstyle": {
+          "enum": [
+            "plain",
+            "alternating"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "table-cell": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "th",
+            "td",
+            "tc"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "allOf": [
+        {
+          "$ref": "#/$defs/typed-element"
+        }
+      ]
+    },
+    "table-conjugation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "tc"
+        },
+        "align": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "audioSrc": {
+          "type": "string"
+        },
+        "audioType": {
+          "type": "string"
         },
         "children": {
           "type": "array",
           "items": {
             "anyOf": [
               {
-                "$ref": "#/$defs/list-item"
+                "$ref": "#/$defs/text-block"
               },
               {
-                "$ref": "#/$defs/list"
+                "$ref": "#/$defs/media"
+              },
+              {
+                "$ref": "#/$defs/math"
+              },
+              {
+                "$ref": "#/$defs/formula"
+              },
+              {
+                "$ref": "#/$defs/formula-inline"
+              },
+              {
+                "$ref": "#/$defs/text"
               }
             ]
           }
+        },
+        "colspan": {
+          "type": "number"
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "pronouns": {
+          "type": "string"
+        },
+        "rowspan": {
+          "type": "number"
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "table-data": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "td"
+        },
+        "align": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/text-block"
+              },
+              {
+                "$ref": "#/$defs/media"
+              },
+              {
+                "$ref": "#/$defs/math"
+              },
+              {
+                "$ref": "#/$defs/formula"
+              },
+              {
+                "$ref": "#/$defs/formula-inline"
+              },
+              {
+                "$ref": "#/$defs/text"
+              }
+            ]
+          }
+        },
+        "colspan": {
+          "type": "number"
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "rowspan": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "table-header": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "th"
+        },
+        "align": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/text-block"
+              },
+              {
+                "$ref": "#/$defs/media"
+              },
+              {
+                "$ref": "#/$defs/math"
+              },
+              {
+                "$ref": "#/$defs/formula"
+              },
+              {
+                "$ref": "#/$defs/formula-inline"
+              },
+              {
+                "$ref": "#/$defs/text"
+              }
+            ]
+          }
+        },
+        "colspan": {
+          "type": "number"
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "rowspan": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "table-row": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "tr"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/table-cell"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "text": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "boolean"
+        },
+        "deemphasis": {
+          "type": "boolean"
+        },
+        "del": {
+          "type": "boolean"
+        },
+        "doublesub": {
+          "type": "boolean"
+        },
+        "em": {
+          "type": "boolean"
+        },
+        "foreign": {
+          "type": "boolean"
+        },
+        "mark": {
+          "type": "boolean"
+        },
+        "strikethrough": {
+          "type": "boolean"
+        },
+        "strong": {
+          "type": "boolean"
+        },
+        "sub": {
+          "type": "boolean"
+        },
+        "sup": {
+          "type": "boolean"
+        },
+        "term": {
+          "type": "boolean"
+        },
+        "text": {
+          "type": "string"
+        },
+        "underline": {
+          "type": "boolean"
+        },
+        "var": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "not": {
+        "required": [
+          "type"
+        ]
+      }
+    },
+    "text-block": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "p",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "allOf": [
+        {
+          "$ref": "#/$defs/typed-element"
+        }
+      ]
+    },
+    "top-level": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "p",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "ol",
+            "ul",
+            "dl",
+            "img",
+            "img_inline",
+            "youtube",
+            "video",
+            "audio",
+            "iframe",
+            "table",
+            "math",
+            "code",
+            "blockquote",
+            "formula",
+            "callout",
+            "definition",
+            "figure",
+            "dialog",
+            "conjugation",
+            "page_link",
+            "ecl",
+            "trigger"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "allOf": [
+        {
+          "$ref": "#/$defs/typed-element"
+        }
+      ]
+    },
+    "trigger": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "trigger"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "id": {
+          "type": "string"
+        },
+        "prompt": {
+          "type": "string"
+        },
+        "trigger_type": {
+          "const": "content"
+        }
+      },
+      "required": [
+        "type",
+        "trigger_type",
+        "prompt",
+        "children"
+      ],
+      "x-torus-dispatch": true
+    },
+    "typed-element": {
+      "description": "Balanced type dispatch selects the element schema before validating descendants.",
+      "$comment": "Generated by mix oli.generate_content_dispatcher. Edit annotated element definitions, not this dispatch table.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "a",
+            "audio",
+            "blockquote",
+            "callout",
+            "callout_inline",
+            "cite",
+            "code",
+            "code_line",
+            "command_button",
+            "conjugation",
+            "dd",
+            "definition",
+            "dialog",
+            "dl",
+            "dt",
+            "ecl",
+            "figure",
+            "foreign",
+            "formula",
+            "formula_inline",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "iframe",
+            "img",
+            "img_inline",
+            "input_ref",
+            "li",
+            "math",
+            "math_line",
+            "ol",
+            "p",
+            "page_link",
+            "popup",
+            "table",
+            "tc",
+            "td",
+            "th",
+            "tr",
+            "trigger",
+            "ul",
+            "video",
+            "youtube"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "a",
+                  "audio",
+                  "blockquote",
+                  "callout",
+                  "callout_inline",
+                  "cite",
+                  "code",
+                  "code_line",
+                  "command_button",
+                  "conjugation",
+                  "dd",
+                  "definition",
+                  "dialog",
+                  "dl",
+                  "dt",
+                  "ecl",
+                  "figure",
+                  "foreign",
+                  "formula",
+                  "formula_inline",
+                  "h1",
+                  "h2",
+                  "h3"
+                ]
+              }
+            }
+          },
+          "then": {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "a",
+                    "audio",
+                    "blockquote",
+                    "callout",
+                    "callout_inline",
+                    "cite",
+                    "code",
+                    "code_line",
+                    "command_button",
+                    "conjugation",
+                    "dd"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "if": {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "a",
+                      "audio",
+                      "blockquote",
+                      "callout",
+                      "callout_inline"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "a",
+                        "audio"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "a"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/hyperlink"
+                  },
+                  "else": {
+                    "$ref": "#/$defs/audio"
+                  }
+                },
+                "else": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "blockquote"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/blockquote"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "callout"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/callout"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/callout-inline"
+                    }
+                  }
+                }
+              },
+              "else": {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "cite",
+                        "code",
+                        "code_line"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "cite"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/citation"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "code"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "if": {
+                        "required": [
+                          "code"
+                        ]
+                      },
+                      "then": {
+                        "$ref": "#/$defs/code-v2"
+                      },
+                      "else": {
+                        "$ref": "#/$defs/code-v1"
+                      }
+                    },
+                    "else": {
+                      "$ref": "#/$defs/code-line"
+                    }
+                  }
+                },
+                "else": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "command_button"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/command-button"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "conjugation"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/conjugation"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/desription-list-item"
+                    }
+                  }
+                }
+              }
+            },
+            "else": {
+              "if": {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "definition",
+                      "dialog",
+                      "dl",
+                      "dt",
+                      "ecl",
+                      "figure"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "definition",
+                        "dialog",
+                        "dl"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "definition"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/definition"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "dialog"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/dialog"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/description-list"
+                    }
+                  }
+                },
+                "else": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "dt"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/desription-list-item"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "ecl"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/ecl"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/figure"
+                    }
+                  }
+                }
+              },
+              "else": {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "foreign",
+                        "formula",
+                        "formula_inline"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "foreign"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/foreign"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "formula"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/formula"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/formula-inline"
+                    }
+                  }
+                },
+                "else": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "h1"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/heading-one"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "h2"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/heading-two"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/heading-three"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "h4",
+                    "h5",
+                    "h6",
+                    "iframe",
+                    "img",
+                    "img_inline",
+                    "input_ref",
+                    "li",
+                    "math",
+                    "math_line",
+                    "ol"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "if": {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "h4",
+                      "h5",
+                      "h6",
+                      "iframe",
+                      "img"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "h4",
+                        "h5"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "h4"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/heading-four"
+                  },
+                  "else": {
+                    "$ref": "#/$defs/heading-five"
+                  }
+                },
+                "else": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "h6"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/heading-six"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "iframe"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/webpage"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/image"
+                    }
+                  }
+                }
+              },
+              "else": {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "img_inline",
+                        "input_ref",
+                        "li"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "img_inline"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/image-inline"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "input_ref"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/input-ref"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/list-item"
+                    }
+                  }
+                },
+                "else": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "math"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/math"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "math_line"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/math-line"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/ordered-list"
+                    }
+                  }
+                }
+              }
+            },
+            "else": {
+              "if": {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "p",
+                      "page_link",
+                      "popup",
+                      "table",
+                      "tc",
+                      "td"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "p",
+                        "page_link",
+                        "popup"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "p"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/paragraph"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "page_link"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/page-link"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/popup"
+                    }
+                  }
+                },
+                "else": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "table"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/table"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "tc"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/table-conjugation"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/table-data"
+                    }
+                  }
+                }
+              },
+              "else": {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "th",
+                        "tr",
+                        "trigger"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "th"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/table-header"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "tr"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/table-row"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/trigger"
+                    }
+                  }
+                },
+                "else": {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "ul"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "$ref": "#/$defs/unordered-list"
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "enum": [
+                            "video"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "$ref": "#/$defs/video"
+                    },
+                    "else": {
+                      "$ref": "#/$defs/youtube"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "unordered-list": {
       "type": "object",
       "properties": {
         "type": {
           "const": "ul"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/list-content"
+          }
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
         },
         "style": {
           "oneOf": [
@@ -419,860 +2944,13 @@
               "const": "square"
             }
           ]
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/list-item"
-              },
-              {
-                "$ref": "#/$defs/list"
-              }
-            ]
-          }
         }
       },
-      "required": ["type", "children"]
-    },
-    "list-item": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "li"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/inline"
-              },
-              {
-                "$ref": "#/$defs/block"
-              }
-            ]
-          }
-        }
-      }
-    },
-    "media": {
-      "oneOf": [
-        {
-          "$ref": "#/$defs/image"
-        },
-        {
-          "$ref": "#/$defs/image-inline"
-        },
-        {
-          "$ref": "#/$defs/youtube"
-        },
-        {
-          "$ref": "#/$defs/video"
-        },
-        {
-          "$ref": "#/$defs/audio"
-        },
-        {
-          "$ref": "#/$defs/webpage"
-        }
-      ]
-    },
-    "image": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "img"
-        },
-        "src": {
-          "type": "string"
-        },
-        "height": {
-          "type": ["string", "number"]
-        },
-        "width": {
-          "type": ["string", "number"]
-        },
-        "alt": {
-          "type": "string"
-        },
-        "caption": {
-          "type": ["string", "array"]
-        },
-        "display": {
-          "type": "string"
-        }
-      },
-      "required": ["type"]
-    },
-    "image-inline": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "img_inline"
-        },
-        "src": {
-          "type": "string"
-        },
-        "height": {
-          "type": ["string", "number"]
-        },
-        "width": {
-          "type": ["string", "number"]
-        },
-        "alt": {
-          "type": "string"
-        }
-      },
-      "required": ["type"]
-    },
-    "youtube": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "youtube"
-        },
-        "src": {
-          "type": "string"
-        },
-        "height": {
-          "type": ["string", "number"]
-        },
-        "width": {
-          "type": ["string", "number"]
-        },
-        "alt": {
-          "type": "string"
-        },
-        "caption": {
-          "type": ["string", "array"]
-        },
-        "display": {
-          "type": "string"
-        },
-        "startTime": {
-          "type": "number"
-        },
-        "endTime": {
-          "type": "number"
-        }
-      },
-      "required": ["type"]
-    },
-    "audio": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "audio"
-        },
-        "src": {
-          "type": "string"
-        },
-        "alt": {
-          "type": "string"
-        },
-        "caption": {
-          "type": ["string", "array"]
-        }
-      },
-      "required": ["type"]
-    },
-    "webpage": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "iframe"
-        },
-        "src": {
-          "type": ["string", "number"]
-        },
-        "height": {
-          "type": ["string", "number"]
-        },
-        "width": {
-          "type": ["string", "number"]
-        },
-        "alt": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "caption": {
-          "type": ["string", "array"]
-        },
-        "display": {
-          "type": "string"
-        },
-        "srcType": {
-          "oneOf": [{ "const": "url" }, { "const": "media_library" }]
-        }
-      },
-      "required": ["type"]
-    },
-    "table": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "table"
-        },
-        "caption": {
-          "type": ["string", "array"]
-        },
-        "border": {
-          "enum": ["hidden", "solid"]
-        },
-        "rowstyle": {
-          "enum": ["plain", "alternating"]
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/table-row"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "table-row": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "tr"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/table-cell"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "table-cell": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/table-header"
-        },
-        {
-          "$ref": "#/$defs/table-data"
-        },
-        {
-          "$ref": "#/$defs/table-conjugation"
-        }
-      ]
-    },
-    "table-header": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "th"
-        },
-        "colspan": {
-          "type": "number"
-        },
-        "rowspan": {
-          "type": "number"
-        },
-        "align": {
-          "enum": ["left", "center", "right"]
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "table-data": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "td"
-        },
-        "colspan": {
-          "type": "number"
-        },
-        "rowspan": {
-          "type": "number"
-        },
-        "align": {
-          "enum": ["left", "center", "right"]
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "table-conjugation": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "tc"
-        },
-        "audioSrc": {
-          "type": "string"
-        },
-        "audioType": {
-          "type": "string"
-        },
-        "pronouns": {
-          "type": "string"
-        },
-        "colspan": {
-          "type": "number"
-        },
-        "rowspan": {
-          "type": "number"
-        },
-        "align": {
-          "enum": ["left", "center", "right"]
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "conjugation": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "conjugation"
-        },
-        "title": {
-          "type": "string"
-        },
-        "verb": {
-          "type": "string"
-        },
-        "pronunciation": {
-          "$ref": "#/$defs/pronunciation"
-        },
-        "table": {
-          "$ref": "#/$defs/table"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "callout": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "callout"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/semantic-element-content"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "callout-inline": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "callout_inline"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/inline"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "foreign": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "foreign"
-        },
-        "lang": {
-          "type": "string"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/inline"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "formula": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "formula"
-        },
-        "subtype": {
-          "enum": ["mathml", "latex"]
-        },
-        "src": {
-          "type": "string"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#"
-          }
-        }
-      },
-      "required": ["type", "subtype", "src"]
-    },
-    "formula-inline": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "formula_inline"
-        },
-        "subtype": {
-          "enum": ["mathml", "latex"]
-        },
-        "legacyBlockRendered": {
-          "type": "boolean"
-        },
-        "src": {
-          "type": "string"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#"
-          }
-        }
-      },
-      "required": ["type", "subtype", "src"]
-    },
-    "math": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "math"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/math-line"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "math-line": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "math_line"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "code-v1": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "code"
-        },
-        "language": {
-          "type": "string"
-        },
-        "caption": {
-          "type": ["string", "array"]
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/code-line"
-          }
-        }
-      },
-      "required": ["type", "language", "children"]
-    },
-    "code-line": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "code_line"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "code-v2": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "code"
-        },
-        "code": {
-          "type": "string"
-        },
-        "language": {
-          "type": "string"
-        },
-        "caption": {
-          "type": ["string", "array"]
-        }
-      },
-      "required": ["type", "code", "language"]
-    },
-    "blockquote": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "blockquote"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/paragraph"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "command-button": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "command_button"
-        },
-        "target": {
-          "id": "string"
-        },
-        "message": {
-          "type": "string"
-        },
-        "style": {
-          "oneOf": [{ "const": "link" }, { "const": "button" }]
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "hyperlink": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "a"
-        },
-        "href": {
-          "type": "string"
-        },
-        "target": {
-          "type": "string"
-        },
-        "anchor": {
-          "type": "string"
-        },
-        "linkType": {
-          "oneOf": [
-            { "const": "page" },
-            { "const": "url" },
-            { "const": "media_library" }
-          ]
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "page-link": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "page_link"
-        },
-        "idref": {
-          "type": ["integer", "string"]
-        },
-        "purpose": {
-          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text"
-          }
-        }
-      },
-      "required": ["type", "idref", "purpose"]
-    },
-    "citation": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "cite"
-        },
-        "bibref": {
-          "type": ["string", "number"]
-        },
-        "slug": {
-          "type": "string"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text"
-          }
-        }
-      },
-      "required": ["type", "bibref", "children"]
-    },
-    "popup": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "popup"
-        },
-        "trigger": {
-          "enum": ["hover", "click", "focus"]
-        },
-        "audioSrc": {
-          "type": "string"
-        },
-        "audioType": {
-          "type": "string"
-        },
-        "content": {
-          "$ref": "#/$defs/rich-text"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text"
-          }
-        }
-      }
-    },
-    "rich-text": {
-      "type": "array",
-      "items": {
-        "$ref": "#"
-      }
-    },
-    "figure": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "figure"
-        },
-        "title": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/semantic-element-content"
-          }
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/semantic-element-content"
-          }
-        }
-      },
-      "required": ["type", "children", "title"]
-    },
-    "semantic-element-content": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/media"
-        },
-        {
-          "$ref": "#/$defs/block"
-        },
-        {
-          "$ref": "#/$defs/text-block"
-        },
-        {
-          "$ref": "#/$defs/code-v2"
-        },
-        {
-          "$ref": "#/$defs/code-v1"
-        },
-        {
-          "$ref": "#/$defs/table"
-        }
-      ]
-    },
-    "pronunciation": {
-      "properties": {
-        "type": {
-          "const": "pronunciation"
-        },
-        "src": {
-          "type": "string"
-        },
-        "contenttype": {
-          "type": "string"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text-block"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-    "definition-translation": {
-      "properties": {
-        "type": {
-          "const": "translation"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text-block"
-          }
-        }
-      }
-    },
-    "definition-meaning": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "meaning"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/semantic-element-content"
-          }
-        }
-      }
-    },
-    "definition": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "definition"
-        },
-        "term": {
-          "type": "string"
-        },
-        "pronunciation": {
-          "$ref": "#/$defs/pronunciation"
-        },
-        "translations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/definition-translation"
-          }
-        },
-        "meanings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/definition-meaning"
-          }
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#"
-          }
-        }
-      }
-    },
-    "dialog-line": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "dialog_line"
-        },
-        "speaker": {
-          "type": "string"
-        },
-        "id": {
-          "type": "string"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/semantic-element-content"
-          }
-        }
-      }
-    },
-    "dialog-speaker": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "image": {
-          "type": "string"
-        },
-        "id": {
-          "type": "string"
-        }
-      }
-    },
-    "dialog": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "dialog"
-        },
-        "speakers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/dialog-speaker"
-          }
-        },
-        "lines": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/dialog-line"
-          }
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#"
-          }
-        }
-      }
+      "required": [
+        "type",
+        "children"
+      ],
+      "x-torus-dispatch": true
     },
     "video": {
       "type": "object",
@@ -1280,46 +2958,194 @@
         "type": {
           "const": "video"
         },
-        "poster": {
-          "type": "string"
-        },
         "alt": {
           "type": "string"
         },
-        "src": {
-          "type": "array",
-          "items": {
-            "url": {
-              "type": "string"
-            },
-            "contenttype": {
-              "type": "string"
-            }
-          }
-        },
-
         "captions": {
           "type": "array",
           "items": {
-            "language_code": "string",
-            "label": "string",
-            "src": "string"
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "language_code": {
+                "type": "string"
+              },
+              "src": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "language_code",
+              "label",
+              "src"
+            ]
           }
-        },
-        "height": {
-          "type": "number"
-        },
-        "width": {
-          "type": "number"
         },
         "children": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/text"
           }
+        },
+        "height": {
+          "type": "number"
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "poster": {
+          "type": "string"
+        },
+        "src": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "contenttype": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "url",
+              "contenttype"
+            ]
+          }
+        },
+        "width": {
+          "type": "number"
         }
       },
-      "required": ["type", "src"]
+      "required": [
+        "type",
+        "src"
+      ],
+      "x-torus-dispatch": true
+    },
+    "webpage": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "type": {
+          "const": "iframe"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "caption": {
+          "$ref": "#/$defs/caption"
+        },
+        "display": {
+          "type": "string"
+        },
+        "height": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "listen": {
+          "type": "boolean"
+        },
+        "src": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "srcType": {
+          "oneOf": [
+            {
+              "const": "url"
+            },
+            {
+              "const": "media_library"
+            }
+          ]
+        },
+        "targetId": {
+          "type": "string"
+        },
+        "width": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "x-torus-dispatch": true
+    },
+    "youtube": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "youtube"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "caption": {
+          "$ref": "#/$defs/caption"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "display": {
+          "type": "string"
+        },
+        "endTime": {
+          "type": "number"
+        },
+        "height": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "id": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "src": {
+          "type": "string"
+        },
+        "startTime": {
+          "type": "number"
+        },
+        "width": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "x-torus-dispatch": true
     }
   }
 }

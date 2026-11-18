@@ -18,10 +18,24 @@
       "type": "boolean"
     },
     "objectives": {
-      "type": "object",
-      "properties": {
-        "attached": {
-          "type": "array"
+      "if": {
+        "type": "array"
+      },
+      "then": {
+        "type": "array",
+        "items": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "else": {
+        "type": "object",
+        "properties": {
+          "attached": {
+            "type": "array"
+          }
         }
       }
     },
@@ -36,6 +50,164 @@
     },
     "unresolvedReferences": {
       "type": "array"
+    },
+    "aiEnabled": {
+      "type": "boolean"
+    },
+    "purpose": {
+      "enum": [
+        "foundation",
+        "application",
+        "deliberate_practice",
+        null
+      ]
+    },
+    "relatesTo": {
+      "type": "array",
+      "items": {
+        "type": [
+          "string",
+          "integer"
+        ]
+      }
+    },
+    "introContent": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "introVideo": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "posterImage": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "scoringStrategyId": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "maxAttempts": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "recommendedAttempts": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "durationMinutes": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "fullProgressPct": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "retakeMode": {
+      "enum": [
+        "normal",
+        "targeted",
+        null
+      ]
+    },
+    "assessmentMode": {
+      "enum": [
+        "traditional",
+        "one_at_a_time",
+        null
+      ]
+    },
+    "collabSpace": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "disabled",
+            "enabled",
+            "archived",
+            null
+          ]
+        },
+        "threaded": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "auto_accept": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "show_full_history": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "anonymous_posting": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "participation_min_replies": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "participation_min_posts": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "explanationStrategy": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "none",
+            "after_max_resource_attempts_exhausted",
+            "after_set_num_attempts",
+            null
+          ]
+        },
+        "set_num_attempts": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": [

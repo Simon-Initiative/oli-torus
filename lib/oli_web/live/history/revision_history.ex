@@ -266,7 +266,7 @@ defmodule OliWeb.RevisionHistory do
               File.read!(path)
               |> Jason.decode!()}
            end),
-         :ok <- ExJsonSchema.Validator.validate(resource_schema, uploaded_content) do
+         :ok <- Oli.Utils.JSONValidation.validate(resource_schema, uploaded_content) do
       latest_revision = fetch_revision(hd(socket.assigns.revisions).id)
 
       {:noreply,

@@ -1,0 +1,1230 @@
+{
+  "text": {
+    "stem": {
+      "id": "multi-input-2",
+      "content": [
+        {
+          "type": "p",
+          "id": "multi-input-3",
+          "children": [
+            {
+              "text": "Example question with a fill in the blank "
+            },
+            {
+              "id": "multi-input-1",
+              "children": [
+                {
+                  "text": ""
+                }
+              ],
+              "type": "input_ref"
+            },
+            {
+              "text": "."
+            }
+          ]
+        }
+      ]
+    },
+    "choices": [],
+    "inputs": [
+      {
+        "inputType": "text",
+        "id": "multi-input-1",
+        "partId": "1"
+      }
+    ],
+    "submitPerPart": false,
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "multi-input-4",
+              "rule": "input contains {answer}",
+              "score": 1,
+              "feedback": {
+                "id": "multi-input-5",
+                "content": [
+                  {
+                    "id": "multi-input-6",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "multi-input-7",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "multi-input-8",
+                "content": [
+                  {
+                    "id": "multi-input-9",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "multi-input-10",
+              "content": [
+                {
+                  "id": "multi-input-11",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [],
+          "explanation": {
+            "id": "multi-input-13",
+            "content": [
+              {
+                "id": "multi-input-14",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        }
+      ],
+      "targeted": [],
+      "transformations": [
+        {
+          "id": "multi-input-12",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true
+        }
+      ],
+      "previewText": "Example question with a fill in the blank"
+    }
+  },
+  "mixed": {
+    "stem": {
+      "id": "multi-input-2",
+      "content": [
+        {
+          "type": "p",
+          "id": "multi-input-3",
+          "children": [
+            {
+              "text": "Example question with a fill in the blank "
+            },
+            {
+              "id": "multi-input-1",
+              "children": [
+                {
+                  "text": ""
+                }
+              ],
+              "type": "input_ref"
+            },
+            {
+              "text": "."
+            }
+          ]
+        }
+      ]
+    },
+    "choices": [
+      {
+        "id": "multi-input-15",
+        "content": [
+          {
+            "id": "multi-input-16",
+            "children": [
+              {
+                "text": "Choice A"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      },
+      {
+        "id": "multi-input-17",
+        "content": [
+          {
+            "id": "multi-input-18",
+            "children": [
+              {
+                "text": "Choice B"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      }
+    ],
+    "inputs": [
+      {
+        "inputType": "dropdown",
+        "id": "multi-input-1",
+        "partId": "1",
+        "choiceIds": [
+          "multi-input-15",
+          "multi-input-17"
+        ]
+      },
+      {
+        "inputType": "text",
+        "partId": "multi-input-58",
+        "id": "input-text"
+      },
+      {
+        "inputType": "numeric",
+        "partId": "multi-input-67",
+        "id": "input-numeric"
+      },
+      {
+        "inputType": "math",
+        "partId": "multi-input-110",
+        "id": "input-math"
+      },
+      {
+        "inputType": "math_expression",
+        "partId": "multi-input-153",
+        "id": "input-math_expression",
+        "itemConfig": {
+          "version": 1,
+          "type": "math_expression",
+          "subtype": "algebraic",
+          "config": {
+            "validation": {
+              "allowedVariables": [
+                "x"
+              ],
+              "domains": [
+                {
+                  "name": "x",
+                  "lower": {
+                    "value": -10,
+                    "inclusive": true
+                  },
+                  "upper": {
+                    "value": 10,
+                    "inclusive": true
+                  },
+                  "exclusions": [],
+                  "integerOnly": false,
+                  "preferredValues": []
+                }
+              ]
+            },
+            "sampling": {
+              "seed": 42,
+              "desiredCount": 8,
+              "maxAttempts": 64,
+              "includeSpecialPoints": true
+            }
+          }
+        }
+      }
+    ],
+    "submitPerPart": false,
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "multi-input-20",
+              "rule": "input like {multi-input-15}",
+              "score": 1,
+              "feedback": {
+                "id": "multi-input-21",
+                "content": [
+                  {
+                    "id": "multi-input-22",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "multi-input-23",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "multi-input-24",
+                "content": [
+                  {
+                    "id": "multi-input-25",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "multi-input-10",
+              "content": [
+                {
+                  "id": "multi-input-11",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [],
+          "explanation": {
+            "id": "multi-input-13",
+            "content": [
+              {
+                "id": "multi-input-14",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        },
+        {
+          "id": "multi-input-58",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "multi-input-50",
+              "rule": "input contains {answer}",
+              "score": 1,
+              "feedback": {
+                "id": "multi-input-51",
+                "content": [
+                  {
+                    "id": "multi-input-52",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "multi-input-53",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "multi-input-54",
+                "content": [
+                  {
+                    "id": "multi-input-55",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "multi-input-56",
+              "content": [
+                {
+                  "id": "multi-input-57",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        },
+        {
+          "id": "multi-input-67",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "multi-input-84",
+              "rule": "input = {1}",
+              "score": 1,
+              "feedback": {
+                "id": "multi-input-85",
+                "content": [
+                  {
+                    "id": "multi-input-86",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "multi-input-87",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "multi-input-88",
+                "content": [
+                  {
+                    "id": "multi-input-89",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "multi-input-65",
+              "content": [
+                {
+                  "id": "multi-input-66",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        },
+        {
+          "id": "multi-input-110",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "multi-input-133",
+              "rule": "input equals {}",
+              "score": 1,
+              "feedback": {
+                "id": "multi-input-134",
+                "content": [
+                  {
+                    "id": "multi-input-135",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "multi-input-136",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "multi-input-137",
+                "content": [
+                  {
+                    "id": "multi-input-138",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "multi-input-108",
+              "content": [
+                {
+                  "id": "multi-input-109",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        },
+        {
+          "id": "multi-input-153",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "multi-input-182",
+              "rule": "",
+              "score": 1,
+              "feedback": {
+                "id": "multi-input-183",
+                "content": [
+                  {
+                    "id": "multi-input-184",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true,
+              "matchConfig": {
+                "version": 1,
+                "type": "math_expression",
+                "math": {
+                  "mode": "algebraic_equivalence",
+                  "expected": ""
+                }
+              }
+            },
+            {
+              "id": "multi-input-185",
+              "rule": "",
+              "score": 0,
+              "feedback": {
+                "id": "multi-input-186",
+                "content": [
+                  {
+                    "id": "multi-input-187",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "matchConfig": {
+                "version": 1,
+                "type": "always"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "multi-input-151",
+              "content": [
+                {
+                  "id": "multi-input-152",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        }
+      ],
+      "targeted": [],
+      "transformations": [
+        {
+          "id": "multi-input-12",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true
+        },
+        {
+          "id": "multi-input-19",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true,
+          "partId": "1"
+        }
+      ],
+      "previewText": "Example question with a fill in the blank"
+    }
+  },
+  "converted": {
+    "stem": {
+      "id": "multi-input-2",
+      "content": [
+        {
+          "type": "p",
+          "id": "multi-input-3",
+          "children": [
+            {
+              "text": "Example question with a fill in the blank "
+            },
+            {
+              "id": "multi-input-1",
+              "children": [
+                {
+                  "text": ""
+                }
+              ],
+              "type": "input_ref"
+            },
+            {
+              "text": "."
+            }
+          ]
+        }
+      ]
+    },
+    "choices": [
+      {
+        "id": "multi-input-15",
+        "content": [
+          {
+            "id": "multi-input-16",
+            "children": [
+              {
+                "text": "Choice A"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      },
+      {
+        "id": "multi-input-17",
+        "content": [
+          {
+            "id": "multi-input-18",
+            "children": [
+              {
+                "text": "Choice B"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      }
+    ],
+    "inputs": [
+      {
+        "inputType": "dropdown",
+        "id": "multi-input-1",
+        "partId": "1",
+        "choiceIds": [
+          "multi-input-15",
+          "multi-input-17"
+        ]
+      },
+      {
+        "inputType": "text",
+        "partId": "multi-input-58",
+        "id": "input-text"
+      },
+      {
+        "inputType": "math_expression",
+        "partId": "multi-input-67",
+        "id": "input-numeric",
+        "itemConfig": {
+          "version": 1,
+          "type": "math_expression",
+          "subtype": "numeric",
+          "config": {}
+        }
+      },
+      {
+        "inputType": "math_expression",
+        "partId": "multi-input-110",
+        "id": "input-math",
+        "itemConfig": {
+          "version": 1,
+          "type": "math_expression",
+          "subtype": "latex_direct",
+          "config": {}
+        }
+      },
+      {
+        "inputType": "math_expression",
+        "partId": "multi-input-153",
+        "id": "input-math_expression",
+        "itemConfig": {
+          "version": 1,
+          "type": "math_expression",
+          "subtype": "algebraic",
+          "config": {
+            "validation": {
+              "allowedVariables": [
+                "x"
+              ],
+              "domains": [
+                {
+                  "name": "x",
+                  "lower": {
+                    "value": -10,
+                    "inclusive": true
+                  },
+                  "upper": {
+                    "value": 10,
+                    "inclusive": true
+                  },
+                  "exclusions": [],
+                  "integerOnly": false,
+                  "preferredValues": []
+                }
+              ]
+            },
+            "sampling": {
+              "seed": 42,
+              "desiredCount": 8,
+              "maxAttempts": 64,
+              "includeSpecialPoints": true
+            }
+          }
+        }
+      }
+    ],
+    "submitPerPart": false,
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "multi-input-20",
+              "rule": "input like {multi-input-15}",
+              "score": 1,
+              "feedback": {
+                "id": "multi-input-21",
+                "content": [
+                  {
+                    "id": "multi-input-22",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "multi-input-23",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "multi-input-24",
+                "content": [
+                  {
+                    "id": "multi-input-25",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "multi-input-10",
+              "content": [
+                {
+                  "id": "multi-input-11",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [],
+          "explanation": {
+            "id": "multi-input-13",
+            "content": [
+              {
+                "id": "multi-input-14",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        },
+        {
+          "id": "multi-input-58",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "multi-input-50",
+              "rule": "input contains {answer}",
+              "score": 1,
+              "feedback": {
+                "id": "multi-input-51",
+                "content": [
+                  {
+                    "id": "multi-input-52",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "multi-input-53",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "multi-input-54",
+                "content": [
+                  {
+                    "id": "multi-input-55",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "multi-input-56",
+              "content": [
+                {
+                  "id": "multi-input-57",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        },
+        {
+          "id": "multi-input-67",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "multi-input-84",
+              "rule": "",
+              "score": 1,
+              "feedback": {
+                "id": "multi-input-85",
+                "content": [
+                  {
+                    "id": "multi-input-86",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true,
+              "matchConfig": {
+                "version": 1,
+                "type": "math_expression",
+                "math": {
+                  "mode": "numeric",
+                  "operator": "equal",
+                  "expected": "1"
+                }
+              }
+            },
+            {
+              "id": "multi-input-87",
+              "rule": "",
+              "score": 0,
+              "feedback": {
+                "id": "multi-input-88",
+                "content": [
+                  {
+                    "id": "multi-input-89",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "matchConfig": {
+                "version": 1,
+                "type": "always"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "multi-input-65",
+              "content": [
+                {
+                  "id": "multi-input-66",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        },
+        {
+          "id": "multi-input-110",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "multi-input-133",
+              "rule": "",
+              "score": 1,
+              "feedback": {
+                "id": "multi-input-134",
+                "content": [
+                  {
+                    "id": "multi-input-135",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true,
+              "matchConfig": {
+                "version": 1,
+                "type": "math_expression",
+                "math": {
+                  "mode": "latex_direct",
+                  "expected": ""
+                }
+              }
+            },
+            {
+              "id": "multi-input-136",
+              "rule": "",
+              "score": 0,
+              "feedback": {
+                "id": "multi-input-137",
+                "content": [
+                  {
+                    "id": "multi-input-138",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "matchConfig": {
+                "version": 1,
+                "type": "always"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "multi-input-108",
+              "content": [
+                {
+                  "id": "multi-input-109",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        },
+        {
+          "id": "multi-input-153",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "multi-input-182",
+              "rule": "",
+              "score": 1,
+              "feedback": {
+                "id": "multi-input-183",
+                "content": [
+                  {
+                    "id": "multi-input-184",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true,
+              "matchConfig": {
+                "version": 1,
+                "type": "math_expression",
+                "math": {
+                  "mode": "algebraic_equivalence",
+                  "expected": ""
+                }
+              }
+            },
+            {
+              "id": "multi-input-185",
+              "rule": "",
+              "score": 0,
+              "feedback": {
+                "id": "multi-input-186",
+                "content": [
+                  {
+                    "id": "multi-input-187",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "matchConfig": {
+                "version": 1,
+                "type": "always"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "multi-input-151",
+              "content": [
+                {
+                  "id": "multi-input-152",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": []
+        }
+      ],
+      "targeted": [],
+      "transformations": [
+        {
+          "id": "multi-input-12",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true
+        },
+        {
+          "id": "multi-input-19",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true,
+          "partId": "1"
+        }
+      ],
+      "previewText": "Example question with a fill in the blank"
+    }
+  }
+}

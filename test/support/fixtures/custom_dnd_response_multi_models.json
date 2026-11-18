@@ -1,0 +1,1635 @@
+{
+  "custom-dnd": {
+    "stem": {
+      "id": "dnd-response-multi-1",
+      "content": [
+        {
+          "id": "dnd-response-multi-2",
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "height": "400",
+    "width": "600",
+    "targetArea": "\n<div id=\"targetContainer\">\n\n  <div id=\"lefttitle\" style=\"position:absolute;top:30px; left:5px\" >Label 1</div>\n  <div id=\"middletitle\" style=\"position:absolute;top:95px; left:5px\" >Label 2</div>\n  <div id=\"bottomtitle\" style=\"position:absolute;top:160px; left:5px\" >Label 3</div>\n\n  <div input_ref=\"area1\" class=\"target\" style=\"left:245px; top:25px; width:240px; height:40px;\"> </div>\n  <div input_ref=\"area2\" class=\"target\" style=\"left:245px;top:85px; width:240px; height:40px;\"> </div>\n  <div input_ref=\"area3\" class=\"target\" style=\"left:245px; top:145px; width:240px; height:40px;\"> </div>\n\n</div>\n",
+    "layoutStyles": "\n\n#targetContainer {\n  margin: auto;\n  height: 300px;\n  position: relative;\n}\n\n.target {\n  border: 2px;\n  border-style: dashed;\n  border-color: #999999;\n  display: inline-block;\n  position: absolute;\n  min-width: 200px;\n  width: 250px;\n  min-height: 40px;\n  height: 40px;\n}\n\n.initiator {\n  color: black;\n  display: inline-block;\n  min-height: 20px;\n  height: 30px;\n  min-width: 60px;\n  width: 200px;\n  background: #ffc;\n  text-align: center;\n  padding: 4px;\n  cursor: move;\n  border-style: solid;\n  border-width: 1px;\n  border-color: black;\n}\n\n:host-context(.dark) .initiator {\n  background-color: white;\n  color: black;\n}\n\n.dragdropspacer {\n  height: 30px;\n}\n",
+    "initiators": "\n<div input_val=\"input1\" class=\"initiator\">Initiator 1</div>\n<div input_val=\"input2\" class=\"initiator\">Initiator 2</div>\n<div input_val=\"input3\" class=\"initiator\">Initiator 3</div>\n",
+    "authoring": {
+      "parts": [
+        {
+          "id": "input1",
+          "scoringStrategy": "average",
+          "gradingApproach": "automatic",
+          "responses": [
+            {
+              "id": "dnd-response-multi-3",
+              "rule": "input like {input1_area1}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-4",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-5",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "dnd-response-multi-6",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-7",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-8",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-9",
+              "content": [
+                {
+                  "id": "dnd-response-multi-10",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "dnd-response-multi-11",
+              "content": [
+                {
+                  "id": "dnd-response-multi-12",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "dnd-response-multi-13",
+              "content": [
+                {
+                  "id": "dnd-response-multi-14",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "explanation": {
+            "id": "dnd-response-multi-39",
+            "content": [
+              {
+                "id": "dnd-response-multi-40",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        },
+        {
+          "id": "input2",
+          "scoringStrategy": "average",
+          "gradingApproach": "automatic",
+          "responses": [
+            {
+              "id": "dnd-response-multi-15",
+              "rule": "input like {input2_area2}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-16",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-17",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "dnd-response-multi-18",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-19",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-20",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-21",
+              "content": [
+                {
+                  "id": "dnd-response-multi-22",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "dnd-response-multi-23",
+              "content": [
+                {
+                  "id": "dnd-response-multi-24",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "dnd-response-multi-25",
+              "content": [
+                {
+                  "id": "dnd-response-multi-26",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ]
+        },
+        {
+          "id": "input3",
+          "scoringStrategy": "average",
+          "gradingApproach": "automatic",
+          "responses": [
+            {
+              "id": "dnd-response-multi-27",
+              "rule": "input like {input3_area3}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-28",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-29",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "dnd-response-multi-30",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-31",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-32",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-33",
+              "content": [
+                {
+                  "id": "dnd-response-multi-34",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "dnd-response-multi-35",
+              "content": [
+                {
+                  "id": "dnd-response-multi-36",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "dnd-response-multi-37",
+              "content": [
+                {
+                  "id": "dnd-response-multi-38",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ]
+        }
+      ],
+      "transformations": [],
+      "previewText": ""
+    }
+  },
+  "custom-dnd-edited": {
+    "stem": {
+      "id": "dnd-response-multi-1",
+      "content": [
+        {
+          "type": "p",
+          "children": [
+            {
+              "text": "Drag the labels."
+            }
+          ],
+          "id": "dnd-edited-stem-paragraph"
+        }
+      ],
+      "editor": "slate",
+      "textDirection": "ltr"
+    },
+    "height": "400",
+    "width": "600",
+    "targetArea": "<div class=\"target\" input_ref=\"area\"></div>",
+    "layoutStyles": ".target { width: 100%; }",
+    "initiators": "<div class=\"initiator\" input_val=\"drag\">Drag me</div>",
+    "authoring": {
+      "parts": [
+        {
+          "id": "renamed",
+          "scoringStrategy": "average",
+          "gradingApproach": "automatic",
+          "responses": [
+            {
+              "id": "dnd-response-multi-3",
+              "rule": "input like {input1_area1}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-4",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-5",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "dnd-response-multi-6",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-7",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-8",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-9",
+              "content": [
+                {
+                  "id": "dnd-response-multi-10",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "dnd-response-multi-11",
+              "content": [
+                {
+                  "id": "dnd-response-multi-12",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "dnd-response-multi-13",
+              "content": [
+                {
+                  "id": "dnd-response-multi-14",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "explanation": {
+            "id": "dnd-response-multi-39",
+            "content": [
+              {
+                "id": "dnd-response-multi-40",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        },
+        {
+          "id": "input2",
+          "scoringStrategy": "average",
+          "gradingApproach": "automatic",
+          "responses": [
+            {
+              "id": "dnd-response-multi-15",
+              "rule": "input like {input2_area2}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-16",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-17",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              },
+              "correct": true
+            },
+            {
+              "id": "dnd-response-multi-18",
+              "rule": "input like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-19",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-20",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-21",
+              "content": [
+                {
+                  "id": "dnd-response-multi-22",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "dnd-response-multi-23",
+              "content": [
+                {
+                  "id": "dnd-response-multi-24",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            },
+            {
+              "id": "dnd-response-multi-25",
+              "content": [
+                {
+                  "id": "dnd-response-multi-26",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ]
+        }
+      ],
+      "transformations": [],
+      "previewText": "Drag the labels."
+    }
+  },
+  "response-multi": {
+    "stem": {
+      "id": "dnd-response-multi-43",
+      "content": [
+        {
+          "type": "p",
+          "id": "dnd-response-multi-44",
+          "children": [
+            {
+              "text": "Example question with a fill in the blank "
+            },
+            {
+              "id": "dnd-response-multi-41",
+              "children": [
+                {
+                  "text": ""
+                }
+              ],
+              "type": "input_ref"
+            },
+            {
+              "text": "."
+            }
+          ]
+        }
+      ]
+    },
+    "choices": [],
+    "inputs": [
+      {
+        "inputType": "text",
+        "id": "dnd-response-multi-41",
+        "partId": "dnd-response-multi-42"
+      }
+    ],
+    "submitPerPart": false,
+    "multInputsPerPart": true,
+    "authoring": {
+      "parts": [
+        {
+          "id": "dnd-response-multi-42",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "dnd-response-multi-45",
+              "rule": "input_ref_dnd-response-multi-41 contains {answer}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-46",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-47",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            },
+            {
+              "id": "dnd-response-multi-48",
+              "rule": "input_ref_dnd-response-multi-41 like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-49",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-50",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-51",
+              "content": [
+                {
+                  "id": "dnd-response-multi-52",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [
+            "dnd-response-multi-41"
+          ],
+          "explanation": {
+            "id": "dnd-response-multi-54",
+            "content": [
+              {
+                "id": "dnd-response-multi-55",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        }
+      ],
+      "targeted": [],
+      "transformations": [
+        {
+          "id": "dnd-response-multi-53",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true
+        }
+      ],
+      "previewText": "Example question with a fill in the blank"
+    }
+  },
+  "response-multi-mixed": {
+    "stem": {
+      "id": "dnd-response-multi-43",
+      "content": [
+        {
+          "type": "p",
+          "id": "dnd-response-multi-44",
+          "children": [
+            {
+              "text": "Example question with a fill in the blank "
+            },
+            {
+              "id": "dnd-response-multi-41",
+              "children": [
+                {
+                  "text": ""
+                }
+              ],
+              "type": "input_ref"
+            },
+            {
+              "text": "."
+            }
+          ]
+        }
+      ]
+    },
+    "choices": [
+      {
+        "id": "dnd-response-multi-56",
+        "content": [
+          {
+            "id": "dnd-response-multi-57",
+            "children": [
+              {
+                "text": "Choice A"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      },
+      {
+        "id": "dnd-response-multi-58",
+        "content": [
+          {
+            "id": "dnd-response-multi-59",
+            "children": [
+              {
+                "text": "Choice B"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      }
+    ],
+    "inputs": [
+      {
+        "inputType": "dropdown",
+        "id": "dnd-response-multi-41",
+        "partId": "dnd-response-multi-42",
+        "choiceIds": [
+          "dnd-response-multi-56",
+          "dnd-response-multi-58"
+        ]
+      },
+      {
+        "inputType": "text",
+        "partId": "dnd-response-multi-99",
+        "id": "input-text"
+      },
+      {
+        "inputType": "numeric",
+        "partId": "dnd-response-multi-108",
+        "id": "input-numeric"
+      },
+      {
+        "inputType": "math",
+        "partId": "dnd-response-multi-151",
+        "id": "input-math"
+      },
+      {
+        "inputType": "math_expression",
+        "partId": "dnd-response-multi-194",
+        "id": "input-math_expression"
+      }
+    ],
+    "submitPerPart": false,
+    "multInputsPerPart": true,
+    "authoring": {
+      "parts": [
+        {
+          "id": "dnd-response-multi-42",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "dnd-response-multi-45",
+              "rule": "input_ref_dnd-response-multi-41 like {dnd-response-multi-56}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-46",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-47",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            },
+            {
+              "id": "dnd-response-multi-48",
+              "rule": "input_ref_dnd-response-multi-41 like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-49",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-50",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-51",
+              "content": [
+                {
+                  "id": "dnd-response-multi-52",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [
+            "dnd-response-multi-41"
+          ],
+          "explanation": {
+            "id": "dnd-response-multi-54",
+            "content": [
+              {
+                "id": "dnd-response-multi-55",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        },
+        {
+          "id": "dnd-response-multi-99",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "dnd-response-multi-91",
+              "rule": "input_ref_input-text contains {answer}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-92",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-93",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            },
+            {
+              "id": "dnd-response-multi-94",
+              "rule": "input_ref_input-text like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-95",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-96",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-97",
+              "content": [
+                {
+                  "id": "dnd-response-multi-98",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [
+            "input-text"
+          ]
+        },
+        {
+          "id": "dnd-response-multi-108",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "dnd-response-multi-100",
+              "rule": "input_ref_input-numeric = {1}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-101",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-102",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            },
+            {
+              "id": "dnd-response-multi-103",
+              "rule": "input_ref_input-numeric like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-104",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-105",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-106",
+              "content": [
+                {
+                  "id": "dnd-response-multi-107",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [
+            "input-numeric"
+          ]
+        },
+        {
+          "id": "dnd-response-multi-151",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "dnd-response-multi-143",
+              "rule": "input_ref_input-math equals {}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-144",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-145",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            },
+            {
+              "id": "dnd-response-multi-146",
+              "rule": "input_ref_input-math like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-147",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-148",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-149",
+              "content": [
+                {
+                  "id": "dnd-response-multi-150",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [
+            "input-math"
+          ]
+        },
+        {
+          "id": "dnd-response-multi-194",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "dnd-response-multi-186",
+              "rule": "input_ref_input-math_expression equals {}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-187",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-188",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            },
+            {
+              "id": "dnd-response-multi-189",
+              "rule": "input_ref_input-math_expression like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-190",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-191",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-192",
+              "content": [
+                {
+                  "id": "dnd-response-multi-193",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [
+            "input-math_expression"
+          ]
+        }
+      ],
+      "targeted": [],
+      "transformations": [
+        {
+          "id": "dnd-response-multi-53",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true
+        },
+        {
+          "id": "dnd-response-multi-60",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true,
+          "partId": "dnd-response-multi-42"
+        }
+      ],
+      "previewText": "Example question with a fill in the blank"
+    }
+  },
+  "response-multi-grouped": {
+    "stem": {
+      "id": "dnd-response-multi-43",
+      "content": [
+        {
+          "type": "p",
+          "id": "dnd-response-multi-44",
+          "children": [
+            {
+              "text": "Example question with a fill in the blank "
+            },
+            {
+              "id": "dnd-response-multi-41",
+              "children": [
+                {
+                  "text": ""
+                }
+              ],
+              "type": "input_ref"
+            },
+            {
+              "text": "."
+            }
+          ]
+        }
+      ]
+    },
+    "choices": [
+      {
+        "id": "dnd-response-multi-56",
+        "content": [
+          {
+            "id": "dnd-response-multi-57",
+            "children": [
+              {
+                "text": "Choice A"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      },
+      {
+        "id": "dnd-response-multi-58",
+        "content": [
+          {
+            "id": "dnd-response-multi-59",
+            "children": [
+              {
+                "text": "Choice B"
+              }
+            ],
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "textDirection": "ltr"
+      }
+    ],
+    "inputs": [
+      {
+        "inputType": "dropdown",
+        "id": "dnd-response-multi-41",
+        "partId": "dnd-response-multi-42",
+        "choiceIds": [
+          "dnd-response-multi-56",
+          "dnd-response-multi-58"
+        ]
+      },
+      {
+        "inputType": "text",
+        "partId": "dnd-response-multi-42",
+        "id": "input-text"
+      },
+      {
+        "inputType": "numeric",
+        "partId": "dnd-response-multi-108",
+        "id": "input-numeric"
+      },
+      {
+        "inputType": "math",
+        "partId": "dnd-response-multi-151",
+        "id": "input-math"
+      },
+      {
+        "inputType": "math_expression",
+        "partId": "dnd-response-multi-194",
+        "id": "input-math_expression"
+      }
+    ],
+    "submitPerPart": false,
+    "multInputsPerPart": true,
+    "authoring": {
+      "parts": [
+        {
+          "id": "dnd-response-multi-42",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "dnd-response-multi-45",
+              "rule": "input_ref_input-text contains {answer} && (input_ref_dnd-response-multi-41 like {dnd-response-multi-56})",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-46",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-47",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            },
+            {
+              "id": "dnd-response-multi-48",
+              "rule": "input_ref_input-text like {.*} && (input_ref_dnd-response-multi-41 like {.*})",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-49",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-50",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-51",
+              "content": [
+                {
+                  "id": "dnd-response-multi-52",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [
+            "dnd-response-multi-41",
+            "input-text"
+          ],
+          "explanation": {
+            "id": "dnd-response-multi-54",
+            "content": [
+              {
+                "id": "dnd-response-multi-55",
+                "children": [
+                  {
+                    "text": "Explanation"
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "textDirection": "ltr"
+          }
+        },
+        {
+          "id": "dnd-response-multi-108",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "dnd-response-multi-100",
+              "rule": "input_ref_input-numeric = {1}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-101",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-102",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            },
+            {
+              "id": "dnd-response-multi-103",
+              "rule": "input_ref_input-numeric like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-104",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-105",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-106",
+              "content": [
+                {
+                  "id": "dnd-response-multi-107",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [
+            "input-numeric"
+          ]
+        },
+        {
+          "id": "dnd-response-multi-151",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "dnd-response-multi-143",
+              "rule": "input_ref_input-math equals {}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-144",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-145",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            },
+            {
+              "id": "dnd-response-multi-146",
+              "rule": "input_ref_input-math like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-147",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-148",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-149",
+              "content": [
+                {
+                  "id": "dnd-response-multi-150",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [
+            "input-math"
+          ]
+        },
+        {
+          "id": "dnd-response-multi-194",
+          "gradingApproach": "automatic",
+          "outOf": null,
+          "scoringStrategy": "average",
+          "responses": [
+            {
+              "id": "dnd-response-multi-186",
+              "rule": "input_ref_input-math_expression equals {}",
+              "score": 1,
+              "feedback": {
+                "id": "dnd-response-multi-187",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-188",
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            },
+            {
+              "id": "dnd-response-multi-189",
+              "rule": "input_ref_input-math_expression like {.*}",
+              "score": 0,
+              "feedback": {
+                "id": "dnd-response-multi-190",
+                "content": [
+                  {
+                    "id": "dnd-response-multi-191",
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "type": "p"
+                  }
+                ],
+                "editor": "slate",
+                "textDirection": "ltr"
+              }
+            }
+          ],
+          "hints": [
+            {
+              "id": "dnd-response-multi-192",
+              "content": [
+                {
+                  "id": "dnd-response-multi-193",
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "textDirection": "ltr"
+            }
+          ],
+          "targets": [
+            "input-math_expression"
+          ]
+        }
+      ],
+      "targeted": [],
+      "transformations": [
+        {
+          "id": "dnd-response-multi-53",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true
+        },
+        {
+          "id": "dnd-response-multi-60",
+          "path": "choices",
+          "operation": "shuffle",
+          "firstAttemptOnly": true,
+          "partId": "dnd-response-multi-42"
+        }
+      ],
+      "previewText": "Example question with a fill in the blank"
+    }
+  }
+}
