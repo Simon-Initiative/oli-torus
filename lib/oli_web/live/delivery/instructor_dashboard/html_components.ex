@@ -210,6 +210,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
         id="student_progress_tooltip_trigger"
         type="button"
         aria-label="About Student Progress"
+        aria-describedby="student_progress_tooltip"
         xphx-mouseover={JS.show(to: "#student_progress_tooltip", display: "flex")}
         phx-click={JS.toggle(to: "#student_progress_tooltip", display: "flex")}
       >

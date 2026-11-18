@@ -59,6 +59,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponentsTest do
 
       assert Floki.attribute(button, "type") == ["button"]
       assert Floki.attribute(button, "aria-label") == ["About Student Progress"]
+      assert Floki.attribute(button, "aria-describedby") == ["student_progress_tooltip"]
 
       assert Floki.attribute(button, "phx-click") == [
                ~s([["toggle",{"display":"flex","to":"#student_progress_tooltip"}]])
