@@ -14,7 +14,7 @@ Review scope: MER-6158 and its 11 Stories (including closed MER-6219) and 20 sub
 
 - [x] **1. Remove the backward acceptance dependency.** MER-6224 owns bank-management header/selector suppression, local back navigation, and restoration of the containing page and focus. MER-6212 owns explanatory notes. Approved and verified in Jira; included in the baseline commit.
 - [x] **2. Clarify session preservation.** MER-6236, MER-6241, and MER-6226 must distinguish the authenticated account from the user used for preview requests. Identify a credible delivery boundary and verification for simultaneous learner and preview tabs. Preserve the approved tab-close exit behavior.
-- [ ] **3. Define recovery when update-job history is missing.** MER-6235–MER-6237 must distinguish an update in progress from a stale preview with no live update, including pruned or cancelled job records. Ensure recovery remains available without requiring unnecessary infrastructure.
+- [x] **3. Define recovery when update-job history is missing.** MER-6235–MER-6237 must distinguish an update in progress from a stale preview with no live update, including pruned or cancelled job records. Ensure recovery remains available without requiring unnecessary infrastructure.
 - [ ] **4. Define the Updating experience.** MER-6236, MER-6238, and MER-6239 need one clear status location and a way to recheck readiness. Prefer a simple explicit retry over automatic launching or new synchronization infrastructure.
 - [ ] **5. Give sub-tasks distinct completion boundaries.** Narrow duplicated whole-feature specifications in MER-6225/6226, MER-6229/6230, MER-6232/6233, and MER-6235/6236/6237. Keep common requirements in their parent Stories and retain each sub-task's relevant technical detail and acceptance checks.
 - [ ] **6. Correct stale identity-integration ownership.** MER-6235–MER-6238 must identify MER-6220 as the reusable account resolver/reset owner and MER-6241 as the project preview integration owner. Reconcile other occurrences of the same stale ownership.
@@ -25,7 +25,7 @@ Review scope: MER-6158 and its 11 Stories (including closed MER-6219) and 20 sub
 
 ## Current item
 
-Finding 2 is approved and verified in Jira: T-005 (MER-6226), T-015 (MER-6236), and T-020 (MER-6241). Finding 3 is next.
+Findings 1–3 are approved and verified in Jira. Finding 4 is next.
 
 ## Completion checks
 
