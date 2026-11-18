@@ -3,6 +3,9 @@ defmodule Oli.GenAI.HealthProbe do
   alias Oli.GenAI.{PoolManager, Provider}
   alias Oli.GenAI.Completions.{Message, OpenAICompliantProvider}
 
+  # Reasoning models spend part of the budget before any visible text.
+  @token_budget 512
+
   @doc "Returns a safe configuration category; deferred adapters never masquerade as healthy."
   def configuration_error(provider, model) do
     cond do
@@ -69,7 +72,8 @@ defmodule Oli.GenAI.HealthProbe do
             model.model,
             [%Message{role: :user, content: "Reply with OK."}],
             [],
-            max_tokens: 8
+            max_tokens: @token_budget,
+            token_limit_parameter: Provider.token_limit_parameter(provider, model)
           )
           |> Map.new()
           |> Map.put(:stream, false)

@@ -53,12 +53,19 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       end
 
     base =
-      Enum.reduce([:response_format, :temperature, :max_tokens], base, fn key, acc ->
+      Enum.reduce([:response_format, :temperature], base, fn key, acc ->
         case Keyword.fetch(opts, key) do
           {:ok, value} -> acc ++ [{key, value}]
           :error -> acc
         end
       end)
+
+    base =
+      case {Keyword.fetch(opts, :max_tokens), Keyword.get(opts, :token_limit_parameter)} do
+        {:error, _} -> base
+        {{:ok, budget}, :max_completion_tokens} -> base ++ [max_completion_tokens: budget]
+        {{:ok, budget}, _} -> base ++ [max_tokens: budget]
+      end
 
     case Keyword.get(opts, :stream, false) do
       true -> base ++ [stream: true]

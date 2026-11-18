@@ -100,6 +100,28 @@ defmodule Oli.GenAI.Provider do
 
   def origin(_), do: {:error, :invalid_endpoint}
 
+  @doc """
+  Returns the request parameter that carries a token budget for this Provider's API.
+
+  OpenAI's own API takes `max_completion_tokens`, and its reasoning models reject `max_tokens`;
+  other OpenAI-compatible servers keep `max_tokens`. OpenAI's hosts are read from the
+  `:genai_max_completion_tokens_hosts` setting, `["api.openai.com"]` by default.
+  """
+  def token_limit_parameter(provider, model) do
+    hosts = Application.get_env(:oli, :genai_max_completion_tokens_hosts, ["api.openai.com"])
+
+    case origin(endpoint(provider, model)) do
+      {:ok, {_scheme, host, _port}} ->
+        case host in hosts do
+          true -> :max_completion_tokens
+          false -> :max_tokens
+        end
+
+      {:error, _} ->
+        :max_tokens
+    end
+  end
+
   @doc "Identifies execution inputs without exposing endpoint credentials in transport metadata."
   def transport_signature(provider, model) do
     {provider.id, provider.config_version, model.id, model.model,

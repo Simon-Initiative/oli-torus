@@ -47,10 +47,12 @@ defmodule Oli.GenAI.HealthProbeTest do
 
     assert %{
              "model" => "selected-probe-model",
-             "max_tokens" => 8,
+             "max_tokens" => 512,
              "stream" => false,
              "messages" => [%{"role" => "user", "content" => "Reply with OK."}]
-           } = Jason.decode!(body)
+           } = decoded = Jason.decode!(body)
+
+    refute Map.has_key?(decoded, "max_completion_tokens")
 
     send(server, {:respond, 200, valid_body()})
     assert :ok = Task.await(task, 2_000)
@@ -110,6 +112,40 @@ defmodule Oli.GenAI.HealthProbeTest do
       assert_receive {:request, server, _, _}, 2_000
       send(server, {:respond, status, body})
       assert {:error, ^expected} = Task.await(task, 2_000)
+    end
+  end
+
+  test "a probe to OpenAI's API sends its budget as max_completion_tokens", ctx do
+    previous = Application.fetch_env(:oli, :genai_max_completion_tokens_hosts)
+    Application.put_env(:oli, :genai_max_completion_tokens_hosts, ["127.0.0.1"])
+
+    on_exit(fn ->
+      case previous do
+        {:ok, value} -> Application.put_env(:oli, :genai_max_completion_tokens_hosts, value)
+        :error -> Application.delete_env(:oli, :genai_max_completion_tokens_hosts)
+      end
+    end)
+
+    task = Task.async(fn -> HealthProbe.run(ctx.provider, ctx.model, ctx.manager) end)
+    assert_receive {:request, server, _, body}, 2_000
+    decoded = Jason.decode!(body)
+    assert decoded["max_completion_tokens"] == 512
+    refute Map.has_key?(decoded, "max_tokens")
+    send(server, {:respond, 200, valid_body()})
+    assert :ok = Task.await(task, 2_000)
+  end
+
+  test "a reasoning model's empty reply fails the probe and a cut-off reply with text passes",
+       ctx do
+    for {content, expected} <- [{"", {:error, :invalid_completion}}, {"OK", :ok}] do
+      task = Task.async(fn -> HealthProbe.run(ctx.provider, ctx.model, ctx.manager) end)
+      assert_receive {:request, server, _, _}, 2_000
+
+      response =
+        Jason.encode!(%{choices: [%{finish_reason: "length", message: %{content: content}}]})
+
+      send(server, {:respond, 200, response})
+      assert Task.await(task, 2_000) == expected
     end
   end
 

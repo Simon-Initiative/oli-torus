@@ -81,8 +81,15 @@ defmodule Oli.GenAI.Diagnostics do
 
   def status(%{observed: observed}), do: String.capitalize(to_string(observed))
 
-  @doc "Returns a bounded user-facing category; never inspects raw provider payloads."
+  @doc """
+  Returns a bounded user-facing category; never inspects raw provider payloads.
+
+  A `:provider_message`, already sanitized by the transport, follows the category.
+  """
   def test_result({:ok, _}), do: "Test successful"
+
+  def test_result({:error, %{provider_message: message}}) when is_binary(message),
+    do: "Test failed: request_error: #{message}"
 
   def test_result({:error, reason})
       when reason in [

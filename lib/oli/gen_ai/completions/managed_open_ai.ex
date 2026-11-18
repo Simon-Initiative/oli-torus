@@ -2,6 +2,7 @@ defmodule Oli.GenAI.Completions.ManagedOpenAI do
   @moduledoc "OpenAI HTTP/1.1 execution through the exact selected transport coordinator."
   alias Oli.GenAI.{Provider, TransportPool}
   alias Oli.GenAI.Completions.OpenAICompliantProvider, as: OpenAI
+  alias Oli.GenAI.Completions.ProviderMessage
 
   @doc "Runs one attempt; the caller owns its connection until completion or process death."
   def request(mode, messages, functions, plan, handler, opts) do
@@ -14,7 +15,9 @@ defmodule Oli.GenAI.Completions.ManagedOpenAI do
         model.model,
         messages,
         functions,
-        Keyword.put(opts, :stream, mode == :stream)
+        opts
+        |> Keyword.put(:stream, mode == :stream)
+        |> Keyword.put(:token_limit_parameter, Provider.token_limit_parameter(provider, model))
       )
       |> Map.new()
       |> Jason.encode!()
@@ -50,9 +53,14 @@ defmodule Oli.GenAI.Completions.ManagedOpenAI do
             end
 
         case :hackney.send_request(ref, {:post, target, headers, body}) do
-          {:ok, 200, _, response} -> consume(mode, response, handler)
-          {:ok, status, _, _} -> {:error, %{http_status: status, error_category: :http_error}}
-          {:error, reason} -> transport_error(reason)
+          {:ok, 200, _, response} ->
+            consume(mode, response, handler)
+
+          {:ok, status, response_headers, response} ->
+            {:error, http_error(status, response_headers, response, [provider, model, url], opts)}
+
+          {:error, reason} ->
+            transport_error(reason)
         end
       after
         case :hackney.close(ref) do
@@ -79,6 +87,56 @@ defmodule Oli.GenAI.Completions.ManagedOpenAI do
 
       {:error, reason} ->
         transport_error(reason)
+    end
+  end
+
+  # Only administrative requests read a failed response; production errors stay status-only.
+  # The body is read whole and only when it declares a bounded length: a capped read would
+  # return a partly read connection to the pool, and an unread one is closed instead.
+  defp http_error(status, response_headers, response, [provider, model, url], opts) do
+    error = %{http_status: status, error_category: :http_error}
+
+    message =
+      with true <- Keyword.get(opts, :capture_provider_message, false),
+           length when is_integer(length) <- declared_length(response_headers),
+           true <- length <= ProviderMessage.max_body_bytes(),
+           {:ok, body} <- :hackney.body(response) do
+        ProviderMessage.from_body(body, [
+          provider.api_key,
+          provider.organization_key,
+          Provider.endpoint(provider, model),
+          url
+        ])
+      else
+        _ -> nil
+      end
+
+    case message do
+      nil -> error
+      message -> Map.put(error, :provider_message, message)
+    end
+  end
+
+  # hackney frames a body by transfer-encoding first and by the last content-length, matching
+  # header names trimmed and lowercased; only a single non-negative content-length without
+  # transfer-encoding is the length it will read.
+  defp declared_length(headers) do
+    named =
+      Enum.map(headers, fn {name, value} ->
+        {name |> String.trim() |> String.downcase(), value}
+      end)
+
+    lengths = for {"content-length", value} <- named, do: value
+
+    case {lengths, List.keymember?(named, "transfer-encoding", 0)} do
+      {[value], false} ->
+        case Integer.parse(value) do
+          {length, ""} when length >= 0 -> length
+          _ -> nil
+        end
+
+      _ ->
+        nil
     end
   end
 

@@ -326,6 +326,28 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProviderTest do
       refute Keyword.has_key?(params, :max_tokens)
     end
 
+    test "sends the budget under max_completion_tokens alone when that parameter is selected" do
+      messages = [%Oli.GenAI.Completions.Message{role: :user, content: "Hello"}]
+
+      params =
+        OpenAICompliantProvider.completion_params("gpt-x", messages, [],
+          max_tokens: 512,
+          token_limit_parameter: :max_completion_tokens
+        )
+
+      assert Keyword.get(params, :max_completion_tokens) == 512
+      refute Keyword.has_key?(params, :max_tokens)
+      refute Keyword.has_key?(params, :token_limit_parameter)
+
+      params =
+        OpenAICompliantProvider.completion_params("gpt-x", messages, [],
+          token_limit_parameter: :max_completion_tokens
+        )
+
+      refute Keyword.has_key?(params, :max_completion_tokens)
+      refute Keyword.has_key?(params, :max_tokens)
+    end
+
     test "combines response_format with tools and stream options" do
       messages = [
         %Oli.GenAI.Completions.Message{

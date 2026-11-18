@@ -281,8 +281,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
          [],
          config.primary_model,
          service_config: config,
-         total_timeout_ms: 10_000,
-         provider_opts: [max_tokens: 8]
+         total_timeout_ms: 10_000
        )
      end)}
   end
