@@ -30,9 +30,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       |> element("form[phx-change='search_objective']")
       |> render_change(%{"objective_name" => term})
 
-  # A collapsed row renders no aria-expanded attribute; an expanded one does.
   defp expanded?(view, resource_id),
-    do: has_element?(view, "[aria-controls='details-row_#{resource_id}'][aria-expanded]")
+    do: has_element?(view, "[aria-controls='details-row_#{resource_id}'][aria-expanded='true']")
 
   describe "user" do
     test "can not access page when it is not logged in", %{conn: conn} do
@@ -401,6 +400,44 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
                "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_1.resource_id}'] > td:nth-child(2)"
              )
              |> render() =~ obj_revision_1.title
+    end
+
+    test "names the sort headers, the Student Proficiency info button and the objective toggles",
+         %{
+           conn: conn,
+           instructor: instructor,
+           section: section,
+           obj_revision_1: obj_revision_1
+         } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      for column <- ["Learning Objective", "Student Proficiency"] do
+        assert has_element?(view, "th[aria-sort] button[aria-label='Sort by #{column}']")
+      end
+
+      assert has_element?(view, "th button[aria-label='About Student Proficiency']")
+      refute has_element?(view, "th button[phx-click] button")
+
+      toggle = "button#button_row_#{obj_revision_1.resource_id}"
+
+      assert has_element?(
+               view,
+               "#{toggle}[aria-label='Expand #{obj_revision_1.title}'][aria-expanded='false']"
+             )
+
+      view |> element(toggle) |> render_click()
+
+      assert has_element?(
+               view,
+               "#{toggle}[aria-label='Collapse #{obj_revision_1.title}'][aria-expanded='true']"
+             )
+
+      # Let the expanded row's async data load finish before the test process exits.
+      wait_until(fn ->
+        not has_element?(view, "#details-row_#{obj_revision_1.resource_id} .spinner-border")
+      end)
     end
 
     test "applies pagination", %{

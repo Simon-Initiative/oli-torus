@@ -1140,6 +1140,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert a4.title =~ "Orphaned Page"
     end
 
+    test "sort headers are named buttons that expose the sort state", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
+
+      for column <- ["Avg Score", "Total Attempts", "Student Progress"] do
+        assert has_element?(view, "th[aria-sort] button[aria-label='Sort by #{column}']")
+      end
+
+      refute has_element?(view, "th button[phx-click] [tabindex]")
+    end
+
     test "Progress filter works correctly", %{
       conn: conn,
       section: section,

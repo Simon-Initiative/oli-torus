@@ -187,14 +187,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
     """
   end
 
-  attr :title, :string, required: true
-  attr :show, :boolean, default: false
-
-  def student_progress_label(assigns) do
+  @doc """
+  Renders the "About Student Progress" info button and its tooltip. Hovering the button shows
+  the tooltip; activating it (click, Enter or Space) toggles it.
+  """
+  def student_progress_info(assigns) do
     ~H"""
     <div
       id="student_progress_tooltip_container"
-      class="flex relative cursor-auto z-9999999999"
+      class="flex relative cursor-auto z-9999999999 mr-1"
       phx-hook="HoverAway"
       mouse-leave-js={
         JS.hide(
@@ -204,6 +205,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
         )
       }
     >
+      <!-- Trigger Element -->
+      <button
+        id="student_progress_tooltip_trigger"
+        type="button"
+        aria-label="About Student Progress"
+        xphx-mouseover={JS.show(to: "#student_progress_tooltip", display: "flex")}
+        phx-click={JS.toggle(to: "#student_progress_tooltip", display: "flex")}
+      >
+        <Icons.info />
+      </button>
       <!-- Tooltip Element -->
       <div
         id="student_progress_tooltip"
@@ -225,16 +236,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
           Learn more.
         </button>
       </div>
-      <!-- Trigger Element -->
-      <button
-        id="student_progress_tooltip_trigger"
-        xphx-mouseover={JS.show(to: "#student_progress_tooltip", display: "flex")}
-      >
-        <Icons.info />
-      </button>
-    </div>
-    <div class="ml-1">
-      {@title}
     </div>
     """
   end
@@ -278,36 +279,47 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
     """
   end
 
-  attr :title, :string, required: true
-  attr :info_tooltip, :string, required: false
+  attr :title, :string, required: true, doc: "Title the info refers to; derives the tooltip id."
+  attr :info_tooltip, :any, required: true
 
   attr :id, :string,
     required: false,
     doc:
       "Overrides the title-derived tooltip id when this component renders more than once with the same title on a page."
 
-  def render_label(assigns) do
-    assigns = Map.put(assigns, :tooltip_id, assigns[:id] || tooltip_id(assigns.title))
+  attr :label, :string,
+    required: false,
+    doc: "Accessible name. When set, the focusable trigger is a <button> with this name."
+
+  @doc """
+  Renders a focusable info icon whose tooltip opens on hover and keyboard focus.
+  """
+  def info_tooltip(assigns) do
+    assigns =
+      assigns
+      |> Map.put(:tooltip_id, assigns[:id] || tooltip_id(assigns.title))
+      |> Map.put_new(:label, nil)
 
     ~H"""
-    <div class="flex items-center gap-x-2 bg-transparent">
-      <span
-        class="group relative flex cursor-pointer items-center text-Text-text-high rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-        tabindex={if assigns[:info_tooltip], do: "0"}
-        aria-describedby={if assigns[:info_tooltip], do: @tooltip_id}
+    <span class="group relative flex items-center mr-1">
+      <.dynamic_tag
+        tag_name={if @label, do: "button", else: "span"}
+        type={@label && "button"}
+        aria-label={@label}
+        tabindex={!@label && "0"}
+        aria-describedby={@tooltip_id}
+        class="flex cursor-pointer items-center text-Text-text-high rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-600 focus-visible:ring-offset-2"
       >
-        {Icons.info(assigns)}
-        <dialog
-          :if={assigns[:info_tooltip]}
-          id={@tooltip_id}
-          role="tooltip"
-          class="absolute top-[150%] left-full -translate-x-1/2 p-0 m-0 w-80 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:flex group-focus-within:flex before:absolute before:content-[''] before:-top-4 before:left-0 before:right-0 before:h-4"
-        >
-          {@info_tooltip}
-        </dialog>
-      </span>
-      <span class="whitespace-nowrap">{@title}</span>
-    </div>
+        <Icons.info />
+      </.dynamic_tag>
+      <dialog
+        id={@tooltip_id}
+        role="tooltip"
+        class="absolute top-[150%] left-full -translate-x-1/2 p-0 m-0 w-80 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal whitespace-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:flex group-focus-within:flex before:absolute before:content-[''] before:-top-4 before:left-0 before:right-0 before:h-4"
+      >
+        {@info_tooltip}
+      </dialog>
+    </span>
     """
   end
 
