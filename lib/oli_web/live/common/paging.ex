@@ -48,10 +48,18 @@ defmodule OliWeb.Common.Paging do
         phx-change={@limit_change}
       >
         <div :if={@show_limit_change} class="inline-flex flex-col gap-1 mr-2">
-          <small class="text-xs font-normal uppercase text-Text-text-low">
-            Page size
+          <small
+            id={"#{@id}_page_size_label"}
+            class="text-xs font-normal uppercase text-Text-text-low"
+          >
+            Page Size
           </small>
-          <select class="torus-select" name="limit">
+          <select
+            id={"#{@id}_page_size"}
+            class="torus-select"
+            name="limit"
+            aria-labelledby={"#{@id}_page_size_label"}
+          >
             <option :for={page_size <- @page_sizes} selected={@limit == page_size} value={page_size}>
               {page_size}
             </option>
@@ -130,10 +138,18 @@ defmodule OliWeb.Common.Paging do
         phx-change={@limit_change}
       >
         <div :if={@show_limit_change} class="inline-flex flex-col gap-1">
-          <small class="text-xs font-normal uppercase text-Text-text-low">
-            Page size
+          <small
+            id={"#{@id}_page_size_label"}
+            class="text-xs font-normal uppercase text-Text-text-low"
+          >
+            Page Size
           </small>
-          <select class="torus-select" name="limit">
+          <select
+            id={"#{@id}_page_size"}
+            class="torus-select"
+            name="limit"
+            aria-labelledby={"#{@id}_page_size_label"}
+          >
             <option :for={page_size <- @page_sizes} selected={@limit == page_size} value={page_size}>
               {page_size}
             </option>
