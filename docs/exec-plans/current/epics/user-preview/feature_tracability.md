@@ -101,7 +101,7 @@ Historical Story sources: [tickets/ at the published pre-replacement commit](htt
 
 ## Replacement technical dependencies
 
-Six Story-level Blocks links define delivery order; fourteen same-Story sub-task links define implementation order. No dependency crosses Story boundaries through a sub-task. Both graphs are acyclic.
+Seven Story-level Blocks links define delivery order; fourteen same-Story sub-task links define implementation order. No dependency crosses Story boundaries through a sub-task. Both graphs are acyclic.
 
 | Prerequisite | Blocks |
 | --- | --- |
@@ -109,6 +109,7 @@ Six Story-level Blocks links define delivery order; fourteen same-Story sub-task
 | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) / [MER-6211](https://eliterate.atlassian.net/browse/MER-6211) | [F-003](docs/exec-plans/current/epics/user-preview/tickets/F-003.md) / [MER-6213](https://eliterate.atlassian.net/browse/MER-6213) |
 | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) / [MER-6211](https://eliterate.atlassian.net/browse/MER-6211) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) / [MER-6217](https://eliterate.atlassian.net/browse/MER-6217) |
 | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) / [MER-6211](https://eliterate.atlassian.net/browse/MER-6211) | [F-008](docs/exec-plans/current/epics/user-preview/tickets/F-008.md) / [MER-6218](https://eliterate.atlassian.net/browse/MER-6218) |
+| [F-002](docs/exec-plans/current/epics/user-preview/tickets/F-002.md) / [MER-6212](https://eliterate.atlassian.net/browse/MER-6212) | [F-003](docs/exec-plans/current/epics/user-preview/tickets/F-003.md) / [MER-6213](https://eliterate.atlassian.net/browse/MER-6213) |
 | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) / [MER-6220](https://eliterate.atlassian.net/browse/MER-6220) | [F-001](docs/exec-plans/current/epics/user-preview/tickets/F-001.md) / [MER-6211](https://eliterate.atlassian.net/browse/MER-6211) |
 | [F-010](docs/exec-plans/current/epics/user-preview/tickets/F-010.md) / [MER-6220](https://eliterate.atlassian.net/browse/MER-6220) | [F-007](docs/exec-plans/current/epics/user-preview/tickets/F-007.md) / [MER-6217](https://eliterate.atlassian.net/browse/MER-6217) |
 | [T-001](docs/exec-plans/current/epics/user-preview/tickets/T-001.md) / [MER-6222](https://eliterate.atlassian.net/browse/MER-6222) | [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md) / [MER-6224](https://eliterate.atlassian.net/browse/MER-6224) |
@@ -167,7 +168,7 @@ All items are direct children of their owning Feature/requirement Story. Former 
 
 Completed and verified: all 31 Jira descriptions match the cleaned F-/T- documents. Preserve requirements, acceptance outcomes, technical constraints, design links, screenshots, parents, sub-tasks, and existing Blocks links. Remove ticket-authoring and migration narrative, source readiness/placeholders, requirement-number references and Requirements analysis, redundant sub-task inventories, and Related implementation lists. The Story descriptions are the requirements; the historical requirement mapping remains local for traceability. Use native Jira relationships for those inventories. Repository publishing remains on hold.
 
-The following 21 Relates links are verified in Linked work items; the current 20 Blocks links follow Story delivery boundaries, and MER-6241 belongs to MER-6217:
+The following 21 Relates links are verified in Linked work items; the current 21 Blocks links follow Story delivery boundaries, and MER-6241 belongs to MER-6217:
 
 | Work item | Related work item |
 | --- | --- |
@@ -198,3 +199,5 @@ The following 21 Relates links are verified in Linked work items; the current 20
 MER-6241 / T-020 belongs to F-007 / MER-6217. F-010 / MER-6220 delivers the reusable user resolver, reset and markers independently; F-001 / MER-6211 consumes that capability for admin preview. Project identity integration is owned and accepted by F-007. No admin-preview dependency on T-020 remains. Cross-Story dependencies are exclusively Story-level links.
 
 Bank-management header suppression, local back navigation, and return focus are owned by F-001 / T-003 (MER-6224). F-002 (MER-6212) consumes that completed behavior and owns explanatory notes.
+
+F-002 owns shared Instructor preview note presentation and bank-selection usage. F-003 consumes that presentation and owns gating-specific messages, actions, and state. MER-6212 blocks MER-6213 at Story level; neither Story requires the other’s implementation to be duplicated.

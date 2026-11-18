@@ -2,7 +2,7 @@
 
 Epic/source: [MER-6158](https://eliterate.atlassian.net/browse/MER-6158) and the existing local overview
 Review: all 11 feature/requirement Stories and 20 sub-task descriptions approved
-Filing: verified; 10 active Stories and one Closed Won’t Do Story (F-009), 20 sub-tasks, 17 embedded screenshots, and 20 dependencies; old work items Closed Won’t Do and removed from epic; repository changes remain local
+Filing: verified; 10 active Stories and one Closed Won’t Do Story (F-009), 20 sub-tasks, 17 embedded screenshots, and 21 dependencies; old work items Closed Won’t Do and removed from epic; repository changes remain local
 
 ## Outcomes and scope
 
@@ -414,7 +414,7 @@ This is planned acceptance coverage, not proof of implemented behavior. Criterio
 | R-001 | Route-derived presentation, actual actor permissions, persistent instructor/admin identity | Delivery/persistence and route helpers exist. T-002 owns the assign rename and applies presentation; F-010/T-004/T-005 replace shared-admin entry with the owned preview identity. | [T-002](docs/exec-plans/current/epics/user-preview/tickets/T-002.md) ([MER-6223](https://eliterate.atlassian.net/browse/MER-6223)) AC1–3/5–10 (including assign-rename AC9/AC10) and [T-004](docs/exec-plans/current/epics/user-preview/tickets/T-004.md), [T-005](docs/exec-plans/current/epics/user-preview/tickets/T-005.md) ([MER-6225](https://eliterate.atlassian.net/browse/MER-6225), [MER-6226](https://eliterate.atlassian.net/browse/MER-6226)) scoped acceptance plus F-001 admin integration criteria; learner Class Notes retained, admin adaptive entry covered by T-004/T-005. |
 | R-001 | Entry mapping, same page, original return, selector accessibility | Header is static; return sanitizer exists. Add selector and context propagation. | [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md) ([MER-6224](https://eliterate.atlassian.net/browse/MER-6224)) AC1–9; evidence reviewed. |
 | R-001 | Bank-management header exception, local back navigation, and return focus | Local back exists. Hide the global header/selector in management and restore the containing page and opener focus on return. | [T-003](docs/exec-plans/current/epics/user-preview/tickets/T-003.md) ([MER-6224](https://eliterate.atlassian.net/browse/MER-6224)) AC8–9. |
-| [R-002](#r-002-explain-instructor-preview-content) | Authorized Student Preview note and actual learner exclusion | Use existing selection provenance to add explanatory notes without adding management controls to Student Preview. | [F-002](docs/exec-plans/current/epics/user-preview/tickets/F-002.md) ([MER-6212](https://eliterate.atlassian.net/browse/MER-6212)) AC1/2/4–6. |
+| [R-002](#r-002-explain-instructor-preview-content) | Authorized Student Preview note and actual learner exclusion | Deliver shared note presentation and bank notes using existing selection provenance. F-003 consumes the presentation for gating notes without duplicating bank work. | [F-002](docs/exec-plans/current/epics/user-preview/tickets/F-002.md) ([MER-6212](https://eliterate.atlassian.net/browse/MER-6212)) AC1–6. |
 | [R-003](#r-003-inspect-restricted-content-without-changing-access) | Restricted/revealed states, settings banner, no gate/prerequisite mutations | Gate evaluator exists; automatic admin bypass must retain restriction information in selected preview. | [F-003](docs/exec-plans/current/epics/user-preview/tickets/F-003.md) ([MER-6213](https://eliterate.atlassian.net/browse/MER-6213)) AC1–7; evidence reviewed. Q9 normal persistence remains. |
 | [R-004](#r-004-preview-a-working-authoring-page) | Working page, shared delivery presentation, learner-free context, sticky banner, exit/focus, excluded navigation | Working resolution and launch exist. Separate shared delivery presentation from learner lifecycle and reuse it in basic/advanced author preview. | [F-004](docs/exec-plans/current/epics/user-preview/tickets/F-004.md) ([MER-6214](https://eliterate.atlassian.net/browse/MER-6214)) P1–6/N1–5 and T-006/T-007; evidence reviewed. |
 | [R-005](#r-005-preview-a-bank-question-in-isolation) | Isolated question, student presentation, state/focus return, question safety | Author-preview rendering/bridge can be reused; the isolated bank flow is missing. | [T-008](docs/exec-plans/current/epics/user-preview/tickets/T-008.md), [T-009](docs/exec-plans/current/epics/user-preview/tickets/T-009.md) ([MER-6229](https://eliterate.atlassian.net/browse/MER-6229), [MER-6230](https://eliterate.atlassian.net/browse/MER-6230)) scoped acceptance plus F-005 single-question preview criteria; evidence reviewed. |
@@ -453,7 +453,8 @@ flowchart TB
     F001 --> F002
     F001 --> F003
     F001 --> F008
-    F003 -.-> F002 -.-> F008
+    F002 --> F003
+    F003 -.-> F008
   end
   subgraph C["Lane C — Project publication preview"]
     direction LR
@@ -473,13 +474,13 @@ flowchart TB
   A ~~~ B ~~~ C ~~~ D ~~~ E
 ```
 
-Solid arrows are the six Story-level prerequisites; dashed arrows are scheduling only. Invisible links arrange the lane blocks. F-011 tracks classification acceptance in its linked implementation; F-009 is closed. The Story graph and the complete work-item graph are acyclic. Fourteen same-Story sub-task links preserve implementation order; the full list is in feature_tracability.md. No feature flag is introduced.
+Solid arrows are the seven Story-level prerequisites; dashed arrows are scheduling only. Invisible links arrange the lane blocks. F-011 tracks classification acceptance in its linked implementation; F-009 is closed. The Story graph and the complete work-item graph are acyclic. Fourteen same-Story sub-task links preserve implementation order; the full list is in feature_tracability.md. No feature flag is introduced.
 
 ## Jira filing and next work
 
-All 31 ticket descriptions are cleaned and verified. Story descriptions are the requirements; tickets omit requirement-number references, Requirements analysis, authoring history, and relationship inventories. The 21 Relates links are recorded in feature_tracability.md and verified in Jira Linked work items. The current 20 Blocks links follow Story delivery boundaries; MER-6241 belongs to MER-6217. All 17 screenshots are preserved.
+All 31 ticket descriptions are cleaned and verified. Story descriptions are the requirements; tickets omit requirement-number references, Requirements analysis, authoring history, and relationship inventories. The 21 Relates links are recorded in feature_tracability.md and verified in Jira Linked work items. The current 21 Blocks links follow Story delivery boundaries; MER-6241 belongs to MER-6217. All 17 screenshots are preserved.
 
-Filing is complete and verified. [MER-6158](https://eliterate.atlassian.net/browse/MER-6158) contains exactly 11 replacement Story child work items: the eight handoff Features plus R-008, R-010, and R-011. Their 20 direct sub-tasks implement their owning Stories. F-010 owns the reusable user capability; F-007 owns project preview identity integration. All 20 Blocks links have the approved direction; related Feature acceptance is cross-linked without duplicate implementation tickets.
+Filing is complete and verified. [MER-6158](https://eliterate.atlassian.net/browse/MER-6158) contains exactly 11 replacement Story child work items: the eight handoff Features plus R-008, R-010, and R-011. Their 20 direct sub-tasks implement their owning Stories. F-010 owns the reusable user capability; F-007 owns project preview identity integration. All 21 Blocks links follow the documented delivery order; related Feature acceptance is cross-linked without duplicate implementation tickets.
 
 The 29 old issues are Closed Won’t Do, with descriptions and history retained; the 16 old Stories are no longer epic children. The [migration table](docs/exec-plans/current/epics/user-preview/feature_tracability.md#ticket-recreation-migration) records every old identifier, corresponding new Jira URL, and verified migration state.
 

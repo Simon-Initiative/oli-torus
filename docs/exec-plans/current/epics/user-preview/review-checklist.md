@@ -18,14 +18,14 @@ Review scope: MER-6158 and its 11 Stories (including closed MER-6219) and 20 sub
 - [x] **4. Define the Updating experience.** MER-6236, MER-6238, and MER-6239 use a shared readiness LiveView in the preview tab, with automatic status updates and redirect to Learn when ready. No Check Again button; retain failed-state recovery and exit.
 - [x] **5. Give sub-tasks distinct completion boundaries.** Narrow duplicated whole-feature specifications in MER-6225/6226, MER-6229/6230, MER-6232/6233, and MER-6235/6236/6237. Keep common requirements in their parent Stories and retain each sub-task's relevant technical detail and acceptance checks.
 - [x] **6. Correct stale identity-integration ownership.** MER-6235–MER-6238 must identify MER-6220 as the reusable account resolver/reset owner and MER-6241 as the project preview integration owner. Reconcile other occurrences of the same stale ownership.
-- [ ] **7. Separate bank-note and gating-note completion.** Clarify MER-6212's note presentation/bank usage and MER-6213's gating integration so neither duplicates the other's delivery commitment.
+- [x] **7. Separate bank-note and gating-note completion.** Clarify MER-6212's note presentation/bank usage and MER-6213's gating integration so neither duplicates the other's delivery commitment.
 - [ ] **8. Resolve MER-6221's tracking role.** Its implementation is already assigned elsewhere. Propose retaining it explicitly as a tracking Story or treating classification as a shared requirement, without inventing extra work. Obtain approval before changing its disposition.
 - [ ] **9. Remove drafting residue and restore incomplete policy text.** Replace MER-6215's unresolved broader-redesign question with the settled scope. Restore explicit retained-attempt behavior in MER-6236–MER-6239 and any other occurrences of the same damaged wording.
 - [ ] **10. Simplify technical guidance.** Remove repeated analysis/process prose and define unclear terms through concrete components, actors, actions, and outcomes. Preserve useful code pointers, design sources, required behavior, and provisional implementation choices.
 
 ## Current item
 
-Findings 1–6 are approved and verified in Jira. Finding 7 is next.
+Findings 1–7 are approved and verified in Jira. Finding 8 is next.
 
 ## Completion checks
 
