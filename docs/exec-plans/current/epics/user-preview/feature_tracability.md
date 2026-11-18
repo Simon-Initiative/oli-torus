@@ -196,3 +196,5 @@ The following 21 Relates links are verified in Linked work items; the current 20
 ## Story delivery boundaries
 
 MER-6241 / T-020 belongs to F-007 / MER-6217. F-010 / MER-6220 delivers the reusable user resolver, reset and markers independently; F-001 / MER-6211 consumes that capability for admin preview. Project identity integration is owned and accepted by F-007. No admin-preview dependency on T-020 remains. Cross-Story dependencies are exclusively Story-level links.
+
+Bank-management header suppression, local back navigation, and return focus are owned by F-001 / T-003 (MER-6224). F-002 (MER-6212) consumes that completed behavior and owns explanatory notes.
