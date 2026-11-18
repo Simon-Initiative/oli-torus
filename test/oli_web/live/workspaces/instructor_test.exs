@@ -282,10 +282,52 @@ defmodule OliWeb.Workspaces.InstructorTest do
       assert has_element?(view, ~s{nav[id=desktop-workspace-nav-menu][aria-expanded=false]})
 
       Enum.each(labels, fn label ->
-        refute view
-               |> element(~s{nav[id=desktop-workspace-nav-menu]})
-               |> render() =~ label
+        refute has_element?(view, ~s{nav[id=desktop-workspace-nav-menu] a}, label)
       end)
+    end
+
+    test "sidebar controls expose an accessible name when collapsed", %{conn: conn, user: user} do
+      Accounts.update_user(user, %{can_create_sections: true})
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor?sidebar_expanded=false")
+
+      for label <- ["Course Author", "Instructor", "Student"] do
+        assert has_element?(view, ~s{nav[id=desktop-workspace-nav-menu] a[aria-label="#{label}"]})
+      end
+
+      assert has_element?(
+               view,
+               ~s{nav[id=desktop-workspace-nav-menu] button[id="tech_support_workspace_sidebar_nav"][aria-label="Support"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{button[data-role="toggle sidebar"][aria-label="Expand sidebar"]}
+             )
+    end
+
+    test "sidebar controls rely on visible text when expanded", %{conn: conn, user: user} do
+      Accounts.update_user(user, %{can_create_sections: true})
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor?sidebar_expanded=true")
+
+      refute has_element?(view, ~s{nav[id=desktop-workspace-nav-menu] a[aria-label]})
+
+      refute has_element?(
+               view,
+               ~s{nav[id=desktop-workspace-nav-menu] button[id="tech_support_workspace_sidebar_nav"][aria-label]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{nav[id=desktop-workspace-nav-menu] button[id="tech_support_workspace_sidebar_nav"]},
+               "Support"
+             )
+
+      assert has_element?(
+               view,
+               ~s{button[data-role="toggle sidebar"][aria-label="Minimize sidebar"]}
+             )
     end
 
     test "navbar expanded or collapsed state is kept after navigating to other menu link", %{
@@ -339,6 +381,14 @@ defmodule OliWeb.Workspaces.InstructorTest do
              )
 
       assert has_element?(view, "a[href='/sections/new']", "Create New Section")
+      assert has_element?(view, "a[href='/sections/new'] svg[aria-hidden='true']")
+    end
+
+    test "hides the decorative hero graphics from assistive technology", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
+
+      assert has_element?(view, "div[aria-hidden='true'] + div h1", "Instructor Dashboard")
+      assert has_element?(view, "div[aria-hidden='true'] + h1", "Instructor Dashboard")
     end
 
     test "sees the instructor label on user menu", %{conn: conn} do

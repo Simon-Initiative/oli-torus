@@ -71,15 +71,17 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
     ~H"""
     <div class="dark:bg-[#0F0D0F] bg-[#F3F4F8]">
       <div class="relative flex items-center h-[247px]">
-        <div class="absolute top-0 h-full w-full">
+        <div class="absolute top-0 h-full w-full" aria-hidden="true">
           <Backgrounds.instructor_dashboard_header />
         </div>
         <div class="flex-col justify-start items-start gap-[15px] z-10 px-6 md:px-[63px] font-['Open Sans']">
           <div class="flex flex-row items-center gap-3">
-            <Icons.growing_bars
-              stroke_class="stroke-[#353740] dark:stroke-white"
-              class="w-[36px] h-[36px]"
-            />
+            <div class="flex" aria-hidden="true">
+              <Icons.growing_bars
+                stroke_class="stroke-[#353740] dark:stroke-white"
+                class="w-[36px] h-[36px]"
+              />
+            </div>
             <h1 class="text-[#353740] dark:text-white text-[32px] font-bold leading-normal">
               Instructor Dashboard
             </h1>
@@ -170,15 +172,17 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
     ~H"""
     <div class="dark:bg-[#0F0D0F] bg-[#F3F4F8]">
       <div class="relative flex items-center h-[247px]">
-        <div class="absolute top-0 h-[291px] w-full overflow-x-hidden">
+        <div class="absolute top-0 h-[291px] w-full overflow-x-hidden" aria-hidden="true">
           <Backgrounds.instructor_dashboard_header />
         </div>
         <div class="flex-col justify-start items-start gap-[15px] z-10 px-6 md:px-[63px] font-['Open Sans']">
           <div class="flex flex-row items-center gap-3">
-            <Icons.growing_bars
-              stroke_class="stroke-[#353740] dark:stroke-white"
-              class="w-[36px] h-[36px]"
-            />
+            <div class="flex" aria-hidden="true">
+              <Icons.growing_bars
+                stroke_class="stroke-[#353740] dark:stroke-white"
+                class="w-[36px] h-[36px]"
+              />
+            </div>
             <h1 class="text-[#353740] dark:text-white text-[32px] font-bold leading-normal">
               Instructor Dashboard
             </h1>
