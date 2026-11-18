@@ -27,7 +27,7 @@ Review scope: MER-6158 and its 11 Stories (including closed MER-6219) and 20 sub
 
 Findings 1–10 are approved and verified in Jira. All 31 ticket descriptions use the approved concise guidance; Story product/UX requirements remain unchanged. Regular instructors retain their logged-in user in both views. Admin-owned preview users receive instructor enrollment, regular authors receive student/learner enrollment, and promotion upgrades the existing preview user's enrollments while preserving identity and progress. Sub-task titles and epic/traceability references match the final ticket set.
 
-Read-back checks confirmed exact description text, headings, paragraphs, nested lists, code formatting, links, all 17 screenshots, unchanged statuses and parent relationships, 21 Relates links, and 21 acyclic Blocks links with no cross-Story sub-task dependencies. MER-6219 and MER-6221 remain Closed Won’t Do. Independent security, performance, and UI fidelity reviews found no material omissions. Repository changes are committed locally without pushing; implementation and runtime verification remain future work.
+Read-back checks confirmed exact description text, headings, paragraphs, nested lists, code formatting, links, all 17 screenshots, unchanged statuses and parent relationships, 21 Relates links, and 20 acyclic Blocks links with no cross-Story sub-task dependencies. MER-6219 and MER-6221 remain Closed Won’t Do. Independent security, performance, and UI fidelity reviews found no material omissions. Repository changes are committed locally without pushing; implementation and runtime verification remain future work.
 
 ## Completion checks
 
@@ -35,3 +35,11 @@ Read-back checks confirmed exact description text, headings, paragraphs, nested 
 - [x] Epic coverage and feature traceability match the final ticket ownership.
 - [x] Story and sub-task dependencies remain acyclic, with no cross-Story sub-task dependency links.
 - [x] No repository commits have been pushed.
+
+## Approved consolidation
+
+MER-6225 owns end-to-end replacement of shared preview users for admin section previews and author/admin template previews. MER-6226 is Closed Won’t Do under its existing parent and points to MER-6225. MER-6224 blocks MER-6225; both obsolete links to MER-6226 are removed. The seven affected descriptions, title, closure, references, and dependency changes are approved, published, and verified in Jira.
+
+Delivery receives the persistent preview user struct or ID in authorized preview context, never as an authenticated login. Remove shared-user helpers and update scenario/test callers. Template exit ends only preview context and preserves real login and return behavior. Audit session reads/writes and derived identities, record their handling, and verify that preview activity cannot affect real learner records. MER-6225 owns shared admin/template handling; MER-6241 applies it and covers project-specific paths.
+
+Verification confirmed all 31 descriptions and titles, formatting, unchanged parent relationships and 17 images, 21 Relates links, and 20 acyclic Blocks links with no cross-Story sub-task dependencies. The repository changes are committed locally without pushing. No application code was changed; implementation tests are specified in the tickets.
