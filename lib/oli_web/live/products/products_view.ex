@@ -7,6 +7,8 @@ defmodule OliWeb.Products.ProductsView do
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Institutions
   alias Oli.Publishing
   alias Oli.Repo.{Paging, Sorting}
@@ -361,7 +363,8 @@ defmodule OliWeb.Products.ProductsView do
         labels -> Map.from_struct(labels)
       end
 
-    case Blueprint.create_blueprint(
+    case SectionsAudited.create_product(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
            socket.assigns.project.slug,
            product_title,
            customizations

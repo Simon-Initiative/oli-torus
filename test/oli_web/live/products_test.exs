@@ -662,6 +662,21 @@ defmodule OliWeb.ProductsLiveTest do
       assert render(view) =~ "Create Template"
       assert render(view) =~ "This can be changed later"
       assert has_element?(view, "button[type='submit']", "Create")
+
+      view
+      |> form("form[phx-submit='create']",
+        create_product_form: %{"product_title" => "Authored product"}
+      )
+      |> render_submit()
+
+      product = Oli.Delivery.Sections.get_section_by_slug("authored_product")
+
+      assert_audited(:product_created,
+        section_id: product.id,
+        project_id: project.id,
+        actor: author,
+        source: :ui
+      )
     end
   end
 

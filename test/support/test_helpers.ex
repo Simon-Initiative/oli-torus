@@ -210,6 +210,21 @@ defmodule Oli.TestHelpers do
   def publish_project_fixture(project, description, author_id),
     do: Oli.Publishing.Audited.publish_project(audit_context(), project, description, author_id)
 
+  @doc """
+  Creates a section from a course builder `request` through `Oli.Delivery.Sections.Audited`,
+  acting as the request's actor (or as the test admin when the actor cannot be loaded, which
+  the command refuses before using the context).
+  """
+  def create_section_from_request(%Oli.Delivery.SectionCreationRequest{} = request) do
+    context =
+      case Oli.Delivery.SectionCreation.load_actor(request.actor) do
+        {:ok, actor} -> Oli.Auditing.Context.for_actor(actor, source: :ui)
+        {:error, _} -> audit_context()
+      end
+
+    Oli.Delivery.Sections.Audited.create_section(context, request)
+  end
+
   @doc "Test fixture: copies the project with `project_slug` for `author`."
   def duplicate_project_fixture(project_slug, author, opts \\ []),
     do: Oli.Authoring.Audited.duplicate_project(audit_context(), project_slug, author, opts)

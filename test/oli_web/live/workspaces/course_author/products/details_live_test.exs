@@ -71,6 +71,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
        |> create_product()}
     end
 
+    test "duplicating records the copy as a new template", ctx do
+      %{conn: conn, project: project, product: product, author: author} = ctx
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      render_hook(live, "duplicate", %{})
+
+      {path, _flash} = assert_redirect(live)
+      copy = Oli.Delivery.Sections.get_section_by_slug(List.last(String.split(path, "/")))
+
+      event =
+        assert_audited(:product_created, section_id: copy.id, actor: author, source: :ui)
+
+      assert event.details["creation_source"] == "product_copy"
+      assert event.details["blueprint_id"] == product.id
+    end
+
     test "renders header", ctx do
       %{conn: conn, project: project, product: product} = ctx
 

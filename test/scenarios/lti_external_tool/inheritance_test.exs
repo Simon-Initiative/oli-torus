@@ -5,7 +5,6 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
 
   import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
 
-  alias Oli.Delivery
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections
@@ -276,7 +275,7 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
 
     assert {:ok, options} = CopyOptions.for_previous_section(groups)
 
-    case Delivery.create_section(%{request | copy_options: options}) do
+    case create_section_from_request(%{request | copy_options: options}) do
       {:ok, id, _} -> {:ok, Sections.get_section!(id)}
       error -> error
     end

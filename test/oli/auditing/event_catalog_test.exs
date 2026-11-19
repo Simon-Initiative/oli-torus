@@ -15,8 +15,7 @@ defmodule Oli.Auditing.EventCatalogTest do
         account_internal_flag_changed)a,
     project: ~w(project_created project_duplicated project_imported project_deleted
         project_collaborator_changed project_published)a,
-    assessment_settings:
-      ~w(assessment_settings_changed assessment_settings_reset assessment_setting_changed)a,
+    assessment_settings: ~w(assessment_settings_changed assessment_setting_changed)a,
     student_exceptions:
       ~w(student_exception_created student_exception_updated student_exception_deleted)a,
     dot_activation:
@@ -34,14 +33,12 @@ defmodule Oli.Auditing.EventCatalogTest do
       ~w(authoring_settings_changed learning_objectives_changed curriculum_changed)a,
     section_lifecycle:
       ~w(section_created section_deleted section_archived section_settings_changed
-        product_created product_deleted product_archived product_settings_changed
-        blueprint_created blueprint_deleted blueprint_archived blueprint_settings_changed)a,
+        product_created product_deleted product_archived product_settings_changed)a,
     enrollment:
       ~w(invitation_created invitation_accepted enrollment_changed instructor_access_changed)a,
     publication_application: ~w(publication_applied publication_update_policy_changed)a,
     gating: ~w(gating_changed prerequisite_changed curriculum_schedule_changed)a,
-    support_configuration:
-      ~w(discussion_settings_changed notes_settings_changed student_support_settings_changed)a,
+    support_configuration: ~w(discussion_settings_changed notes_settings_changed)a,
     payments:
       ~w(payment_settings_changed pricing_changed discount_changed payment_code_administered
         entitlement_changed)a,
@@ -81,7 +78,7 @@ defmodule Oli.Auditing.EventCatalogTest do
       end)
 
     assert actual == @expected
-    assert length(EventCatalog.names()) == 109
+    assert length(EventCatalog.names()) == 103
     assert length(EventCatalog.families()) == 25
   end
 

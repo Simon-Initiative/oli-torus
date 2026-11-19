@@ -183,7 +183,7 @@ defmodule OliWeb.NewCourse.NewCourseTest do
     end
 
     test "confirming the modal creates the section immediately (no wizard steps), copying the source's title (with a '(copy)' suffix), dates, and section details, but not course_section_number",
-         %{conn: conn} do
+         %{conn: conn, admin: admin} do
       %{project: project, publication: publication} = published_project_with_resource()
 
       course =
@@ -237,6 +237,11 @@ defmodule OliWeb.NewCourse.NewCourseTest do
       assert created.end_date == course.end_date
       assert created.preferred_scheduling_time == course.preferred_scheduling_time
       assert created.timezone == "US/Pacific"
+
+      event =
+        assert_audited(:section_created, section_id: created.id, actor: admin, source: :ui)
+
+      assert event.details["creation_source"] == "previous_section"
     end
 
     test "re-selecting a source while the first section is still being created does not queue a second section (regression)",

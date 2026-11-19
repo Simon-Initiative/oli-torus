@@ -9,6 +9,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   alias __MODULE__
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Publishing
   alias Oli.Repo.Paging
   alias Oli.Repo.Sorting
@@ -177,7 +179,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
         labels -> Map.from_struct(labels)
       end
 
-    blueprint = Blueprint.create_blueprint(project_slug, product_title, customizations)
+    blueprint =
+      SectionsAudited.create_product(
+        Context.for_actor(socket.assigns.current_author, source: :ui),
+        project_slug,
+        product_title,
+        customizations
+      )
 
     case blueprint do
       {:ok, blueprint} ->

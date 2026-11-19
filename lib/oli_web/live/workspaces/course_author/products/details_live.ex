@@ -7,7 +7,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
   alias Oli.Delivery.TemplatePreview
-  alias Oli.Delivery.Sections.{Blueprint, Section}
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Inventories
   alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
   alias OliWeb.Common.Confirm
@@ -455,7 +457,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   end
 
   def handle_event("duplicate", _, socket) do
-    case Blueprint.duplicate(socket.assigns.product) do
+    case SectionsAudited.duplicate_product(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           socket.assigns.product
+         ) do
       {:ok, duplicate} ->
         {:noreply,
          redirect(socket,

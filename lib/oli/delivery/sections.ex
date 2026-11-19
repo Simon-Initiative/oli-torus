@@ -1735,18 +1735,6 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Deletes a section by marking the record as deleted.
-  ## Examples
-      iex> soft_delete_section(section)
-      {:ok, %Section{}}
-      iex> soft_delete_section(section)
-      {:error, %Ecto.Changeset{}}
-  """
-  def soft_delete_section(%Section{} = section) do
-    update_section(section, %{status: :deleted})
-  end
-
-  @doc """
   Deletes a section.
   ## Examples
       iex> delete_section(section)

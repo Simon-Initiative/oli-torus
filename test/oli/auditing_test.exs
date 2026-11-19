@@ -14,7 +14,12 @@ defmodule Oli.AuditingTest do
       section = insert(:section)
 
       assert {:ok, %LogEvent{} = event} =
-               Auditing.capture(admin, :section_created, section, %{})
+               Auditing.capture(
+                 admin,
+                 :resource_attempt_deleted,
+                 section,
+                 attempt_details(section, insert(:user))
+               )
 
       assert event.user_id == admin.id
       assert event.author_id == nil
@@ -26,27 +31,33 @@ defmodule Oli.AuditingTest do
       section = insert(:section)
 
       assert {:ok, %LogEvent{} = event} =
-               Auditing.capture(user, :section_created, section, %{
-                 "section_title" => section.title
-               })
+               Auditing.capture(
+                 user,
+                 :resource_attempt_deleted,
+                 section,
+                 attempt_details(section, insert(:user))
+               )
 
       assert event.user_id == user.id
       assert event.section_id == section.id
-      assert event.event_type == :section_created
-      assert event.details["section_title"] == section.title
+      assert event.event_type == :resource_attempt_deleted
     end
 
     test "drops detail keys outside the event contract" do
       admin = insert(:author)
       section = insert(:section)
 
-      assert {:ok, event} =
-               Auditing.log_admin_action(admin, :section_created, section, %{
-                 "section_title" => "Biology",
-                 "setting" => "maintenance_mode"
-               })
+      details = attempt_details(section, insert(:user))
 
-      assert event.details == %{"section_title" => "Biology"}
+      assert {:ok, event} =
+               Auditing.log_admin_action(
+                 admin,
+                 :resource_attempt_deleted,
+                 section,
+                 Map.put(details, "setting", "maintenance_mode")
+               )
+
+      assert event.details == details
     end
 
     test "rejects event types outside the legacy producers" do
@@ -245,7 +256,14 @@ defmodule Oli.AuditingTest do
 
       {:ok, event1} = user_deleted_event(admin, insert(:user))
       {:ok, event2} = project_published_event(author, project)
-      {:ok, event3} = Auditing.capture(user, :section_created, section, %{})
+
+      {:ok, event3} =
+        Auditing.capture(
+          user,
+          :resource_attempt_deleted,
+          section,
+          attempt_details(section, insert(:user))
+        )
 
       %{
         user: user,
@@ -463,5 +481,14 @@ defmodule Oli.AuditingTest do
       })
 
     Auditing.insert(changeset)
+  end
+
+  defp attempt_details(section, student) do
+    %{
+      "attempt_guid" => "attempt-#{System.unique_integer([:positive])}",
+      "user_id" => student.id,
+      "section_id" => section.id,
+      "resource_id" => 4512
+    }
   end
 end

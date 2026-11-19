@@ -13,9 +13,9 @@ defmodule Oli.Auditing.LegacyAdapter do
   # `Ecto.Multi`), which means reshaping each domain's transaction. Each later coverage
   # sub-task does that for its own events, so each call site changes only once. Account
   # deletion, author roles, the internal flag, the feature flag and rollout events, project
-  # publication, and Google Doc imports already moved to their audited facades; these remain:
+  # publication, Google Doc imports, and section creation already moved to their audited
+  # facades; these remain:
   #
-  #   * delivery and configuration: `section_created`
   #   * learner administration and operations: `resource_attempt_deleted`,
   #     `clickhouse_admin_operation_initiated`
   #
@@ -30,9 +30,8 @@ defmodule Oli.Auditing.LegacyAdapter do
 
   alias Oli.Accounts.{Author, User}
   alias Oli.Auditing.{Context, EventCatalog}
-  alias Oli.Delivery.Sections.Section
 
-  @events ~w(section_created clickhouse_admin_operation_initiated resource_attempt_deleted)a
+  @events ~w(clickhouse_admin_operation_initiated resource_attempt_deleted)a
 
   @doc false
   def events, do: @events
@@ -72,18 +71,6 @@ defmodule Oli.Auditing.LegacyAdapter do
     {:ok, details |> Jason.encode!() |> Jason.decode!()}
   rescue
     _ in [Jason.EncodeError, Protocol.UndefinedError] -> {:error, :invalid_event}
-  end
-
-  defp proposal(:section_created, %Section{id: id} = section, details) do
-    scope =
-      %{
-        section_id: id,
-        project_id: details["base_project_id"] || section.base_project_id,
-        institution_id: section.institution_id
-      }
-      |> Map.reject(fn {_column, value} -> not is_integer(value) end)
-
-    {:ok, %{entity: {:section, id, section}, scope: scope, event_key: "section:#{id}:created"}}
   end
 
   defp proposal(:resource_attempt_deleted, _section, %{"attempt_guid" => guid} = details)

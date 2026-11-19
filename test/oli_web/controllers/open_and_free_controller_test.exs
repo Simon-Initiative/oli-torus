@@ -43,7 +43,8 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
     test "create section from product redirects to instructor dashboard manage page", %{
       conn: conn,
-      product_1: product_1
+      product_1: product_1,
+      instructor: instructor
     } do
       conn =
         post(conn, ~p"/sections/independent",
@@ -57,6 +58,13 @@ defmodule OliWeb.OpenAndFreeControllerTest do
       %{section_slug: section_slug} = redirected_params(conn)
 
       assert redirected_to(conn) == ~p"/sections/#{section_slug}/manage?section_created=true"
+
+      section = Sections.get_section_by_slug(section_slug)
+
+      event =
+        assert_audited(:section_created, section_id: section.id, actor: instructor, source: :api)
+
+      assert event.details["blueprint_id"] == product_1.id
       refute Phoenix.Flash.get(conn.assigns.flash, :section_created_setup)
       refute Phoenix.Flash.get(conn.assigns.flash, :info)
 
@@ -70,7 +78,8 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
     test "create section from a Project copies its learning model", %{
       conn: conn,
-      project: project
+      project: project,
+      instructor: instructor
     } do
       project =
         project
@@ -88,7 +97,15 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
       %{section_slug: section_slug} = redirected_params(conn)
 
-      assert Sections.get_section_by_slug(section_slug).learning_model_version == :lkt_aoa
+      section = Sections.get_section_by_slug(section_slug)
+      assert section.learning_model_version == :lkt_aoa
+
+      assert_audited(:section_created,
+        section_id: section.id,
+        project_id: project.id,
+        actor: instructor,
+        source: :api
+      )
     end
 
     test "renders errors when data is invalid", %{

@@ -628,11 +628,6 @@ defmodule Oli.SectionsTest do
       assert unit_titles == ["Unit 1", "Unit 2"]
     end
 
-    test "soft_delete_section/1 marks the section as deleted", %{section: section} do
-      assert {:ok, %Section{}} = Sections.soft_delete_section(section)
-      assert Sections.get_section!(section.id).status == :deleted
-    end
-
     test "delete_section/1 deletes the section", %{section: section} do
       assert {:ok, %Section{}} = Sections.delete_section(section)
       refute Sections.get_section_by_slug(section.slug)

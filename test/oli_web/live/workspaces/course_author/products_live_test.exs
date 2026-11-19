@@ -94,7 +94,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
              |> render() =~ "None exist"
     end
 
-    test "create a product", %{conn: conn, project: project} do
+    test "create a product", %{conn: conn, project: project, admin: admin} do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       view
@@ -119,6 +119,18 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
         )
 
       assert flash["info"] == "Template successfully created."
+
+      product = Oli.Delivery.Sections.get_section_by_slug("some_product")
+
+      event =
+        assert_audited(:product_created,
+          section_id: product.id,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.entity_type == :product
     end
 
     test "trigger archived products checkbox", %{conn: conn, project: project} do

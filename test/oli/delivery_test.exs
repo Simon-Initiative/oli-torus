@@ -292,7 +292,7 @@ defmodule Oli.DeliveryTest do
       section_spec = SectionSpecification.lti(context.user, section.context_id)
 
       assert {:ok, returned_section_id, returned_section_slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(
                    context.user,
                    "publication:#{context.publication.id}",
@@ -320,7 +320,7 @@ defmodule Oli.DeliveryTest do
       )
 
       assert {:ok, section_id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(
                    context.user,
                    "publication:#{context.publication.id}",
@@ -363,7 +363,7 @@ defmodule Oli.DeliveryTest do
       publication = Oli.Publishing.get_latest_published_publication_by_slug(project.slug)
 
       assert {:ok, section_id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(
                    user,
                    "publication:#{publication.id}",
@@ -415,7 +415,7 @@ defmodule Oli.DeliveryTest do
       )
 
       assert {:ok, section_id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(
                    context.user,
                    "product:#{product.id}",
@@ -474,7 +474,7 @@ defmodule Oli.DeliveryTest do
       request = request!(user, "section:#{source.id}", attrs, SectionSpecification.direct())
 
       assert {:ok, copied_section_id, _slug} =
-               Delivery.create_section(%{request | copy_options: copy_options})
+               create_section_from_request(%{request | copy_options: copy_options})
 
       copy = Sections.get_section!(copied_section_id)
 
@@ -504,7 +504,7 @@ defmodule Oli.DeliveryTest do
         })
 
       assert {:error, _message} =
-               Delivery.create_section(%SectionCreationRequest{
+               create_section_from_request(%SectionCreationRequest{
                  actor: nil,
                  source: {:section, source.id},
                  attrs: %{title: "Unauthorized Copy"},
@@ -527,7 +527,7 @@ defmodule Oli.DeliveryTest do
       section_spec = SectionSpecification.lti(context.user, context_id)
 
       assert {:ok, returned_section_id, _returned_section_slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(
                    context.user,
                    "publication:#{context.publication.id}",
@@ -639,7 +639,7 @@ defmodule Oli.DeliveryTest do
       section_spec = SectionSpecification.lti(context.user, context.product.context_id)
 
       assert {:ok, returned_section_id, _returned_section_slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(
                    context.user,
                    "product:#{context.product.id}",

@@ -5,7 +5,9 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.{Accounts, Branding, Inventories, Publishing, Repo, Tags}
   alias Oli.Authoring.Course
   alias Oli.Delivery.{Paywall, Sections, TemplatePreview}
-  alias Oli.Delivery.Sections.{Blueprint, Section}
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
   alias OliWeb.Common.{Breadcrumb, Confirm, CoverImageUpload}
   alias OliWeb.Components.{Common, Overview}
@@ -425,7 +427,10 @@ defmodule OliWeb.Products.DetailsView do
   end
 
   def handle_event("duplicate", _, socket) do
-    case Blueprint.duplicate(socket.assigns.product) do
+    case SectionsAudited.duplicate_product(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           socket.assigns.product
+         ) do
       {:ok, duplicate} ->
         {:noreply,
          redirect(socket,

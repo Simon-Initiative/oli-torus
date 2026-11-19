@@ -50,7 +50,7 @@ columns an event sets; omitted columns are `NULL`, `{}`, or `[]`.
 | Authentication | `user_logged_in`, `author_logged_in`, `user_logged_out`, `author_logged_out`, `session_revoked` |
 | Account | `account_created`, `account_updated`, `account_locked`, `account_unlocked`, `account_linked`, `account_identity_linked`, `account_identity_unlinked`, `account_permissions_changed`, `account_creation_rights_changed`, `account_recovery_requested`, `account_credential_recovered`, `user_deleted`, `author_deleted`, `author_role_changed`, `account_internal_flag_changed` |
 | Project | `project_created`, `project_duplicated`, `project_imported`, `project_deleted`, `project_collaborator_changed`, `project_published` |
-| Assessment settings | `assessment_settings_changed`, `assessment_settings_reset`, `assessment_setting_changed` |
+| Assessment settings | `assessment_settings_changed`, `assessment_setting_changed` |
 | Student exceptions | `student_exception_created`, `student_exception_updated`, `student_exception_deleted` |
 | DOT and activation points | `dot_settings_changed`, `activation_settings_changed`, `instructor_ai_recommendation_changed` |
 | Remix | `section_remix_saved` |
@@ -59,11 +59,11 @@ columns an event sets; omitted columns are `NULL`, `{}`, or `[]`.
 | Learner intervention | `resource_attempt_deleted`, `learner_attempt_reset`, `learner_progress_restored`, `manual_grade_changed`, `learner_regraded` |
 | Project settings | `project_settings_changed` |
 | Authoring configuration | `authoring_settings_changed`, `learning_objectives_changed`, `curriculum_changed` |
-| Section lifecycle and settings | `section_created`, `section_deleted`, `section_archived`, `section_settings_changed`, `product_created`, `product_deleted`, `product_archived`, `product_settings_changed`, `blueprint_created`, `blueprint_deleted`, `blueprint_archived`, `blueprint_settings_changed` |
+| Section lifecycle and settings | `section_created`, `section_deleted`, `section_archived`, `section_settings_changed`, `product_created`, `product_deleted`, `product_archived`, `product_settings_changed` |
 | Enrollment and access | `invitation_created`, `invitation_accepted`, `enrollment_changed`, `instructor_access_changed` |
 | Publication application | `publication_applied`, `publication_update_policy_changed` |
 | Gating and scheduling | `gating_changed`, `prerequisite_changed`, `curriculum_schedule_changed` |
-| Support configuration | `discussion_settings_changed`, `notes_settings_changed`, `student_support_settings_changed` |
+| Support configuration | `discussion_settings_changed`, `notes_settings_changed` |
 | Payments | `payment_settings_changed`, `pricing_changed`, `discount_changed`, `payment_code_administered`, `entitlement_changed` |
 | Certificates | `certificate_settings_changed`, `certificate_granted`, `certificate_revoked` |
 | Organizations | `institution_settings_changed`, `community_settings_changed`, `publisher_settings_changed`, `research_consent_settings_changed` |
@@ -1221,49 +1221,6 @@ Example:
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "assessment:4512:settings_changed",
-  "search_text": "Grace Hopper grace.hopper@example.edu Unit 1 Quiz"
-}
-```
-
-### `assessment_settings_reset`
-
-**Assessment settings reset.** Section-level settings of one assessment were reset to the values inherited from the publication.
-
-| Rule | Value |
-| --- | --- |
-| Actors | `user`, `author` |
-| Entity types | `resource` |
-| Required columns | `section_id`, `resource_id` |
-| At least one of | none |
-| Affected person | none |
-| Outcomes | `succeeded` |
-| No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `allow_hints`, `assessment_mode`, `batch_scoring`, `end_date`, `explanation_strategy`, `feedback_mode`, `feedback_scheduled_date`, `grace_period`, `late_policy`, `late_start`, `late_submit`, `max_attempts`, `password` (secret), `replacement_strategy`, `retake_mode`, `review_submission`, `scoring_strategy_id`, `secure_delivery`, `start_date`, `time_limit` |
-| Detail keys | none |
-| Reference roles | none |
-| Status | active |
-
-Example:
-
-```json
-{
-  "inserted_at": "2026-10-29T14:05:08.123456Z",
-  "occurred_at": "2026-10-29T14:05:08.123456Z",
-  "schema_version": 2,
-  "event_type": "assessment_settings_reset",
-  "outcome": "succeeded",
-  "actor_type": "user",
-  "user_id": 41,
-  "actor_snapshot": {"email":"grace.hopper@example.edu","id":41,"name":"Grace Hopper"},
-  "entity_type": "resource",
-  "entity_id": "4512",
-  "entity_snapshot": {"id":4512,"title":"Unit 1 Quiz"},
-  "section_id": 301,
-  "resource_id": 4512,
-  "changes": {"max_attempts":{"after":null,"before":3,"effective_after":1,"effective_before":3,"operation":"reset","result_source":"publication"}},
-  "source": "ui",
-  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
-  "event_key": "assessment:4512:settings_reset",
   "search_text": "Grace Hopper grace.hopper@example.edu Unit 1 Quiz"
 }
 ```
@@ -2530,7 +2487,7 @@ Example:
 
 ### `product_created`
 
-**Product created.** A product was created.
+**Template created.** A template was created.
 
 | Rule | Value |
 | --- | --- |
@@ -2573,7 +2530,7 @@ Example:
 
 ### `product_deleted`
 
-**Product deleted.** A product was deleted.
+**Template deleted.** A template was deleted.
 
 | Rule | Value |
 | --- | --- |
@@ -2614,7 +2571,7 @@ Example:
 
 ### `product_archived`
 
-**Product archived.** A product was archived and closed to new activity.
+**Template archived.** A template was archived and closed to new activity.
 
 | Rule | Value |
 | --- | --- |
@@ -2656,7 +2613,7 @@ Example:
 
 ### `product_settings_changed`
 
-**Product settings changed.** Settings of a product were changed.
+**Template settings changed.** Settings of a template were changed.
 
 | Rule | Value |
 | --- | --- |
@@ -2693,174 +2650,6 @@ Example:
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "product:290:settings_changed",
   "search_text": "Alan Admin alan.admin@example.edu Intro Biology Product intro_bio_product"
-}
-```
-
-### `blueprint_created`
-
-**Blueprint created.** A blueprint was created.
-
-| Rule | Value |
-| --- | --- |
-| Actors | `user`, `author`, `system` |
-| Entity types | `blueprint` |
-| Required columns | `section_id` |
-| At least one of | none |
-| Affected person | none |
-| Outcomes | `succeeded` |
-| No-op policy | `lifecycle` (written without changes) |
-| Change fields | none |
-| Detail keys | `section_title`, `type`, `base_project_id`, `creation_source`, `copied_groups`, `blueprint_id` |
-| Reference roles | none |
-| Status | active |
-
-Example:
-
-```json
-{
-  "inserted_at": "2026-10-29T14:05:08.123456Z",
-  "occurred_at": "2026-10-29T14:05:08.123456Z",
-  "schema_version": 2,
-  "event_type": "blueprint_created",
-  "outcome": "succeeded",
-  "actor_type": "author",
-  "author_id": 12,
-  "actor_snapshot": {"email":"katherine.author@example.edu","id":12,"name":"Katherine Author"},
-  "entity_type": "blueprint",
-  "entity_id": "295",
-  "entity_snapshot": {"id":295,"title":"Biology Blueprint"},
-  "project_id": 88,
-  "section_id": 295,
-  "details": {"base_project_id":88,"section_title":"Biology Blueprint"},
-  "source": "ui",
-  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
-  "event_key": "blueprint:295:created",
-  "search_text": "Katherine Author katherine.author@example.edu Biology Blueprint"
-}
-```
-
-### `blueprint_deleted`
-
-**Blueprint deleted.** A blueprint was deleted.
-
-| Rule | Value |
-| --- | --- |
-| Actors | `user`, `author` |
-| Entity types | `blueprint` |
-| Required columns | `section_id` |
-| At least one of | none |
-| Affected person | none |
-| Outcomes | `succeeded` |
-| No-op policy | `lifecycle` (written without changes) |
-| Change fields | none |
-| Detail keys | `section_title`, `type`, `base_project_id`, `creation_source`, `copied_groups`, `blueprint_id` |
-| Reference roles | none |
-| Status | active |
-
-Example:
-
-```json
-{
-  "inserted_at": "2026-10-29T14:05:08.123456Z",
-  "occurred_at": "2026-10-29T14:05:08.123456Z",
-  "schema_version": 2,
-  "event_type": "blueprint_deleted",
-  "outcome": "succeeded",
-  "actor_type": "author",
-  "author_id": 12,
-  "actor_snapshot": {"email":"katherine.author@example.edu","id":12,"name":"Katherine Author"},
-  "entity_type": "blueprint",
-  "entity_id": "295",
-  "entity_snapshot": {"id":295,"title":"Biology Blueprint"},
-  "section_id": 295,
-  "source": "ui",
-  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
-  "event_key": "blueprint:295:deleted",
-  "search_text": "Katherine Author katherine.author@example.edu Biology Blueprint"
-}
-```
-
-### `blueprint_archived`
-
-**Blueprint archived.** A blueprint was archived and closed to new activity.
-
-| Rule | Value |
-| --- | --- |
-| Actors | `user`, `author` |
-| Entity types | `blueprint` |
-| Required columns | `section_id` |
-| At least one of | none |
-| Affected person | none |
-| Outcomes | `succeeded` |
-| No-op policy | `lifecycle` (written without changes) |
-| Change fields | `status` |
-| Detail keys | `section_title`, `type`, `base_project_id`, `creation_source`, `copied_groups`, `blueprint_id` |
-| Reference roles | none |
-| Status | active |
-
-Example:
-
-```json
-{
-  "inserted_at": "2026-10-29T14:05:08.123456Z",
-  "occurred_at": "2026-10-29T14:05:08.123456Z",
-  "schema_version": 2,
-  "event_type": "blueprint_archived",
-  "outcome": "succeeded",
-  "actor_type": "author",
-  "author_id": 12,
-  "actor_snapshot": {"email":"katherine.author@example.edu","id":12,"name":"Katherine Author"},
-  "entity_type": "blueprint",
-  "entity_id": "295",
-  "entity_snapshot": {"id":295,"title":"Biology Blueprint"},
-  "section_id": 295,
-  "changes": {"status":{"after":"archived","before":"active","operation":"set"}},
-  "source": "ui",
-  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
-  "event_key": "blueprint:295:archived",
-  "search_text": "Katherine Author katherine.author@example.edu Biology Blueprint"
-}
-```
-
-### `blueprint_settings_changed`
-
-**Blueprint settings changed.** Settings of a blueprint were changed.
-
-| Rule | Value |
-| --- | --- |
-| Actors | `user`, `author` |
-| Entity types | `blueprint` |
-| Required columns | `section_id` |
-| At least one of | none |
-| Affected person | none |
-| Outcomes | `succeeded` |
-| No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `agenda`, `apply_major_updates`, `brand_id`, `class_days`, `class_modality`, `contains_deliberate_practice`, `contains_discussions`, `contains_explorations`, `course_section_number`, `cover_image`, `customizations`, `description`, `display_curriculum_item_numbering`, `encouraging_subtitle`, `end_date`, `invite_token` (secret), `open_and_free`, `passcode` (secret), `preferred_scheduling_time`, `publisher_id`, `registration_open`, `required_survey_resource_id`, `requires_enrollment`, `skip_email_verification`, `start_date`, `status`, `timezone`, `title`, `visibility`, `welcome_title` |
-| Detail keys | `section_title`, `type`, `base_project_id`, `creation_source`, `copied_groups`, `blueprint_id` |
-| Reference roles | none |
-| Status | active |
-
-Example:
-
-```json
-{
-  "inserted_at": "2026-10-29T14:05:08.123456Z",
-  "occurred_at": "2026-10-29T14:05:08.123456Z",
-  "schema_version": 2,
-  "event_type": "blueprint_settings_changed",
-  "outcome": "succeeded",
-  "actor_type": "author",
-  "author_id": 12,
-  "actor_snapshot": {"email":"katherine.author@example.edu","id":12,"name":"Katherine Author"},
-  "entity_type": "blueprint",
-  "entity_id": "295",
-  "entity_snapshot": {"id":295,"title":"Biology Blueprint"},
-  "section_id": 295,
-  "changes": {"welcome_title":{"after":"Welcome!","before":null,"operation":"set"}},
-  "source": "ui",
-  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
-  "event_key": "blueprint:295:settings_changed",
-  "search_text": "Katherine Author katherine.author@example.edu Biology Blueprint"
 }
 ```
 
@@ -3340,48 +3129,6 @@ Example:
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "resource:4512:notes_settings_changed",
   "search_text": "Grace Hopper grace.hopper@example.edu Unit 1 Quiz"
-}
-```
-
-### `student_support_settings_changed`
-
-**Student support settings changed.** Student support options of a section were changed.
-
-| Rule | Value |
-| --- | --- |
-| Actors | `user`, `author` |
-| Entity types | `section`, `project`, `resource` |
-| Required columns | none |
-| At least one of | `section_id`, `project_id` |
-| Affected person | none |
-| Outcomes | `succeeded` |
-| No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `anonymous_posting`, `auto_accept`, `contains_discussions`, `participation_min_posts`, `participation_min_replies`, `show_full_history`, `status`, `threaded` |
-| Detail keys | none |
-| Reference roles | none |
-| Status | active |
-
-Example:
-
-```json
-{
-  "inserted_at": "2026-10-29T14:05:08.123456Z",
-  "occurred_at": "2026-10-29T14:05:08.123456Z",
-  "schema_version": 2,
-  "event_type": "student_support_settings_changed",
-  "outcome": "succeeded",
-  "actor_type": "user",
-  "user_id": 41,
-  "actor_snapshot": {"email":"grace.hopper@example.edu","id":41,"name":"Grace Hopper"},
-  "entity_type": "section",
-  "entity_id": "301",
-  "entity_snapshot": {"id":301,"slug":"bio_101_fall_2026","title":"Biology 101 - Fall 2026"},
-  "section_id": 301,
-  "changes": {"contains_discussions":{"after":true,"before":false,"operation":"set"}},
-  "source": "ui",
-  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
-  "event_key": "section:301:student_support_settings_changed",
-  "search_text": "Grace Hopper grace.hopper@example.edu Biology 101 - Fall 2026 bio_101_fall_2026"
 }
 ```
 

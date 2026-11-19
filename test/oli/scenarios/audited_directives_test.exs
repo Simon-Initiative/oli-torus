@@ -66,6 +66,11 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
         title: Product
         from: product_source
 
+    - section:
+        name: from_product
+        title: From Product
+        from: product
+
     - project:
         name: remix_source
         title: Remix Source
@@ -152,5 +157,24 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
     backing = Repo.get_by!(Oli.Authoring.Course.Project, title: "Standalone Project")
     assert_audited(:project_created, [project_id: backing.id] ++ scenario)
     assert_audited(:project_published, [project_id: backing.id] ++ scenario)
+
+    # Sections from a project, from a product, and standalone, and the product itself.
+    section_id = fn name -> Engine.get_section(state, name).id end
+
+    for name <- ["from_project", "standalone"] do
+      assert_audited(:section_created, [section_id: section_id.(name)] ++ scenario)
+    end
+
+    product = Engine.get_product(state, "product")
+
+    from_product =
+      assert_audited(:section_created, [section_id: section_id.("from_product")] ++ scenario)
+
+    assert from_product.details["blueprint_id"] == product.id
+
+    assert_audited(
+      :product_created,
+      [section_id: product.id, project_id: project_id.("product_source")] ++ scenario
+    )
   end
 end

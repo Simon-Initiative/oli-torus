@@ -298,7 +298,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
           SectionSpecification.direct()
         )
 
-      {:ok, copy_id, _slug} = Oli.Delivery.create_section(request)
+      {:ok, copy_id, _slug} = create_section_from_request(request)
       copied = Sections.get_section!(copy_id)
 
       student = insert(:user)
@@ -721,7 +721,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
           SectionSpecification.direct()
         )
 
-      {:ok, copy_id, copy_slug} = Oli.Delivery.create_section(request)
+      {:ok, copy_id, copy_slug} = create_section_from_request(request)
       copied = Sections.get_section!(copy_id)
       required_survey = Sections.get_survey(copy_slug)
 
@@ -777,7 +777,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
         )
 
       {:ok, copy_id, _slug} =
-        Oli.Delivery.create_section(%{request | copy_options: options})
+        create_section_from_request(%{request | copy_options: options})
 
       copy = Sections.get_section!(copy_id)
 

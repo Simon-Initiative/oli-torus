@@ -364,9 +364,7 @@ defmodule Oli.Auditing.ContractsTest do
                })
     end
 
-    test "multi-field changes, resets with effective values, and secret markers are accepted" do
-      assert :ok = EventCatalog.validate(EventExamples.example(:assessment_settings_reset))
-
+    test "multi-field changes and secret markers are accepted" do
       example = EventExamples.example(:student_exception_updated)
       assert example.changes["password"] == Changes.secret_record()
       assert map_size(example.changes) == 2

@@ -155,9 +155,6 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
        [
          {:assessment_settings_changed, "Assessment settings changed",
           "Section-level settings of one assessment were changed.", []},
-         {:assessment_settings_reset, "Assessment settings reset",
-          "Section-level settings of one assessment were reset to the values inherited from " <>
-            "the publication.", []},
          {:assessment_setting_changed, "Assessment setting changed (history)",
           "Migrated history of one assessment setting change; never written by the application.",
           v1_only: true}
@@ -370,9 +367,7 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
          {:discussion_settings_changed, "Discussion settings changed",
           "Discussion configuration of a page or section was changed.", []},
          {:notes_settings_changed, "Notes settings changed",
-          "Class notes configuration was changed.", []},
-         {:student_support_settings_changed, "Student support settings changed",
-          "Student support options of a section were changed.", []}
+          "Class notes configuration was changed.", []}
        ]},
       {:payments, "Payments",
        [
@@ -548,7 +543,9 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
   end
 
   defp section_lifecycle_events do
-    for {kind, noun} <- [section: "Section", product: "Product", blueprint: "Blueprint"],
+    # Products are sections of type `:blueprint`; the interface calls them course section
+    # templates, so their events read "Template".
+    for {kind, noun} <- [section: "Section", product: "Template"],
         {verb, label_verb, description, overrides} <- section_lifecycle_verbs(noun) do
       {:"#{kind}_#{verb}", "#{noun} #{label_verb}", description,
        Keyword.put(overrides, :entity_types, [kind])}

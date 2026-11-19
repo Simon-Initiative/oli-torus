@@ -14,8 +14,7 @@ defmodule Oli.Auditing.LegacyAdapterTest do
     events = LegacyAdapter.events()
 
     assert Enum.sort(events) ==
-             Enum.sort(~w(section_created clickhouse_admin_operation_initiated
-               resource_attempt_deleted)a)
+             Enum.sort(~w(clickhouse_admin_operation_initiated resource_attempt_deleted)a)
 
     assert events -- EventCatalog.names() == []
   end
@@ -23,21 +22,9 @@ defmodule Oli.Auditing.LegacyAdapterTest do
   test "events whose producers moved to audited facades are rejected", %{admin: admin} do
     for event <- ~w(user_deleted author_deleted author_role_changed account_internal_flag_changed
                     feature_flag_enabled feature_rollout_stage_changed project_published
-                    google_doc_imported)a do
+                    google_doc_imported section_created)a do
       assert {:error, %Error{code: :invalid_event}} = Auditing.capture(admin, event, admin, %{})
     end
-  end
-
-  test "section creation records the section and its base project", %{user: user} do
-    section = insert(:section)
-
-    assert {:ok, event} =
-             Auditing.capture(user, :section_created, section, %{
-               "base_project_id" => section.base_project_id
-             })
-
-    assert {event.section_id, event.project_id, event.entity_type} ==
-             {section.id, section.base_project_id, :section}
   end
 
   test "attempt deletion records the student as the affected person", %{user: instructor} do
@@ -76,8 +63,9 @@ defmodule Oli.Auditing.LegacyAdapterTest do
     admin: admin
   } do
     section = insert(:section)
-    assert {:ok, first} = Auditing.capture(admin, :section_created, section, %{})
-    assert {:ok, second} = Auditing.capture(admin, :section_created, section, %{})
+    details = attempt_details(section, insert(:user))
+    assert {:ok, first} = Auditing.capture(admin, :resource_attempt_deleted, section, details)
+    assert {:ok, second} = Auditing.capture(admin, :resource_attempt_deleted, section, details)
 
     assert first.source == :application
     assert first.schema_version == 2
@@ -88,9 +76,23 @@ defmodule Oli.Auditing.LegacyAdapterTest do
     section = insert(:section)
 
     assert {:error, %Error{code: :invalid_event}} =
-             Auditing.capture(nil, :section_created, section, %{})
+             Auditing.capture(
+               nil,
+               :resource_attempt_deleted,
+               section,
+               attempt_details(section, insert(:user))
+             )
 
     assert {:error, %Error{code: :invalid_event}} =
-             Auditing.capture(admin, :section_created, nil, %{})
+             Auditing.capture(admin, :resource_attempt_deleted, section, %{})
+  end
+
+  defp attempt_details(section, student) do
+    %{
+      "attempt_guid" => "attempt-#{System.unique_integer([:positive])}",
+      "user_id" => student.id,
+      "section_id" => section.id,
+      "resource_id" => 4512
+    }
   end
 end

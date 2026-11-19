@@ -7,6 +7,8 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Details.ImageUpload
   alias OliWeb.Sections.{Instructors, Mount}
@@ -647,18 +649,20 @@ defmodule OliWeb.Sections.OverviewView do
            Sections.has_student_data?(socket.assigns.section.slug) do
         {action_function, action} =
           if socket.assigns.section_has_student_data do
-            {&Sections.update_section(&1, %{status: :archived}), "archived"}
+            {&SectionsAudited.archive_section/2, "archived"}
           else
-            {&Sections.update_section(&1, %{status: :deleted}), "deleted"}
+            {&SectionsAudited.delete_section/2, "deleted"}
           end
 
-        case action_function.(socket.assigns.section) do
+        context = Context.for_actor(socket.assigns.user, source: :ui)
+
+        case action_function.(context, socket.assigns.section) do
           {:ok, _section} ->
             socket
             |> put_flash(:info, "Section successfully #{action}.")
             |> redirect(to: ~p"/sections")
 
-          {:error, %Ecto.Changeset{}} ->
+          {:error, _} ->
             put_flash(
               socket,
               :error,

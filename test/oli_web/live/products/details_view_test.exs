@@ -397,6 +397,36 @@ defmodule OliWeb.Products.DetailsViewTest do
     end
   end
 
+  describe "product details page - duplicate" do
+    setup [:setup_admin_conn]
+
+    test "duplicating records the copy as a new template", %{conn: conn, admin: admin} do
+      seeds =
+        Oli.Utils.Seeder.Project.create_sample_project(%{}, admin,
+          project_tag: :project,
+          publication_tag: :publication
+        )
+
+      Oli.Utils.Seeder.Project.ensure_published(seeds, seeds.publication)
+
+      {:ok, product} =
+        Oli.Delivery.Sections.Blueprint.create_blueprint(seeds.project.slug, "Source", nil)
+
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      render_hook(view, "duplicate", %{})
+
+      {path, _flash} = assert_redirect(view)
+      copy = Oli.Delivery.Sections.get_section_by_slug(List.last(String.split(path, "/")))
+
+      event =
+        assert_audited(:product_created, section_id: copy.id, actor: admin, source: :ui)
+
+      assert event.details["creation_source"] == "product_copy"
+      assert event.details["blueprint_id"] == product.id
+    end
+  end
+
   describe "product details page - template preview" do
     setup [:setup_admin_conn, :create_product]
 

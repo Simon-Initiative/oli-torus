@@ -285,7 +285,9 @@ defmodule Oli.AutomationSetup do
       end
 
     {:ok, section} =
-      Oli.Delivery.Sections.create_section_from_source(
+      Oli.Delivery.Sections.Audited.create_section_from_publication(
+        setup_context(),
+        %{publication | project: project},
         %{
           title: "Automation test section",
           context_id: UUID.uuid4(),
@@ -294,11 +296,8 @@ defmodule Oli.AutomationSetup do
           base_project_id: project.id,
           open_and_free: true,
           customizations: customizations
-        },
-        project
+        }
       )
-
-    Oli.Delivery.Sections.create_section_resources(section, publication)
 
     Oli.Delivery.Sections.enroll(educator.id, section.id, [
       ContextRoles.get_role(:context_instructor)

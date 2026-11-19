@@ -1,12 +1,3 @@
-defmodule Oli.Delivery.SectionCreationTest.FailingAuditor do
-  @moduledoc false
-  @behaviour Oli.Delivery.SectionCreationAuditor
-
-  @impl true
-  def capture(_actor, _event_type, _resource, _details),
-    do: {:error, Oli.Auditing.Error.new(:insert_failed, :section_created)}
-end
-
 defmodule Oli.Delivery.SectionCreationTest do
   use Oli.DataCase
 
@@ -16,7 +7,6 @@ defmodule Oli.Delivery.SectionCreationTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.SystemRole
   alias Oli.Authoring.Course.Project
-  alias Oli.Delivery
   alias Oli.Delivery.{SectionCreation, SectionCreationRequest}
   alias Oli.Delivery.Sections
 
@@ -52,7 +42,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       before = section_count()
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(student, "publication:#{publication.id}", %{title: "Student Section"})
                )
 
@@ -66,7 +56,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       product = product_from(project, publication)
 
       assert {:ok, _id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(admin_author(), "product:#{product.id}", %{title: "Admin Section"})
                )
 
@@ -74,7 +64,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       %{spec: lti_spec} = lti_launch(lms_user, unique_context_id(), [@instructor_role])
 
       assert {:ok, _id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(
                    lms_user,
                    "publication:#{publication.id}",
@@ -86,7 +76,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       independent = insert(:user, independent_learner: true, can_create_sections: true)
 
       assert {:ok, _id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(independent, "publication:#{publication.id}", %{title: "Direct Section"})
                )
     end
@@ -108,7 +98,7 @@ defmodule Oli.Delivery.SectionCreationTest do
             "section:#{enrollable_section.id}"
           ] do
         assert {:error, :unauthorized} =
-                 Delivery.create_section(
+                 create_section_from_request(
                    request!(learner, source, %{title: "Learner Section"}, lti_spec)
                  )
       end
@@ -123,7 +113,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       Repo.delete!(user)
       before = section_count()
 
-      assert {:error, :unauthorized} = Delivery.create_section(request)
+      assert {:error, :unauthorized} = create_section_from_request(request)
       assert section_count() == before
     end
   end
@@ -138,7 +128,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       before = section_count()
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(stranger, "section:#{source_section.id}", %{title: "Stolen Copy"})
                )
 
@@ -162,7 +152,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       before = section_count()
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(stranger, "product:#{source_section.id}", %{title: "Stolen Copy"})
                )
 
@@ -173,7 +163,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       product = product_from(project, publication, status: :archived)
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(admin_author(), "product:#{product.id}", %{title: "Archived Source"})
                )
     end
@@ -193,7 +183,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       refute product.id in Enum.map(SectionCreation.permitted_products(admin, nil), & &1.id)
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(admin, "product:#{product.id}", %{title: "Deleted Base Project Source"})
                )
     end
@@ -225,7 +215,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       refute paid_product.id in Enum.map(SectionCreation.permitted_products(user, nil), & &1.id)
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(user, "publication:#{paid_publication.id}", %{title: "Free Ride"})
                )
 
@@ -237,7 +227,7 @@ defmodule Oli.Delivery.SectionCreationTest do
                SectionCreation.resolve_source(user, {:publication, paid_publication.id}, nil)
 
       assert {:ok, _id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(user, "publication:#{free_publication.id}", %{title: "Paid For"})
                )
     end
@@ -301,7 +291,7 @@ defmodule Oli.Delivery.SectionCreationTest do
         Sections.enroll(student.id, source_section.id, [ContextRoles.get_role(:context_learner)])
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(student, "section:#{source_section.id}", %{title: "Student Copy"})
                )
 
@@ -310,12 +300,16 @@ defmodule Oli.Delivery.SectionCreationTest do
 
     test "administrator course copy creates no instructor enrollment", %{section: source_section} do
       assert {:ok, copied_id, slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(admin_author(), "section:#{source_section.id}", %{title: "Admin Copy"})
                )
 
       assert copied_id != source_section.id
       assert Sections.list_enrollments(slug) == []
+
+      event = assert_audited(:section_created, section_id: copied_id, source: :ui)
+      assert event.details["creation_source"] == "previous_section"
+      assert is_list(event.details["copied_groups"])
     end
 
     test "T18 refuses malformed, retired and nonexistent identifiers, and drops forged attributes",
@@ -331,10 +325,12 @@ defmodule Oli.Delivery.SectionCreationTest do
       before = section_count()
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(request!(user, "product:999999", %{title: "Nonexistent"}))
+               create_section_from_request(
+                 request!(user, "product:999999", %{title: "Nonexistent"})
+               )
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(user, "publication:999999", %{title: "Nonexistent"})
                )
 
@@ -355,7 +351,7 @@ defmodule Oli.Delivery.SectionCreationTest do
         section_spec: spec
       }
 
-      assert {:ok, section_id, _slug} = Delivery.create_section(forged)
+      assert {:ok, section_id, _slug} = create_section_from_request(forged)
 
       section = Sections.get_section!(section_id)
       assert section.title == "Forged Section"
@@ -382,7 +378,7 @@ defmodule Oli.Delivery.SectionCreationTest do
 
       assert newer.id != chosen.id
 
-      assert {:ok, section_id, _slug} = Delivery.create_section(request)
+      assert {:ok, section_id, _slug} = create_section_from_request(request)
 
       pins =
         Repo.all(
@@ -421,7 +417,7 @@ defmodule Oli.Delivery.SectionCreationTest do
 
       assert_copy_unavailable(instructor, section)
       before = section_count()
-      assert {:error, :unauthorized} = Delivery.create_section(request)
+      assert {:error, :unauthorized} = create_section_from_request(request)
       assert section_count() == before
     end
 
@@ -494,7 +490,7 @@ defmodule Oli.Delivery.SectionCreationTest do
 
       assert_copy_unavailable(instructor, section, institution)
       before = section_count()
-      assert {:error, :unauthorized} = Delivery.create_section(request)
+      assert {:error, :unauthorized} = create_section_from_request(request)
       assert section_count() == before
     end
 
@@ -518,7 +514,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       assert_copy_available(instructor, section)
 
       assert {:ok, _id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(instructor, "section:#{section.id}", %{title: "Visible Template Copy"})
                )
 
@@ -526,7 +522,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       assert_copy_unavailable(instructor, section)
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(instructor, "section:#{section.id}", %{title: "Hidden Template Copy"})
                )
     end
@@ -566,7 +562,7 @@ defmodule Oli.Delivery.SectionCreationTest do
 
       assert_copy_unavailable(instructor, section)
       before = section_count()
-      assert {:error, :unauthorized} = Delivery.create_section(request)
+      assert {:error, :unauthorized} = create_section_from_request(request)
       assert section_count() == before
     end
 
@@ -618,7 +614,7 @@ defmodule Oli.Delivery.SectionCreationTest do
             true ->
               assert {:ok, _} = SectionCreation.resolve_source(instructor, material, nil)
               assert_copy_available(instructor, source)
-              assert {:ok, _id, _slug} = Delivery.create_section(request)
+              assert {:ok, _id, _slug} = create_section_from_request(request)
 
             false ->
               assert {:error, :unauthorized} =
@@ -626,7 +622,7 @@ defmodule Oli.Delivery.SectionCreationTest do
 
               assert_copy_unavailable(instructor, source)
               before = section_count()
-              assert {:error, :unauthorized} = Delivery.create_section(request)
+              assert {:error, :unauthorized} = create_section_from_request(request)
               assert section_count() == before
           end
         end
@@ -663,7 +659,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       before = section_count()
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(instructor, "section:#{section.id}", %{title: "Legacy Free Copy"})
                )
 
@@ -745,19 +741,17 @@ defmodule Oli.Delivery.SectionCreationTest do
       product = product_from(project, publication)
 
       assert {:ok, section_id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(admin, "product:#{product.id}", %{title: "Admin Audited"})
                )
 
-      event =
-        Repo.one!(
-          from(event in Oli.Auditing.LogEvent,
-            where: event.section_id == ^section_id and event.event_type == :section_created
-          )
-        )
+      event = assert_audited(:section_created, section_id: section_id, actor: admin, source: :ui)
 
-      assert event.author_id == admin.id
       assert is_nil(event.user_id)
+      assert event.entity_type == :section
+      assert event.project_id == project.id
+      assert event.details["blueprint_id"] == product.id
+      assert event.details["section_title"] == "Admin Audited"
 
       assert Repo.aggregate(
                from(e in Enrollment, where: e.section_id == ^section_id),
@@ -771,24 +765,36 @@ defmodule Oli.Delivery.SectionCreationTest do
       user = insert(:user, independent_learner: true, can_create_sections: true)
 
       assert {:ok, section_id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(user, "publication:#{publication.id}", %{title: "User Audited"})
                )
 
-      event =
-        Repo.one!(
-          from(event in Oli.Auditing.LogEvent,
-            where: event.section_id == ^section_id and event.event_type == :section_created
-          )
-        )
+      event = assert_audited(:section_created, section_id: section_id, actor: user, source: :ui)
 
-      assert event.user_id == user.id
       assert is_nil(event.author_id)
+      refute Map.has_key?(event.details, "blueprint_id")
 
       assert [enrollment] =
                Repo.all(from(e in Enrollment, where: e.section_id == ^section_id))
 
       assert enrollment.user_id == user.id
+    end
+  end
+
+  describe "audit context" do
+    setup [:publishable_source]
+
+    test "refuses a context that does not name the request's actor", %{publication: publication} do
+      user = insert(:user, independent_learner: true, can_create_sections: true)
+      before = section_count()
+
+      assert {:error, :invalid_request} =
+               Oli.Delivery.Sections.Audited.create_section(
+                 author_audit_context(),
+                 request!(user, "publication:#{publication.id}", %{title: "Other Actor"})
+               )
+
+      assert section_count() == before
     end
   end
 
@@ -829,13 +835,14 @@ defmodule Oli.Delivery.SectionCreationTest do
       before = section_count()
 
       assert {:ok, section_id, section_slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(user, "publication:#{paid_publication.id}", %{title: "Retry"}, spec)
                )
 
       assert section_id == existing.id
       assert section_slug == existing.slug
       assert section_count() == before
+      assert audit_events(:section_created, section_id: existing.id) == []
 
       learner = insert(:user, independent_learner: false, can_create_sections: false)
       learner_context_id = unique_context_id()
@@ -854,7 +861,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       )
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(
                    learner,
                    "publication:#{paid_publication.id}",
@@ -884,7 +891,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       before = section_count()
 
       assert {:error, _reason} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(
                    user,
                    "publication:#{publication.id}",
@@ -909,12 +916,12 @@ defmodule Oli.Delivery.SectionCreationTest do
       user = insert(:user, independent_learner: true, can_create_sections: true)
 
       assert {:ok, first_id, first_slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(user, "publication:#{publication.id}", %{title: "Replayed"})
                )
 
       assert {:ok, second_id, second_slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(user, "publication:#{publication.id}", %{title: "Replayed"})
                )
 
@@ -1005,7 +1012,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       creator = insert(:user, independent_learner: true, can_create_sections: true)
 
       assert {:ok, section_id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(creator, "product:#{product.id}", %{title: "Clean Copy"})
                )
 
@@ -1070,25 +1077,18 @@ defmodule Oli.Delivery.SectionCreationTest do
       project: project,
       publication: publication
     } do
-      Application.put_env(
-        :oli,
-        :section_creation_auditor,
-        Oli.Delivery.SectionCreationTest.FailingAuditor
-      )
-
-      on_exit(fn -> Application.delete_env(:oli, :section_creation_auditor) end)
-
       product = product_from(project, publication)
+      reject_audit_inserts()
       user = insert(:user, independent_learner: true, can_create_sections: true)
       before = section_count()
 
       assert {:error, _reason} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(user, "publication:#{publication.id}", %{title: "Unaudited Publication"})
                )
 
       assert {:error, _reason} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(user, "product:#{product.id}", %{title: "Unaudited Product"})
                )
 
@@ -1155,7 +1155,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       }
 
       assert {:ok, section_id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(
                    user,
                    "publication:#{publication.id}",
@@ -1221,7 +1221,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       spec = SectionSpecification.lti(user, context_id)
 
       assert {:ok, section_id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(user, "publication:#{publication.id}", %{title: "My Deployment"}, spec)
                )
 
@@ -1269,7 +1269,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       }
 
       assert {:ok, section_id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(
                    admin,
                    "publication:#{publication.id}",
@@ -1291,7 +1291,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       before = section_count()
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(
                    admin,
                    "publication:#{publication.id}",
@@ -1333,7 +1333,7 @@ defmodule Oli.Delivery.SectionCreationTest do
 
       # Control: the same request with well formed claims creates.
       assert {:ok, _id, _slug} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(admin, "publication:#{publication.id}", %{title: "Well Formed"}, spec)
                )
 
@@ -1351,7 +1351,7 @@ defmodule Oli.Delivery.SectionCreationTest do
 
       for {label, claims} <- malformed do
         assert {:error, :unauthorized} =
-                 Delivery.create_section(
+                 create_section_from_request(
                    request!(
                      admin,
                      "publication:#{publication.id}",
@@ -1414,7 +1414,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       before = section_count()
 
       assert {:error, :unauthorized} =
-               Delivery.create_section(
+               create_section_from_request(
                  request!(admin, "publication:#{publication.id}", %{title: "Ambiguous"}, spec)
                )
 
@@ -1458,12 +1458,12 @@ defmodule Oli.Delivery.SectionCreationTest do
       }
 
       before = section_count()
-      assert {:error, :unauthorized} = Delivery.create_section(forged)
+      assert {:error, :unauthorized} = create_section_from_request(forged)
       assert section_count() == before
 
       # The same request with a real id still works, so the guard is the size, not the shape.
       assert {:ok, _id, _slug} =
-               Delivery.create_section(%{forged | source: {:publication, publication.id}})
+               create_section_from_request(%{forged | source: {:publication, publication.id}})
     end
   end
 
@@ -1698,5 +1698,20 @@ defmodule Oli.Delivery.SectionCreationTest do
 
   defp resource_access_query(section_id) do
     from(ra in Oli.Delivery.Attempts.Core.ResourceAccess, where: ra.section_id == ^section_id)
+  end
+
+  defp reject_audit_inserts do
+    Repo.query!("""
+    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'audit insert rejected by test';
+    END;
+    $$ LANGUAGE plpgsql
+    """)
+
+    Repo.query!("""
+    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
+      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
+    """)
   end
 end
