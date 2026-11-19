@@ -136,8 +136,8 @@ defmodule Oli.Scenarios.ChangeOperationTest do
                 title: "String Value"
                 apply_major_updates: true
                 grace_period_days: 5
-                grade_passback_enabled: false
-                context_id: "context-123"
+                requires_enrollment: false
+                course_section_number: "section-123"
 
       """
 
@@ -149,8 +149,45 @@ defmodule Oli.Scenarios.ChangeOperationTest do
       assert section.title == "String Value"
       assert section.apply_major_updates == true
       assert section.grace_period_days == 5
-      assert section.grade_passback_enabled == false
-      assert section.context_id == "context-123"
+      assert section.requires_enrollment == false
+      assert section.course_section_number == "section-123"
+
+      event =
+        assert_audited(:section_settings_changed, section_id: section.id, source: :scenario)
+
+      assert Map.keys(event.changes) == ["course_section_number", "title"]
+
+      assert_audited(:publication_update_policy_changed,
+        section_id: section.id,
+        source: :scenario
+      )
+    end
+
+    test "rejects fields that no settings form writes" do
+      yaml = """
+      - project:
+          name: "test_project"
+          title: "Test Project"
+          root:
+            children:
+              - page: "Page 1"
+
+      - section:
+          name: "test_section"
+          from: "test_project"
+
+      - manipulate:
+          to: "test_section"
+          ops:
+            - change:
+                grade_passback_enabled: true
+
+      """
+
+      result = TestHelpers.execute_yaml(yaml)
+
+      assert [{_directive, message}] = result.errors
+      assert message =~ "invalid_request"
     end
 
     test "can combine change with other operations" do

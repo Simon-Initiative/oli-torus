@@ -14,7 +14,8 @@ defmodule Oli.Authoring.Audited do
   key returns `{:error, :protected}`. The trigger switch records `activation_settings_changed`.
 
   Alternatives group changes record `project_settings_changed` with the group's title, strategy,
-  and options before and after.
+  and options before and after. Page discussion settings record `discussion_settings_changed`,
+  per page or once for the whole project.
 
   Page saves record the settings, objectives, DOT settings, and triggers they change, and the
   activities whose references they remove; activity saves record their objectives and triggers.
@@ -50,6 +51,7 @@ defmodule Oli.Authoring.Audited do
     Collaborators,
     Content,
     Curriculum,
+    Discussions,
     History,
     Imports,
     LearningParameters,
@@ -63,6 +65,7 @@ defmodule Oli.Authoring.Audited do
   alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Authoring.Course.Project
   alias Oli.Repo
+  alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Resources.Revision
 
   @type command_error ::
@@ -238,6 +241,52 @@ defmodule Oli.Authoring.Audited do
     do: Settings.complete_import(context, project, attrs)
 
   def complete_import(_context, _project, _attrs), do: {:error, :invalid_request}
+
+  ## Page discussions
+
+  @doc """
+  Writes the discussion configuration `attrs` of the page with `page_slug` as a new working
+  revision authored by `author`, and records `discussion_settings_changed` with the
+  configuration fields that changed and the previous and resulting revisions. A save that
+  changes no field still creates the revision, as before, and records nothing.
+
+  Returns the map the page editor expects (`:project`, `:publication`, `:page_resource`,
+  `:next_page_revision`).
+  """
+  @spec update_project_page_discussions(Context.t(), %Project{}, String.t(), map(), %Author{}) ::
+          {:ok, map()} | {:error, command_error()}
+  def update_project_page_discussions(
+        %Context{} = context,
+        %Project{} = project,
+        page_slug,
+        attrs,
+        %Author{id: author_id}
+      )
+      when is_binary(page_slug) and is_map(attrs),
+      do: Discussions.update_page(context, project, page_slug, attrs, author_id)
+
+  def update_project_page_discussions(_context, _project, _page_slug, _attrs, _author),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Writes `config` (a `CollabSpaceConfig`) as the discussion configuration of every page in the
+  project's working publication, or disables discussions on every page with `:disabled`, and
+  records one `discussion_settings_changed` for the project with the number of pages written.
+  Returns that number.
+  """
+  @spec set_project_discussions(Context.t(), %Project{}, %CollabSpaceConfig{} | :disabled) ::
+          {:ok, non_neg_integer()} | {:error, command_error()}
+  def set_project_discussions(%Context{} = context, %Project{} = project, :disabled),
+    do: Discussions.set_project(context, project, :disabled)
+
+  def set_project_discussions(
+        %Context{} = context,
+        %Project{} = project,
+        %CollabSpaceConfig{} = config
+      ),
+      do: Discussions.set_project(context, project, config)
+
+  def set_project_discussions(_context, _project, _config), do: {:error, :invalid_request}
 
   ## Alternatives groups
 

@@ -160,7 +160,8 @@ defmodule Oli.Auditing.EventCatalog.Fields do
       display_curriculum_item_numbering contains_discussions contains_explorations
       contains_deliberate_practice required_survey_resource_id class_modality class_days
       course_section_number preferred_scheduling_time apply_major_updates welcome_title
-      encouraging_subtitle agenda timezone brand_id publisher_id customizations)a)
+      encouraging_subtitle agenda timezone brand_id publisher_id customizations institution_id
+      unnumbered_unit_ids)a)
     |> Map.merge(secrets(~w(invite_token passcode)a))
   end
 
@@ -376,8 +377,7 @@ defmodule Oli.Auditing.EventCatalog.Fields do
           )
           |> Map.merge(
             excluded(
-              ~w(resource_gating_index previous_next_index unnumbered_unit_ids
-                root_section_resource_id)a,
+              ~w(resource_gating_index previous_next_index root_section_resource_id)a,
               "derived by the system from the curriculum"
             )
           )

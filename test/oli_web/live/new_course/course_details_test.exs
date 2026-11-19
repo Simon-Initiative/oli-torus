@@ -352,7 +352,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/new")
 
-      {:ok, section} = Sections.update_section(section, %{type: :blueprint})
+      {:ok, section} = put_section_fields(section, %{type: :blueprint})
 
       select_source(:lms_instructor_conn, view, section)
 

@@ -265,7 +265,7 @@ defmodule OliWeb.GradesLiveTest do
       unit_1: unit_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
 

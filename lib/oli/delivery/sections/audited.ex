@@ -9,6 +9,11 @@ defmodule Oli.Delivery.Sections.Audited do
   type `:blueprint` record `product_*` events, which the Audit Log labels "Template"; other
   sections record `section_*` events.
 
+  Settings commands write only the fields the caller allows, the fields its form renders for
+  that user, and record one event per family that changed (`<kind>_settings_changed`,
+  `publication_update_policy_changed`, the DOT events, `discussion_settings_changed`,
+  `notes_settings_changed`); a save that changes nothing records nothing.
+
   Commands do not authorize the actor: callers keep their existing authorization, and checks
   that already lived in a moved function (such as the course builder's creation rights) still
   run inside the transaction. The writes live in private modules under this namespace, so this
@@ -23,8 +28,9 @@ defmodule Oli.Delivery.Sections.Audited do
   alias Oli.Auditing.Context
   alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Sections.Audited.Lifecycle
+  alias Oli.Delivery.Sections.Audited.{Discussions, Lifecycle, SectionSettings}
   alias Oli.Publishing.Publications.Publication
+  alias Oli.Resources.Collaboration.CollabSpaceConfig
 
   @type command_error ::
           :invalid_request
@@ -156,4 +162,126 @@ defmodule Oli.Delivery.Sections.Audited do
     do: Lifecycle.delete_section(context, section)
 
   def delete_section(_context, _section), do: {:error, :invalid_request}
+
+  @doc """
+  Writes the keys of `attrs` (atom or string keys, as a form submits them) named in `allowed`
+  to `section` and records what changed: `<kind>_settings_changed` for the section settings,
+  `<kind>_archived` or `<kind>_deleted` when the status moves to that value, and
+  `publication_update_policy_changed` for `apply_major_updates`. Other keys of `attrs` are
+  ignored, so a form writes only the fields it renders.
+
+  `allowed` lists the fields the caller's form offers to the user; it may include payment and
+  certificate fields, which are written without an event until their own events exist. Any
+  other field (LTI service fields, system-derived fields, DOT settings) returns
+  `:invalid_request`.
+  """
+  @spec update_section_settings(Context.t(), Section.t(), map(), [atom()]) ::
+          {:ok, Section.t()} | {:error, command_error()}
+  def update_section_settings(%Context{} = context, %Section{} = section, attrs, allowed)
+      when is_map(attrs) and is_list(allowed),
+      do:
+        SectionSettings.update(
+          context,
+          section,
+          attrs,
+          allowed,
+          SectionSettings.settings_fields()
+        )
+
+  def update_section_settings(_context, _section, _attrs, _allowed),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Writes the DOT settings of `attrs` named in `allowed` (`assistant_enabled`, `triggers_enabled`,
+  `page_prompt_template`, `instructor_recommendations_enabled`,
+  `instructor_recommendation_prompt_template`) and records `dot_settings_changed`,
+  `activation_settings_changed`, or `instructor_ai_recommendation_changed` for each that
+  changed. Prompts are recorded up to 2,000 characters, with `prompt_truncated` in the details
+  when cut.
+  """
+  @spec update_section_dot(Context.t(), Section.t(), map(), [atom()]) ::
+          {:ok, Section.t()} | {:error, command_error()}
+  def update_section_dot(%Context{} = context, %Section{} = section, attrs, allowed)
+      when is_map(attrs) and is_list(allowed),
+      do: SectionSettings.update(context, section, attrs, allowed, SectionSettings.dot_fields())
+
+  def update_section_dot(_context, _section, _attrs, _allowed), do: {:error, :invalid_request}
+
+  @doc """
+  Requires the students of `section` to take its base project's survey before starting, and
+  records `<kind>_settings_changed`. Returns `:survey_already_required` when the section already
+  requires one and `:no_project_survey` when the project has none.
+  """
+  @spec create_section_survey(Context.t(), Section.t()) ::
+          {:ok, Section.t()} | {:error, command_error()}
+  def create_section_survey(%Context{} = context, %Section{} = section),
+    do: SectionSettings.create_survey(context, section)
+
+  def create_section_survey(_context, _section), do: {:error, :invalid_request}
+
+  @doc """
+  Stops requiring the survey in `section` and records `<kind>_settings_changed`. Returns
+  `:no_required_survey` when the section requires none.
+  """
+  @spec delete_section_survey(Context.t(), Section.t()) ::
+          {:ok, Section.t()} | {:error, command_error()}
+  def delete_section_survey(%Context{} = context, %Section{} = section),
+    do: SectionSettings.delete_survey(context, section)
+
+  def delete_section_survey(_context, _section), do: {:error, :invalid_request}
+
+  @doc """
+  Changes the course discussion board of `section`: merges `config_changes` (fields of
+  `CollabSpaceConfig`, such as `:status` or `:auto_accept`) into the root container's
+  configuration and, when the status changes, sets `contains_discussions` to match. Records
+  `discussion_settings_changed` for the section with the fields that changed.
+
+  Returns the updated section and root section resource. A section without a root container
+  returns `:not_found`.
+  """
+  @spec update_course_discussions(Context.t(), Section.t(), map()) ::
+          {:ok, %{section: Section.t(), section_resource: struct()}}
+          | {:error, command_error()}
+  def update_course_discussions(%Context{} = context, %Section{} = section, config_changes)
+      when is_map(config_changes),
+      do: Discussions.update_course(context, section, config_changes)
+
+  def update_course_discussions(_context, _section, _config_changes),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Writes `config_attrs` as the discussion configuration of the page with `resource_id` in
+  `section`, sets `contains_discussions` to match an enabled or disabled status, and records
+  `discussion_settings_changed` for the page.
+
+  Returns the updated section and section resource.
+  """
+  @spec update_page_discussions(Context.t(), Section.t(), pos_integer(), map()) ::
+          {:ok, %{section: Section.t(), section_resource: struct()}}
+          | {:error, command_error()}
+  def update_page_discussions(%Context{} = context, %Section{} = section, resource_id, attrs)
+      when is_integer(resource_id) and is_map(attrs),
+      do: Discussions.update_page(context, section, resource_id, attrs)
+
+  def update_page_discussions(_context, _section, _resource_id, _attrs),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Enables notes on every page of `section` with `config`, or disables them with `:disabled`,
+  and records one `notes_settings_changed` for the section with the number of pages written.
+  Returns that number.
+  """
+  @spec set_section_notes(Context.t(), Section.t(), %CollabSpaceConfig{} | :disabled) ::
+          {:ok, non_neg_integer()} | {:error, command_error()}
+  def set_section_notes(%Context{} = context, %Section{} = section, :disabled),
+    do: Discussions.set_notes(context, section, :disabled)
+
+  def set_section_notes(
+        %Context{} = context,
+        %Section{} = section,
+        %CollabSpaceConfig{} = config
+      ),
+      do: Discussions.set_notes(context, section, config)
+
+  def set_section_notes(_context, _section, _config), do: {:error, :invalid_request}
 end

@@ -505,7 +505,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       } = Oli.Seeder.base_project_with_larger_hierarchy()
 
       {:ok, section} =
-        Oli.Delivery.Sections.update_section(section, %{
+        put_section_fields(section, %{
           unnumbered_unit_ids: [unit1_resource.id]
         })
 
@@ -562,7 +562,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       {:ok, section} = Sections.create_section_resources(section, publication)
 
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_b.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_b.resource_id]})
 
       {_count, items} = IntelligentDashboardTab.navigator_items(section)
 

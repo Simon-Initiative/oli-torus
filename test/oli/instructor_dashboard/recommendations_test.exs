@@ -113,7 +113,7 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
     marker = "ARG_TEST_001"
 
     {:ok, _section} =
-      Sections.update_section(section, %{
+      put_section_fields(section, %{
         instructor_recommendation_prompt_template:
           "Always start your final recommendation with: [#{marker}]"
       })

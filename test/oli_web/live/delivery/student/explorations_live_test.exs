@@ -196,7 +196,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
 
     test "can not access when not enrolled to course", %{conn: conn, section: section} do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -226,7 +226,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
       basic_exploration: basic_exploration
     } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -251,7 +251,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
         |> List.first()
 
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)

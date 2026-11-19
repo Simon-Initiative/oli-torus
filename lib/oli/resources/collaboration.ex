@@ -1,11 +1,9 @@
 defmodule Oli.Resources.Collaboration do
   alias Oli.Authoring.Course.Project
-  alias Oli.Publishing
   alias Oli.Publishing.{AuthoringResolver, DeliveryResolver, Publication, PublishedResource}
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
-  alias Oli.Resources
   alias Oli.Resources.{ResourceType, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, UserReadPost, UserReactionPost}
   alias Oli.Repo
@@ -17,50 +15,6 @@ defmodule Oli.Resources.Collaboration do
 
   # ------------------------------------------------------------
   # Collaborative Spaces
-
-  @doc """
-  Attach a new collaborative space config to the page_slug revision in the project.
-
-  ## Examples
-
-      iex> upsert_collaborative_space(%{status: :active, ...}, %Project{}, "slug", 123)
-      {:ok,
-        %{
-          project: %Project{},
-          publication: %Publication{},
-          page_resource: %Resource{},
-          next_page_revision: %Revision{}
-        }
-      }
-
-      iex> upsert_collaborative_space(%{status: :active, ...}, %Project{}, "invalid_slug", 123)
-      {:error, {:error, {:not_found}}}
-  """
-  @spec upsert_collaborative_space(map(), %Project{}, String.t(), integer()) ::
-          {:ok, map()} | {:error, String.t()}
-  def upsert_collaborative_space(attrs, %Project{} = project, page_slug, author_id) do
-    Repo.transaction(fn ->
-      with %Publication{} = publication <- Publishing.project_working_publication(project.slug),
-           {:ok, page_resource} <- Resources.get_resource_from_slug(page_slug) |> trap_nil(),
-           {:ok, page_revision} <-
-             Publishing.get_published_revision(publication.id, page_resource.id) |> trap_nil(),
-           {:ok, next_page_revision} <-
-             Resources.create_revision_from_previous(page_revision, %{
-               collab_space_config: attrs,
-               author_id: author_id
-             }),
-           {:ok, _} <- Publishing.upsert_published_resource(publication, next_page_revision) do
-        %{
-          project: project,
-          publication: publication,
-          page_resource: page_resource,
-          next_page_revision: next_page_revision
-        }
-      else
-        error -> Repo.rollback(error)
-      end
-    end)
-  end
 
   @doc """
   Returns a list of all pages that has a collab space config related in a section.
@@ -339,72 +293,6 @@ defmodule Oli.Resources.Collaboration do
       }
     )
     |> Repo.one()
-  end
-
-  @doc """
-  Disables all page collaborative spaces for a given project,
-  for the current working publication.
-  """
-
-  def disable_all_page_collab_spaces_for_project(project_slug) do
-    page_id = Oli.Resources.ResourceType.id_for_page()
-
-    from(rev in Revision,
-      join: m in PublishedResource,
-      on: m.revision_id == rev.id,
-      where:
-        m.publication_id in subquery(project_working_publication(project_slug)) and
-          rev.resource_type_id == ^page_id and rev.deleted == false,
-      select: rev
-    )
-    |> Repo.update_all(set: [collab_space_config: %CollabSpaceConfig{}])
-  end
-
-  @doc """
-  Enables all page collaborative spaces for a given project,
-  for the current working publication, bulk applying the collab space config provided.
-  """
-
-  def enable_all_page_collab_spaces_for_project(project_slug, collab_space_config) do
-    page_id = Oli.Resources.ResourceType.id_for_page()
-
-    from(rev in Revision,
-      join: m in PublishedResource,
-      on: m.revision_id == rev.id,
-      where:
-        m.publication_id in subquery(project_working_publication(project_slug)) and
-          rev.resource_type_id == ^page_id and rev.deleted == false,
-      select: rev
-    )
-    |> Repo.update_all(set: [collab_space_config: collab_space_config])
-  end
-
-  @doc """
-  Disables all page collaborative spaces for a given section.
-  """
-
-  def disable_all_page_collab_spaces_for_section(section_slug) do
-    page_id = Oli.Resources.ResourceType.id_for_page()
-
-    from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
-      where: rev.resource_type_id == ^page_id and rev.deleted == false,
-      select: sr
-    )
-    |> Repo.update_all(set: [collab_space_config: %CollabSpaceConfig{}])
-  end
-
-  @doc """
-  Enables all page collaborative spaces for a given section, bulk applying the collab space config provided.
-  """
-
-  def enable_all_page_collab_spaces_for_section(section_slug, collab_space_config) do
-    page_id = Oli.Resources.ResourceType.id_for_page()
-
-    from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
-      where: rev.resource_type_id == ^page_id and rev.deleted == false,
-      select: sr
-    )
-    |> Repo.update_all(set: [collab_space_config: collab_space_config])
   end
 
   # ------------------------------------------------------------

@@ -92,10 +92,11 @@ defmodule Mix.Tasks.InstructorDashboard.Seed do
   defp seed_dashboard_fixture(opts) do
     course = build_seed_course()
 
+    # Seed data is not recorded in the Audit Log.
     section =
-      Sections.update_section!(course.section_2, %{
-        title: "Intelligent Dashboard Seed Section"
-      })
+      course.section_2
+      |> Sections.settings_changeset(%{title: "Intelligent Dashboard Seed Section"})
+      |> Repo.update!()
 
     Sections.rebuild_contained_pages(section)
     Sections.rebuild_contained_objectives(section)

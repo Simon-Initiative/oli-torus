@@ -189,7 +189,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
         |> then(fn {:ok, section} -> section end)
         |> Sections.create_section_resources(publication)
 
-      {:ok, seeded} = Sections.update_section(source, %{blueprint_id: product.id})
+      {:ok, seeded} = put_section_fields(source, %{blueprint_id: product.id})
 
       {:ok, copy} = copy(seeded, @all_groups)
 
@@ -225,7 +225,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
   describe "always-new section fields" do
     test "identity, integration and payment state are never inherited", %{source: source} do
       {:ok, source} =
-        Sections.update_section(source, %{
+        put_section_fields(source, %{
           invite_token: "a-token",
           passcode: "a-passcode",
           grade_passback_enabled: true,
@@ -276,7 +276,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
         )
 
       {:ok, source} =
-        Sections.update_section(source, %{
+        put_section_fields(source, %{
           blueprint_id: product.id,
           requires_payment: true,
           amount: price,
@@ -314,7 +314,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
     end
 
     test "an archived source produces an active copy", %{source: source} do
-      {:ok, source} = Sections.update_section(source, %{status: :archived})
+      {:ok, source} = put_section_fields(source, %{status: :archived})
 
       {:ok, copy} = copy(source, @all_groups)
 
@@ -322,7 +322,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
     end
 
     test "a legacy analytics version does not propagate", %{source: source} do
-      {:ok, source} = Sections.update_section(source, %{analytics_version: :v1})
+      {:ok, source} = put_section_fields(source, %{analytics_version: :v1})
 
       {:ok, copy} = copy(source, @all_groups)
 
@@ -421,7 +421,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
   describe "destination billing" do
     test "a paid course without a product fails without creating a section", %{source: source} do
       {:ok, source} =
-        Sections.update_section(source, %{
+        put_section_fields(source, %{
           requires_payment: true,
           amount: Money.new(1000, "USD"),
           has_grace_period: false
@@ -452,7 +452,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       insert(:discount, section: product, institution: destination_institution, percentage: 25)
 
       {:ok, source} =
-        Sections.update_section(source, %{
+        put_section_fields(source, %{
           blueprint_id: product.id,
           requires_payment: true,
           amount: Money.new(100, "USD"),
@@ -492,7 +492,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
         )
 
       insert(:discount, section: product, institution: institution, bypass_paywall: true)
-      {:ok, source} = Sections.update_section(source, %{blueprint_id: product.id})
+      {:ok, source} = put_section_fields(source, %{blueprint_id: product.id})
 
       {:ok, institutional_copy} = copy(source, [:content], %{institution_id: institution.id})
       refute institutional_copy.requires_payment
@@ -512,7 +512,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
           has_grace_period: false
         )
 
-      {:ok, source} = Sections.update_section(source, %{blueprint_id: product.id})
+      {:ok, source} = put_section_fields(source, %{blueprint_id: product.id})
       assert {:error, :billing_amount_missing} = copy(source, [:content])
     end
   end
@@ -689,7 +689,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       assert Sections.get_survey(copied.slug).resource_id == survey.resource_id
       assert publication_pins(copied) |> Enum.map(& &1.publication_id) == [publication.id]
 
-      {:ok, _} = Sections.update_section(source, %{required_survey_resource_id: nil})
+      {:ok, _} = put_section_fields(source, %{required_survey_resource_id: nil})
       assert reload(copied).required_survey_resource_id == survey.resource_id
     end
   end
@@ -796,7 +796,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
 
     test "selected: section level assistant configuration is carried", %{source: source} do
       {:ok, source} =
-        Sections.update_section(source, %{
+        put_section_fields(source, %{
           assistant_enabled: true,
           triggers_enabled: true,
           page_prompt_template: "a template",
@@ -815,7 +815,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
 
     test "unselected: section level assistant configuration resets", %{source: source} do
       {:ok, source} =
-        Sections.update_section(source, %{
+        put_section_fields(source, %{
           assistant_enabled: true,
           triggers_enabled: true,
           page_prompt_template: "a template"
@@ -832,7 +832,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
   describe ":section_settings" do
     test "selected: instructor-owned section configuration is carried", %{source: source} do
       {:ok, source} =
-        Sections.update_section(source, %{
+        put_section_fields(source, %{
           display_curriculum_item_numbering: false,
           agenda: false,
           welcome_title: %{"type" => "p", "children" => []},
@@ -851,7 +851,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
 
     test "unselected: section configuration resets to defaults", %{source: source} do
       {:ok, source} =
-        Sections.update_section(source, %{
+        put_section_fields(source, %{
           display_curriculum_item_numbering: false,
           agenda: false,
           encouraging_subtitle: "Let us begin"
@@ -1062,7 +1062,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       update_page_settings(source, page1, %{max_attempts: 3})
       {:ok, copy} = copy(source, @all_groups)
 
-      {:ok, _} = Sections.update_section(reload(source), %{title: "Renamed Source"})
+      {:ok, _} = put_section_fields(reload(source), %{title: "Renamed Source"})
       update_page_settings(source, page1, %{max_attempts: 99})
 
       reloaded = reload(copy)
@@ -1075,7 +1075,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       update_page_settings(source, page1, %{max_attempts: 3})
       {:ok, copy} = copy(source, @all_groups)
 
-      {:ok, _} = Sections.update_section(copy, %{title: "Renamed Copy"})
+      {:ok, _} = put_section_fields(copy, %{title: "Renamed Copy"})
       update_page_settings(copy, page1, %{max_attempts: 99})
 
       reloaded = reload(source)
@@ -1175,7 +1175,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
   # early for anything absent. Set it explicitly rather than regenerating it,
   # which would require a warm section resource depot.
   defp set_gating_index(section, page) do
-    Sections.update_section(reload(section), %{
+    put_section_fields(reload(section), %{
       resource_gating_index: %{Integer.to_string(page.id) => [page.id]}
     })
   end

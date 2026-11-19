@@ -4,30 +4,36 @@ defmodule Oli.Scenarios.SectionOps do
   Supports the revise operation for modifying section resource properties.
   """
 
+  alias Oli.Auditing.Context
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Delivery.Settings.AssessmentSettings
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
 
-  def apply_ops!(section, ops) do
+  @doc """
+  Applies `ops` to `section` in order. Settings changes (`change`) are recorded in the Audit Log
+  under `context`.
+  """
+  def apply_ops!(section, ops, %Context{} = context) do
     Enum.reduce(ops, section, fn op, acc_section ->
-      apply_op(op, acc_section)
+      apply_op(op, acc_section, context)
     end)
   end
 
-  defp apply_op(%{"revise" => params}, section) do
+  defp apply_op(%{"revise" => params}, section, _context) do
     target = params["target"]
     set_params = params["set"] || %{}
 
     revise_section_resource!(section, target, set_params)
   end
 
-  defp apply_op(%{"change" => params}, section) do
-    change_section!(section, params)
+  defp apply_op(%{"change" => params}, section, context) do
+    change_section!(section, params, context)
   end
 
-  defp apply_op(op, _section) do
+  defp apply_op(op, _section, _context) do
     raise "Unsupported section operation: #{inspect(op)}"
   end
 
@@ -166,22 +172,27 @@ defmodule Oli.Scenarios.SectionOps do
   defp process_value(_key, value) when is_atom(value), do: value
   defp process_value(_key, value), do: value
 
-  defp change_section!(section, params) do
-    # Process the parameters to convert special values
+  # Keys must name existing section fields; the facade rejects fields no settings form writes.
+  defp change_section!(section, params, context) do
     change_params =
-      params
-      |> Enum.map(fn {key, value} ->
-        {String.to_atom(key), process_value(key, value)}
+      Map.new(params, fn {key, value} ->
+        {String.to_existing_atom(key), process_value(key, value)}
       end)
-      |> Enum.into(%{})
 
-    # Update the section using standard changeset
-    case Sections.update_section(section, change_params) do
+    case SectionsAudited.update_section_settings(
+           context,
+           section,
+           change_params,
+           Map.keys(change_params)
+         ) do
       {:ok, updated_section} ->
         updated_section
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         raise "Failed to change section settings: #{inspect(changeset.errors)}"
+
+      {:error, reason} ->
+        raise "Failed to change section settings: #{inspect(reason)}"
     end
   end
 end

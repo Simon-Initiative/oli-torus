@@ -1407,14 +1407,14 @@ Example:
 | Rule | Value |
 | --- | --- |
 | Actors | `user`, `author` |
-| Entity types | `project`, `section`, `resource` |
+| Entity types | `project`, `section`, `product`, `resource` |
 | Required columns | none |
 | At least one of | `project_id`, `section_id` |
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
 | Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers`, `triggers_enabled` |
-| Detail keys | none |
+| Detail keys | `prompt_truncated` |
 | Reference roles | none |
 | Status | active |
 
@@ -1434,7 +1434,8 @@ Example:
   "entity_id": "301",
   "entity_snapshot": {"id":301,"slug":"bio_101_fall_2026","title":"Biology 101 - Fall 2026"},
   "section_id": 301,
-  "changes": {"assistant_enabled":{"after":true,"before":false,"operation":"set"}},
+  "changes": {"assistant_enabled":{"after":true,"before":false,"operation":"set"},"page_prompt_template":{"after":"You are a tutor for this course...","before":null,"operation":"set"}},
+  "details": {"prompt_truncated":true},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "section:301:dot_settings_changed",
@@ -1449,14 +1450,14 @@ Example:
 | Rule | Value |
 | --- | --- |
 | Actors | `user`, `author` |
-| Entity types | `project`, `section`, `resource` |
+| Entity types | `project`, `section`, `product`, `resource` |
 | Required columns | none |
 | At least one of | `project_id`, `section_id` |
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
 | Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers`, `triggers_enabled` |
-| Detail keys | none |
+| Detail keys | `prompt_truncated` |
 | Reference roles | none |
 | Status | active |
 
@@ -1491,14 +1492,14 @@ Example:
 | Rule | Value |
 | --- | --- |
 | Actors | `user`, `author` |
-| Entity types | `project`, `section`, `resource` |
+| Entity types | `project`, `section`, `product`, `resource` |
 | Required columns | none |
 | At least one of | `project_id`, `section_id` |
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
 | Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers`, `triggers_enabled` |
-| Detail keys | none |
+| Detail keys | `prompt_truncated` |
 | Reference roles | none |
 | Status | active |
 
@@ -1521,7 +1522,7 @@ Example:
   "changes": {"instructor_recommendations_enabled":{"after":false,"before":true,"operation":"set"}},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
-  "event_key": "section:301:ai_recommendation_changed",
+  "event_key": "section:301:instructor_ai_recommendation_changed",
   "search_text": "Grace Hopper grace.hopper@example.edu Biology 101 - Fall 2026 bio_101_fall_2026"
 }
 ```
@@ -2456,7 +2457,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `agenda`, `apply_major_updates`, `brand_id`, `class_days`, `class_modality`, `contains_deliberate_practice`, `contains_discussions`, `contains_explorations`, `course_section_number`, `cover_image`, `customizations`, `description`, `display_curriculum_item_numbering`, `encouraging_subtitle`, `end_date`, `invite_token` (secret), `open_and_free`, `passcode` (secret), `preferred_scheduling_time`, `publisher_id`, `registration_open`, `required_survey_resource_id`, `requires_enrollment`, `skip_email_verification`, `start_date`, `status`, `timezone`, `title`, `visibility`, `welcome_title` |
+| Change fields | `agenda`, `apply_major_updates`, `brand_id`, `class_days`, `class_modality`, `contains_deliberate_practice`, `contains_discussions`, `contains_explorations`, `course_section_number`, `cover_image`, `customizations`, `description`, `display_curriculum_item_numbering`, `encouraging_subtitle`, `end_date`, `institution_id`, `invite_token` (secret), `open_and_free`, `passcode` (secret), `preferred_scheduling_time`, `publisher_id`, `registration_open`, `required_survey_resource_id`, `requires_enrollment`, `skip_email_verification`, `start_date`, `status`, `timezone`, `title`, `unnumbered_unit_ids`, `visibility`, `welcome_title` |
 | Detail keys | `section_title`, `type`, `base_project_id`, `creation_source`, `copied_groups`, `blueprint_id` |
 | Reference roles | none |
 | Status | active |
@@ -2624,7 +2625,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `agenda`, `apply_major_updates`, `brand_id`, `class_days`, `class_modality`, `contains_deliberate_practice`, `contains_discussions`, `contains_explorations`, `course_section_number`, `cover_image`, `customizations`, `description`, `display_curriculum_item_numbering`, `encouraging_subtitle`, `end_date`, `invite_token` (secret), `open_and_free`, `passcode` (secret), `preferred_scheduling_time`, `publisher_id`, `registration_open`, `required_survey_resource_id`, `requires_enrollment`, `skip_email_verification`, `start_date`, `status`, `timezone`, `title`, `visibility`, `welcome_title` |
+| Change fields | `agenda`, `apply_major_updates`, `brand_id`, `class_days`, `class_modality`, `contains_deliberate_practice`, `contains_discussions`, `contains_explorations`, `course_section_number`, `cover_image`, `customizations`, `description`, `display_curriculum_item_numbering`, `encouraging_subtitle`, `end_date`, `institution_id`, `invite_token` (secret), `open_and_free`, `passcode` (secret), `preferred_scheduling_time`, `publisher_id`, `registration_open`, `required_survey_resource_id`, `requires_enrollment`, `skip_email_verification`, `start_date`, `status`, `timezone`, `title`, `unnumbered_unit_ids`, `visibility`, `welcome_title` |
 | Detail keys | `section_title`, `type`, `base_project_id`, `creation_source`, `copied_groups`, `blueprint_id` |
 | Reference roles | none |
 | Status | active |
@@ -2832,7 +2833,7 @@ Example:
 | Rule | Value |
 | --- | --- |
 | Actors | `user`, `author`, `system` |
-| Entity types | `section` |
+| Entity types | `section`, `product` |
 | Required columns | `section_id`, `project_id` |
 | At least one of | none |
 | Affected person | none |
@@ -2877,7 +2878,7 @@ Example:
 | Rule | Value |
 | --- | --- |
 | Actors | `user`, `author` |
-| Entity types | `section` |
+| Entity types | `section`, `product` |
 | Required columns | `section_id`, `project_id` |
 | At least one of | none |
 | Affected person | none |
@@ -2908,7 +2909,7 @@ Example:
   "changes": {"apply_major_updates":{"after":true,"before":false,"operation":"set"}},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
-  "event_key": "section:301:update_policy_changed",
+  "event_key": "section:301:publication_update_policy_changed",
   "search_text": "Grace Hopper grace.hopper@example.edu Biology 101 - Fall 2026 bio_101_fall_2026"
 }
 ```
@@ -3054,15 +3055,15 @@ Example:
 | Rule | Value |
 | --- | --- |
 | Actors | `user`, `author` |
-| Entity types | `section`, `project`, `resource` |
+| Entity types | `section`, `product`, `project`, `resource` |
 | Required columns | none |
 | At least one of | `section_id`, `project_id` |
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
 | Change fields | `anonymous_posting`, `auto_accept`, `contains_discussions`, `participation_min_posts`, `participation_min_replies`, `show_full_history`, `status`, `threaded` |
-| Detail keys | none |
-| Reference roles | none |
+| Detail keys | `page_count` |
+| Reference roles | `previous`, `resulting` |
 | Status | active |
 
 Example:
@@ -3096,15 +3097,15 @@ Example:
 | Rule | Value |
 | --- | --- |
 | Actors | `user`, `author` |
-| Entity types | `section`, `project`, `resource` |
+| Entity types | `section`, `product`, `project`, `resource` |
 | Required columns | none |
 | At least one of | `section_id`, `project_id` |
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
 | Change fields | `anonymous_posting`, `auto_accept`, `contains_discussions`, `participation_min_posts`, `participation_min_replies`, `show_full_history`, `status`, `threaded` |
-| Detail keys | none |
-| Reference roles | none |
+| Detail keys | `page_count` |
+| Reference roles | `previous`, `resulting` |
 | Status | active |
 
 Example:
@@ -3119,16 +3120,16 @@ Example:
   "actor_type": "user",
   "user_id": 41,
   "actor_snapshot": {"email":"grace.hopper@example.edu","id":41,"name":"Grace Hopper"},
-  "entity_type": "resource",
-  "entity_id": "4512",
-  "entity_snapshot": {"id":4512,"title":"Unit 1 Quiz"},
+  "entity_type": "section",
+  "entity_id": "301",
+  "entity_snapshot": {"id":301,"slug":"bio_101_fall_2026","title":"Biology 101 - Fall 2026"},
   "section_id": 301,
-  "resource_id": 4512,
   "changes": {"status":{"after":"enabled","before":"disabled","operation":"set"}},
+  "details": {"page_count":24},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
-  "event_key": "resource:4512:notes_settings_changed",
-  "search_text": "Grace Hopper grace.hopper@example.edu Unit 1 Quiz"
+  "event_key": "section:301:notes_settings_changed",
+  "search_text": "Grace Hopper grace.hopper@example.edu Biology 101 - Fall 2026 bio_101_fall_2026"
 }
 ```
 

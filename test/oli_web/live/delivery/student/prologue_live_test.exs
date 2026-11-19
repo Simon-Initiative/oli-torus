@@ -392,9 +392,10 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     end
 
     # enable collaboration spaces for all pages in the section
-    {_total_page_count, _section_resources} =
-      Oli.Resources.Collaboration.enable_all_page_collab_spaces_for_section(
-        section.slug,
+    {:ok, _total_page_count} =
+      Oli.Delivery.Sections.Audited.set_section_notes(
+        audit_context(),
+        section,
         %Oli.Resources.Collaboration.CollabSpaceConfig{
           status: :enabled,
           threaded: true,
@@ -587,7 +588,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       page_1: page_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -631,7 +632,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       section: section,
       page_1: page_1
     } do
-      Sections.update_section(section, %{brand_id: nil})
+      put_section_fields(section, %{brand_id: nil})
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
@@ -661,7 +662,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       page_1: page_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{open_and_free: false, lti_1p3_deployment_id: nil})
+        put_section_fields(section, %{open_and_free: false, lti_1p3_deployment_id: nil})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -1140,7 +1141,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       page_2: page_2
     } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -1160,7 +1161,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       unit_1: unit_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)

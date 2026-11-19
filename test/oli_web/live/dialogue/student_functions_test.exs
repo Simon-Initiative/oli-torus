@@ -149,7 +149,7 @@ defmodule OliWeb.Dialogue.StudentFunctionsTest do
     test "uses suppression-aware numbering in the layout, falling back to the bare title for a suppressed unit",
          %{section: section, unit1_resource: unit1_resource} do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit1_resource.id]})
 
       MockOpenAIClient
       |> expect(:embeddings, fn _args, _opts -> {:error, :not_found} end)

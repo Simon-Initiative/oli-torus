@@ -72,7 +72,7 @@ defmodule Oli.Analytics.Summary.UpsertTest do
       project: project,
       publication: pub
     } do
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
+      {:ok, section} = put_section_fields(section, %{analytics_version: :v2})
 
       context = %Context{
         user_id: user1.id,

@@ -66,6 +66,17 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
         title: Product
         from: product_source
 
+    - discussion_config:
+        section: product
+        enabled: true
+        anonymous_posting: false
+
+    - manipulate:
+        to: product
+        ops:
+          - change:
+              apply_major_updates: true
+
     - section:
         name: from_product
         title: From Product
@@ -176,5 +187,14 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
       :product_created,
       [section_id: product.id, project_id: project_id.("product_source")] ++ scenario
     )
+
+    # Template settings: course discussions and the publication update policy
+    discussions =
+      assert_audited(:discussion_settings_changed, [section_id: product.id] ++ scenario)
+
+    assert discussions.changes["status"]["after"] == "enabled"
+    assert discussions.changes["anonymous_posting"]["after"] == false
+
+    assert_audited(:publication_update_policy_changed, [section_id: product.id] ++ scenario)
   end
 end

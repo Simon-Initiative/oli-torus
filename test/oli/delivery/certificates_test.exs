@@ -714,7 +714,7 @@ defmodule Oli.Delivery.CertificatesTest do
     test "does nothing when section has no certificate enabled", %{
       section: section
     } do
-      {:ok, updated_section} = Sections.update_section(section, %{certificate_enabled: false})
+      {:ok, updated_section} = put_section_fields(section, %{certificate_enabled: false})
 
       assert {:ok, :no_purge_needed} =
                Certificates.purge_deleted_assessments_from_certificate(updated_section)
@@ -726,7 +726,7 @@ defmodule Oli.Delivery.CertificatesTest do
     } do
       a_non_existing_assessment_id = -1
 
-      {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
+      {:ok, section} = put_section_fields(section, %{certificate_enabled: true})
 
       _certificate =
         insert(:certificate,
@@ -757,7 +757,7 @@ defmodule Oli.Delivery.CertificatesTest do
     test "does nothing when section has no certificate enabled", %{
       section: section
     } do
-      {:ok, updated_section} = Sections.update_section(section, %{certificate_enabled: false})
+      {:ok, updated_section} = put_section_fields(section, %{certificate_enabled: false})
 
       assert {:ok, :no_switch_needed} =
                Certificates.switch_certificate_to_custom_assessments(updated_section)
@@ -769,7 +769,7 @@ defmodule Oli.Delivery.CertificatesTest do
       page_2: page_2,
       page_3: page_3
     } do
-      {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
+      {:ok, section} = put_section_fields(section, %{certificate_enabled: true})
 
       _certificate =
         insert(:certificate, section: section, assessments_apply_to: :all)

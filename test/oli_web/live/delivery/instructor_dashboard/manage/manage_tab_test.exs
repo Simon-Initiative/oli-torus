@@ -101,7 +101,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       section: section,
       conn: conn
     } do
-      {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
+      {:ok, section} = put_section_fields(section, %{certificate_enabled: true})
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))

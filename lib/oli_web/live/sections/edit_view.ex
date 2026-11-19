@@ -1,11 +1,13 @@
 defmodule OliWeb.Sections.EditView do
   use OliWeb, :live_view
 
+  alias Oli.Auditing.Context
   alias Oli.Branding
   alias Oli.Authoring.Course.Project
   alias OliWeb.Sections.StartEnd
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.SectionCache
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
+  alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.{Breadcrumb, FormatDateTime, CustomLabelsForm}
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Router.Helpers, as: Routes
@@ -65,7 +67,7 @@ defmodule OliWeb.Sections.EditView do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {user_type, _, section} ->
+      {user_type, actor, section} ->
         available_brands =
           Branding.list_brands()
           |> Enum.sort_by(& &1.name)
@@ -90,6 +92,7 @@ defmodule OliWeb.Sections.EditView do
            institutions: available_institutions,
            changeset: Sections.change_section(section),
            is_admin: user_type == :admin,
+           actor: actor,
            is_blueprint: section.type == :blueprint,
            user_type: user_type,
            section: section,
@@ -193,7 +196,12 @@ defmodule OliWeb.Sections.EditView do
     save_message =
       if socket.assigns.is_blueprint, do: "Template changes saved", else: "Section changes saved"
 
-    case Sections.update_section(socket.assigns.section, params) do
+    case SectionsAudited.update_section_settings(
+           audit_context(socket),
+           socket.assigns.section,
+           params,
+           form_fields(socket.assigns.section, socket.assigns.is_admin)
+         ) do
       {:ok, section} ->
         socket = put_flash(socket, :info, save_message)
 
@@ -201,6 +209,9 @@ defmodule OliWeb.Sections.EditView do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Changes could not be saved")}
     end
   end
 
@@ -221,11 +232,13 @@ defmodule OliWeb.Sections.EditView do
     save_message =
       if socket.assigns.is_blueprint, do: "Template changes saved", else: "Section changes saved"
 
-    case Sections.update_section(socket.assigns.section, %{customizations: params}) do
+    case SectionsAudited.update_section_settings(
+           audit_context(socket),
+           socket.assigns.section,
+           %{customizations: params},
+           [:customizations]
+         ) do
       {:ok, section} ->
-        # we need to update the order container labels on the cache
-        SectionCache.clear(section.slug, [:ordered_container_labels])
-
         socket = put_flash(socket, :info, save_message)
 
         {:noreply,
@@ -237,6 +250,9 @@ defmodule OliWeb.Sections.EditView do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Labels could not be saved")}
     end
   end
 
@@ -249,6 +265,39 @@ defmodule OliWeb.Sections.EditView do
 
     {:noreply, assign(socket, changeset: changeset)}
   end
+
+  # The account `Mount` authorized for this section.
+  defp audit_context(socket), do: Context.for_actor(socket.assigns.actor, source: :ui)
+
+  # The fields the settings form renders for this section and user: payment settings only for
+  # admins, open-and-free access only for open-and-free sections, and the institution only
+  # when no LTI deployment sets it.
+  defp form_fields(%Section{} = section, is_admin) do
+    [
+      :title,
+      :description,
+      :welcome_title,
+      :encouraging_subtitle,
+      :brand_id,
+      :start_date,
+      :end_date,
+      :preferred_scheduling_time,
+      :timezone,
+      :display_curriculum_item_numbering
+    ] ++
+      institution_fields(section) ++ open_and_free_fields(section) ++ payment_fields(is_admin)
+  end
+
+  defp institution_fields(%Section{lti_1p3_deployment_id: nil}), do: [:institution_id]
+  defp institution_fields(_section), do: []
+
+  defp open_and_free_fields(%Section{type: :enrollable, open_and_free: true}),
+    do: [:registration_open, :requires_enrollment, :skip_email_verification]
+
+  defp open_and_free_fields(_section), do: []
+
+  defp payment_fields(true), do: OliWeb.Sections.PaywallSettings.fields()
+  defp payment_fields(false), do: []
 
   defp convert_dates(params, ctx) do
     utc_start_date = FormatDateTime.datestring_to_utc_datetime(params["start_date"], ctx)
@@ -272,6 +321,10 @@ defmodule OliWeb.Sections.EditView do
   defp decode_welcome_title(%{"welcome_title" => ""} = project_params),
     do: %{project_params | "welcome_title" => nil}
 
-  defp decode_welcome_title(project_params),
-    do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
+  # A form without the welcome title (such as the content options) leaves it unchanged.
+  defp decode_welcome_title(%{"welcome_title" => welcome_title} = project_params)
+       when is_binary(welcome_title),
+       do: %{project_params | "welcome_title" => Poison.decode!(welcome_title)}
+
+  defp decode_welcome_title(project_params), do: project_params
 end

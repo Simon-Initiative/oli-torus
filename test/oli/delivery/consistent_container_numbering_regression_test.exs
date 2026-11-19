@@ -109,7 +109,7 @@ defmodule Oli.Delivery.ConsistentContainerNumberingRegressionTest do
     {:ok, section} = Sections.create_section_resources(section, publication)
 
     {:ok, section} =
-      Sections.update_section(section, %{unnumbered_unit_ids: [unit1_revision.resource_id]})
+      put_section_fields(section, %{unnumbered_unit_ids: [unit1_revision.resource_id]})
 
     {:ok, _} = Sections.rebuild_contained_pages(section)
 

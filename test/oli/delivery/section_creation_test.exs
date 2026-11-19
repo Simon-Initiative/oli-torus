@@ -263,7 +263,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       end
 
       {:ok, source_section} =
-        Sections.update_section(source_section, %{institution_id: institution.id})
+        put_section_fields(source_section, %{institution_id: institution.id})
 
       for actor <- [instructor, admin] do
         assert {:ok, {:section, %Section{id: id}}} =
@@ -473,7 +473,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       %{institution: institution, spec: spec} =
         lti_launch(instructor, unique_context_id(), [@instructor_role])
 
-      {:ok, section} = Sections.update_section(section, %{institution_id: institution.id})
+      {:ok, section} = put_section_fields(section, %{institution_id: institution.id})
 
       project |> Ecto.Changeset.change(visibility: :selected) |> Repo.update!()
       assert_copy_unavailable(instructor, section, institution)
@@ -503,7 +503,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       project |> Ecto.Changeset.change(visibility: :selected) |> Repo.update!()
       product = product_from(project, publication)
       other_product = product_from(project, publication)
-      {:ok, section} = Sections.update_section(section, %{blueprint_id: product.id})
+      {:ok, section} = put_section_fields(section, %{blueprint_id: product.id})
       community = insert(:community, global_access: false)
       insert(:community_user_account, community: community, user: instructor)
       insert(:community_visibility, community: community, project: project)
@@ -534,10 +534,10 @@ defmodule Oli.Delivery.SectionCreationTest do
       section: section
     } do
       product = product_from(project, publication)
-      {:ok, section} = Sections.update_section(section, %{blueprint_id: product.id})
+      {:ok, section} = put_section_fields(section, %{blueprint_id: product.id})
       assert_copy_available(instructor, section)
 
-      {:ok, _} = Sections.update_section(product, %{status: :archived})
+      {:ok, _} = put_section_fields(product, %{status: :archived})
       assert_copy_unavailable(instructor, section)
       assert_copy_unavailable(admin_author(), section)
     end
@@ -550,7 +550,7 @@ defmodule Oli.Delivery.SectionCreationTest do
     } do
       project |> Ecto.Changeset.change(visibility: :selected) |> Repo.update!()
       product = product_from(project, publication)
-      {:ok, section} = Sections.update_section(section, %{blueprint_id: product.id})
+      {:ok, section} = put_section_fields(section, %{blueprint_id: product.id})
       community = insert(:community, global_access: false)
       insert(:community_user_account, community: community, user: instructor)
 
@@ -641,7 +641,7 @@ defmodule Oli.Delivery.SectionCreationTest do
       unpublished_project = insert(:project)
 
       {:ok, section} =
-        Sections.update_section(section, %{base_project_id: unpublished_project.id})
+        put_section_fields(section, %{base_project_id: unpublished_project.id})
 
       assert_copy_unavailable(instructor, section)
     end

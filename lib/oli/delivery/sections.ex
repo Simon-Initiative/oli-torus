@@ -29,7 +29,8 @@ defmodule Oli.Delivery.Sections do
     ObjectiveChildrenProjection,
     EnrollmentContextRole,
     Scheduling,
-    MinimalHierarchy
+    MinimalHierarchy,
+    SectionFields
   }
 
   alias Lti_1p3.Roles.ContextRole
@@ -1589,18 +1590,38 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
+  # Section resource fields written only by the audited commands of
+  # `Oli.Delivery.Sections.Audited`.
+  @protected_section_resource_fields [:collab_space_config]
+
   @doc """
-  Updates a section resource.
+  Updates a section resource's display or creation fields.
+
+  Fields recorded in the Audit Log (`collab_space_config`) are written only by
+  `Oli.Delivery.Sections.Audited`; passing one returns `{:error, :protected}` and writes nothing.
+
   ## Examples
-      iex> update_section_resource(section, %{field: new_value})
+      iex> update_section_resource(section_resource, %{field: new_value})
       {:ok, %SectionResource{}}
-      iex> update_section_resource(section, %{field: bad_value})
+      iex> update_section_resource(section_resource, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
+      iex> update_section_resource(section_resource, %{collab_space_config: %{}})
+      {:error, :protected}
   """
-  def update_section_resource(%SectionResource{} = section, attrs) do
-    section
-    |> SectionResource.changeset(attrs)
-    |> Repo.update()
+  @spec update_section_resource(SectionResource.t(), map()) ::
+          {:ok, SectionResource.t()} | {:error, Ecto.Changeset.t() | :protected}
+  def update_section_resource(%SectionResource{} = section_resource, attrs) do
+    protected = MapSet.new(@protected_section_resource_fields, &Atom.to_string/1)
+
+    case Enum.any?(Map.keys(attrs), &MapSet.member?(protected, to_string(&1))) do
+      true ->
+        {:error, :protected}
+
+      false ->
+        section_resource
+        |> SectionResource.changeset(attrs)
+        |> Repo.update()
+    end
   end
 
   @doc """
@@ -1674,19 +1695,94 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Updates a section.
+  Updates a section's system-derived fields (indexes, version markers, content flags) or the
+  settings that have no audited command yet (payment, pricing, certificates), as listed by
+  `Oli.Delivery.Sections.SectionFields.generic/0`.
+
+  Settings recorded in the Audit Log are written only by `Oli.Delivery.Sections.Audited`, and
+  the LTI service fields only by `sync_lti_services/2`; passing one returns
+  `{:error, :protected}` and writes nothing.
+
   ## Examples
-      iex> update_section(section, %{field: new_value})
+      iex> update_section(section, %{previous_next_index: index})
       {:ok, %Section{}}
-      iex> update_section(section, %{field: bad_value})
+      iex> update_section(section, %{amount: bad_value})
       {:error, %Ecto.Changeset{}}
+      iex> update_section(section, %{title: "New title"})
+      {:error, :protected}
   """
+  @spec update_section(Section.t(), map()) ::
+          {:ok, Section.t()} | {:error, Ecto.Changeset.t() | :protected}
   def update_section(%Section{} = section, attrs) do
+    with :ok <- SectionFields.check(attrs, SectionFields.generic()) do
+      write_section(section, attrs)
+    end
+  end
+
+  @doc """
+  Same as `update_section/2`, but returns the section and raises on a protected field or an
+  invalid change.
+  """
+  @spec update_section!(Section.t(), map()) :: Section.t()
+  def update_section!(%Section{} = section, attrs) do
+    case SectionFields.check(attrs, SectionFields.generic()) do
+      :ok ->
+        updated_section = section |> settings_changeset(attrs) |> Repo.update!()
+        SectionCache.clear(updated_section.slug, [:ordered_container_labels])
+        updated_section
+
+      {:error, :protected} ->
+        raise ArgumentError, "update_section!/2 cannot write audited or LMS-supplied fields"
+    end
+  end
+
+  @doc """
+  Writes the LTI service fields an LMS launch reports for `section` (grade passback, line
+  items, and roster services). Only those four fields are written; the launch records no
+  audit event because the values mirror the LMS.
+  """
+  @spec sync_lti_services(Section.t(), map()) :: {:ok, Section.t()} | {:error, Ecto.Changeset.t()}
+  def sync_lti_services(%Section{} = section, attrs) do
+    write_section(section, SectionFields.take(attrs, SectionFields.lms_supplied()))
+  end
+
+  @doc """
+  Writes the content flags that post-processing recomputes from the section's curriculum
+  (`contains_discussions`, `contains_explorations`, `contains_deliberate_practice`) and raises
+  on an invalid change. Other keys are ignored. Recomputing a derived flag records no audit
+  event; instructors change `contains_discussions` through `Oli.Delivery.Sections.Audited`.
+  """
+  @spec update_contained_content_flags!(Section.t(), map()) :: Section.t()
+  def update_contained_content_flags!(%Section{} = section, flags) do
+    flags =
+      Map.take(flags, [
+        :contains_discussions,
+        :contains_explorations,
+        :contains_deliberate_practice
+      ])
+
+    updated_section = section |> Section.changeset(flags) |> Repo.update!()
+    SectionCache.clear(updated_section.slug, [:ordered_container_labels])
+    updated_section
+  end
+
+  @doc """
+  Returns the changeset that writes `attrs` to `section` with the section's validations,
+  including that unnumbered units are top-level units of the section. It does not check which
+  fields may be written; the callers that persist it do.
+  """
+  @spec settings_changeset(Section.t(), map()) :: Ecto.Changeset.t()
+  def settings_changeset(%Section{} = section, attrs) do
     attrs = normalize_unnumbered_unit_ids_param(attrs)
 
     section
     |> Section.changeset(attrs)
     |> validate_unnumbered_unit_ids()
+  end
+
+  defp write_section(section, attrs) do
+    section
+    |> settings_changeset(attrs)
     |> Repo.update()
     |> case do
       {:ok, updated_section} = result ->
@@ -1696,19 +1792,6 @@ defmodule Oli.Delivery.Sections do
       error ->
         error
     end
-  end
-
-  def update_section!(%Section{} = section, attrs) do
-    attrs = normalize_unnumbered_unit_ids_param(attrs)
-
-    updated_section =
-      section
-      |> Section.changeset(attrs)
-      |> validate_unnumbered_unit_ids()
-      |> Repo.update!()
-
-    SectionCache.clear(updated_section.slug, [:ordered_container_labels])
-    updated_section
   end
 
   def get_top_level_unit_resources(section_id) do
@@ -6902,41 +6985,6 @@ defmodule Oli.Delivery.Sections do
     |> where([s, spp, _, pr, proj], pr.resource_id == s.required_survey_resource_id)
     |> limit(1)
     |> Repo.one()
-  end
-
-  defp update_project_required_survey_resource_id(section_id, resource_id) do
-    Section
-    |> where([s], s.id == ^section_id)
-    |> Repo.one()
-    |> Section.changeset(%{required_survey_resource_id: resource_id})
-    |> Repo.update()
-  end
-
-  def create_required_survey(section) do
-    case section.required_survey_resource_id do
-      nil -> do_create_required_survey(section)
-      _ -> {:error, "The section already has a survey"}
-    end
-  end
-
-  defp do_create_required_survey(section) do
-    case get_base_project_survey(section.slug) do
-      nil ->
-        {:error, "The parent project doesn't have a survey"}
-
-      survey ->
-        update_project_required_survey_resource_id(section.id, survey.resource_id)
-    end
-  end
-
-  def delete_required_survey(section) do
-    case section.required_survey_resource_id do
-      nil ->
-        {:error, "The section doesn't have a survey"}
-
-      _ ->
-        update_project_required_survey_resource_id(section.id, nil)
-    end
   end
 
   @type opts :: {:enrollment_state, Boolean.t()}

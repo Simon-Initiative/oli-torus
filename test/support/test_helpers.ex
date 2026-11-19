@@ -225,6 +225,44 @@ defmodule Oli.TestHelpers do
     Oli.Delivery.Sections.Audited.create_section(context, request)
   end
 
+  @doc """
+  Test fixture: writes any section fields directly, including settings that only the audited
+  commands write in the application, and records nothing. Returns `{:ok, section}` or
+  `{:error, changeset}`, like `Oli.Delivery.Sections.update_section/2` did before it was
+  restricted.
+  """
+  def put_section_fields(%Oli.Delivery.Sections.Section{} = section, attrs) do
+    section
+    |> Oli.Delivery.Sections.settings_changeset(attrs)
+    |> Oli.Repo.update()
+    |> tap(fn
+      {:ok, updated} ->
+        Oli.Delivery.Sections.SectionCache.clear(updated.slug, [:ordered_container_labels])
+
+      _error ->
+        :ok
+    end)
+  end
+
+  @doc "Same as `put_section_fields/2`, returning the section and raising on an invalid change."
+  def put_section_fields!(section, attrs) do
+    {:ok, section} = put_section_fields(section, attrs)
+    section
+  end
+
+  @doc """
+  Test fixture: writes any section resource fields directly, including the discussion
+  configuration that only the audited commands write in the application, and records nothing.
+  """
+  def put_section_resource_fields(
+        %Oli.Delivery.Sections.SectionResource{} = section_resource,
+        attrs
+      ) do
+    section_resource
+    |> Oli.Delivery.Sections.SectionResource.changeset(attrs)
+    |> Oli.Repo.update()
+  end
+
   @doc "Test fixture: copies the project with `project_slug` for `author`."
   def duplicate_project_fixture(project_slug, author, opts \\ []),
     do: Oli.Authoring.Audited.duplicate_project(audit_context(), project_slug, author, opts)

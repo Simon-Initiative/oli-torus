@@ -666,7 +666,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       unit_1_revision: unit_1_revision
     } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1_revision.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1_revision.resource_id]})
 
       grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, false)
 

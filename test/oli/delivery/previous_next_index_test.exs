@@ -69,7 +69,7 @@ defmodule Oli.Delivery.PreviousNextIndexTest do
       } = Seeder.base_project_with_larger_hierarchy()
 
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit1_resource.id]})
 
       # Simulates the post-migration state: cache invalidated, nothing rebuilt yet.
       assert is_nil(section.previous_next_index)

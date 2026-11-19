@@ -181,10 +181,11 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
        ]},
       {:dot_activation, "DOT and activation points",
        [
-         entity_types: [:project, :section, :resource],
+         entity_types: [:project, :section, :product, :resource],
          required_one_of: [:project_id, :section_id],
          no_op: :skip,
-         change_fields: Fields.dot_activation()
+         change_fields: Fields.dot_activation(),
+         detail_keys: ~w(prompt_truncated)
        ],
        [
          {:dot_settings_changed, "DOT settings changed",
@@ -328,7 +329,7 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
        ]},
       {:publication_application, "Publication application",
        [
-         entity_types: [:section],
+         entity_types: [:section, :product],
          required: [:section_id, :project_id],
          change_fields: Fields.publication(),
          ref_roles: [:previous, :resulting]
@@ -358,10 +359,12 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
        ]},
       {:support_configuration, "Support configuration",
        [
-         entity_types: [:section, :project, :resource],
+         entity_types: [:section, :product, :project, :resource],
          required_one_of: [:section_id, :project_id],
          no_op: :skip,
-         change_fields: Fields.support_configuration()
+         change_fields: Fields.support_configuration(),
+         detail_keys: ~w(page_count),
+         ref_roles: [:previous, :resulting]
        ],
        [
          {:discussion_settings_changed, "Discussion settings changed",

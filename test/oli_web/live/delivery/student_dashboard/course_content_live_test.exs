@@ -105,7 +105,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
     test "navigates to next level in hierarchy", %{conn: conn, user: user, section: section} do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           customizations: %{unit: "Volume", module: "Chapter", section: "Lesson"}
         })
 
@@ -517,7 +517,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
       # Updates section to not display item numbering
 
-      Sections.update_section(section, %{
+      put_section_fields(section, %{
         display_curriculum_item_numbering: false
       })
 

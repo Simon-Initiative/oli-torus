@@ -1025,7 +1025,7 @@ defmodule Oli.Interop.ExportTest do
 
       %{certificate: %Certificate{}} = section = Oli.Repo.preload(section, :certificate)
 
-      section = Sections.update_section!(section, %{certificate: nil})
+      section = put_section_fields!(section, %{certificate: nil})
 
       refute Oli.Repo.preload(section, :certificate).certificate
 

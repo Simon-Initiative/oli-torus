@@ -351,7 +351,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       |> enroll
 
     # There is only one section that is "active" in that the start and end dates overlap today
-    Sections.update_section(hd(sections), %{
+    put_section_fields(hd(sections), %{
       start_date: yesterday(),
       end_date: tomorrow(),
       open_and_free: true,
@@ -360,7 +360,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
     })
 
     # There is only one section that differs in the amount
-    Sections.update_section(Enum.at(sections, 1), %{
+    put_section_fields(Enum.at(sections, 1), %{
       amount: Money.new(1, "USD")
     })
 
@@ -368,13 +368,13 @@ defmodule Oli.Delivery.Sections.BrowseTest do
     user = insert(:user, name: "Instructor")
     Sections.enroll(user.id, hd(sections).id, [ContextRoles.get_role(:context_instructor)])
 
-    Sections.update_section(Enum.at(sections, 1), %{
+    put_section_fields(Enum.at(sections, 1), %{
       start_date: yesterday(),
       end_date: yesterday(),
       blueprint_id: hd(sections).id
     })
 
-    Sections.update_section(Enum.at(sections, 2), %{
+    put_section_fields(Enum.at(sections, 2), %{
       start_date: tomorrow(),
       end_date: tomorrow()
     })

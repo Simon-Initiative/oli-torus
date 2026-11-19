@@ -190,7 +190,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
     } do
       # Update section with custom labels
       customizations = %{unit: "Unidad", module: "Módulo", section: "Sección"}
-      {:ok, updated_section} = Sections.update_section(section, %{customizations: customizations})
+      {:ok, updated_section} = put_section_fields(section, %{customizations: customizations})
 
       student_exceptions = []
       assessments = AssessmentSettings.get_assessments(updated_section, student_exceptions)
@@ -358,7 +358,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
       )
 
     # Update section with root_section_resource_id
-    {:ok, section} = Sections.update_section(section, %{root_section_resource_id: root_sr.id})
+    {:ok, section} = put_section_fields(section, %{root_section_resource_id: root_sr.id})
 
     # Rebuild contained_pages - this needs all section_resources with their children
     # It will query section_resources itself, so we don't need to pass them

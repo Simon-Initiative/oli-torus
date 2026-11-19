@@ -113,7 +113,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HelpersTest do
       page_b: page_b
     } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit1_resource.id]})
 
       pages = Helpers.get_practice_pages(section, [])
 

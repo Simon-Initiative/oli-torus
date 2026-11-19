@@ -148,7 +148,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
       conn: conn,
       section: section
     } do
-      {:ok, product} = Oli.Delivery.Sections.update_section(section, %{type: :blueprint})
+      {:ok, product} = put_section_fields(section, %{type: :blueprint})
       conn = get(conn, live_view_source_materials(product.slug))
 
       assert html_response(conn, 200)

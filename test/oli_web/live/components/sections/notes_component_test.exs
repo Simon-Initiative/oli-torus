@@ -84,6 +84,7 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
     } do
       {:ok, view, _html} =
         live_component_isolated(conn, NotesComponent, %{
+          actor: insert(:author),
           id: "notes-test",
           section: product,
           collab_space_pages_count: 0,
@@ -106,6 +107,7 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
     } do
       {:ok, view, _html} =
         live_component_isolated(conn, NotesComponent, %{
+          actor: insert(:author),
           id: "notes-test",
           section: product,
           collab_space_pages_count: 1,
@@ -128,6 +130,7 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
     } do
       {:ok, view, _html} =
         live_component_isolated(conn, NotesComponent, %{
+          actor: insert(:author),
           id: "notes-test",
           section: product,
           collab_space_pages_count: pages_count,
@@ -147,6 +150,7 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
     } do
       {:ok, view, _html} =
         live_component_isolated(conn, NotesComponent, %{
+          actor: insert(:author),
           id: "notes-test",
           section: product,
           collab_space_pages_count: 0,
@@ -172,13 +176,16 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
       pages_count: pages_count
     } do
       # First enable notes for all pages
-      Collaboration.enable_all_page_collab_spaces_for_section(
-        product.slug,
-        %Oli.Resources.Collaboration.CollabSpaceConfig{status: :enabled}
-      )
+      {:ok, _} =
+        Oli.Delivery.Sections.Audited.set_section_notes(
+          audit_context(),
+          product,
+          %Oli.Resources.Collaboration.CollabSpaceConfig{status: :enabled}
+        )
 
       {:ok, view, _html} =
         live_component_isolated(conn, NotesComponent, %{
+          actor: insert(:author),
           id: "notes-test",
           section: product,
           collab_space_pages_count: pages_count,
@@ -208,6 +215,7 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
     } do
       {:ok, view, _html} =
         live_component_isolated(conn, NotesComponent, %{
+          actor: insert(:author),
           id: "notes-test",
           section: product,
           collab_space_pages_count: 0,
@@ -240,13 +248,16 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
       pages_count: pages_count
     } do
       # Enable notes first
-      Collaboration.enable_all_page_collab_spaces_for_section(
-        product.slug,
-        %Oli.Resources.Collaboration.CollabSpaceConfig{status: :enabled}
-      )
+      {:ok, _} =
+        Oli.Delivery.Sections.Audited.set_section_notes(
+          audit_context(),
+          product,
+          %Oli.Resources.Collaboration.CollabSpaceConfig{status: :enabled}
+        )
 
       {:ok, view, _html} =
         live_component_isolated(conn, NotesComponent, %{
+          actor: insert(:author),
           id: "notes-test",
           section: product,
           collab_space_pages_count: pages_count,
@@ -270,6 +281,31 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
       view |> form("#notes-test-toggle-notes", %{}) |> render_change()
 
       assert_received {:notes_count, 0}
+    end
+
+    test "records the notes toggle as the actor", %{
+      conn: conn,
+      product: product,
+      pages_count: pages_count
+    } do
+      actor = insert(:author)
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, NotesComponent, %{
+          actor: actor,
+          id: "notes-test",
+          section: product,
+          collab_space_pages_count: 0,
+          pages_count: pages_count
+        })
+
+      view |> form("#notes-test-toggle-notes", %{}) |> render_change()
+
+      event =
+        assert_audited(:notes_settings_changed, section_id: product.id, actor: actor, source: :ui)
+
+      assert event.details["page_count"] == pages_count
+      assert event.changes["status"]["after"] == "enabled"
     end
   end
 end

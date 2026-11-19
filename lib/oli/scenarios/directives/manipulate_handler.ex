@@ -3,6 +3,7 @@ defmodule Oli.Scenarios.Directives.ManipulateHandler do
   Handler for manipulate directives that apply operations to projects, sections, or products.
   """
 
+  alias Oli.Auditing.Context
   alias Oli.Scenarios.DirectiveTypes.{ManipulateDirective, ExecutionState}
   alias Oli.Scenarios.{Ops, Engine, SectionOps}
 
@@ -28,7 +29,7 @@ defmodule Oli.Scenarios.Directives.ManipulateHandler do
       product = Engine.get_product(state, to) ->
         # Apply operations to product (treated as section)
         try do
-          updated_product = SectionOps.apply_ops!(product, ops)
+          updated_product = SectionOps.apply_ops!(product, ops, audit_context(state))
 
           # Update state with modified product
           updated_state = Engine.put_product(state, to, updated_product)
@@ -43,7 +44,7 @@ defmodule Oli.Scenarios.Directives.ManipulateHandler do
       section = Engine.get_section(state, to) ->
         # Apply operations to section
         try do
-          updated_section = SectionOps.apply_ops!(section, ops)
+          updated_section = SectionOps.apply_ops!(section, ops, audit_context(state))
 
           # Update state with modified section
           updated_state = Engine.put_section(state, to, updated_section)
@@ -58,4 +59,6 @@ defmodule Oli.Scenarios.Directives.ManipulateHandler do
         {:error, "Target '#{to}' not found as project, section, or product"}
     end
   end
+
+  defp audit_context(state), do: Context.for_actor(state.current_author, source: :scenario)
 end

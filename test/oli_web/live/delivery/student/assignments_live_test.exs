@@ -369,7 +369,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
 
     test "can not access when not enrolled to course", %{conn: conn, section: section} do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 

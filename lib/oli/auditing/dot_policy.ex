@@ -87,6 +87,23 @@ defmodule Oli.Auditing.DotPolicy do
     end
   end
 
+  @doc """
+  Returns `prompt` cut to #{@max_prompt} characters and whether it was cut, for prompts recorded
+  outside a trigger entry (the prompt templates of sections and products).
+
+      iex> Oli.Auditing.DotPolicy.truncate_prompt("Summarize")
+      {"Summarize", false}
+  """
+  @spec truncate_prompt(String.t() | nil) :: {String.t() | nil, boolean()}
+  def truncate_prompt(prompt) when is_binary(prompt) do
+    case String.length(prompt) > @max_prompt do
+      true -> {String.slice(prompt, 0, @max_prompt), true}
+      false -> {prompt, false}
+    end
+  end
+
+  def truncate_prompt(prompt), do: {prompt, false}
+
   defp page_trigger(%{"trigger" => %{} = trigger}), do: [entry("page", trigger)]
   defp page_trigger(_content), do: []
 
@@ -197,14 +214,9 @@ defmodule Oli.Auditing.DotPolicy do
     do: with_prompt(%{"path" => "part:#{id}", "trigger_type" => type}, prompt)
 
   defp with_prompt(entry, prompt) when is_binary(prompt) do
-    case String.length(prompt) > @max_prompt do
-      true ->
-        entry
-        |> Map.put("prompt", String.slice(prompt, 0, @max_prompt))
-        |> Map.put("prompt_truncated", true)
-
-      false ->
-        Map.put(entry, "prompt", prompt)
+    case truncate_prompt(prompt) do
+      {prompt, true} -> entry |> Map.put("prompt", prompt) |> Map.put("prompt_truncated", true)
+      {prompt, false} -> Map.put(entry, "prompt", prompt)
     end
   end
 

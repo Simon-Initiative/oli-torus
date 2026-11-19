@@ -1023,7 +1023,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
            unit_1: unit_1
          } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
@@ -2820,7 +2820,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
            unit_1: unit_1
          } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       {:ok, view, _html} =
         live(conn, live_view_overview_route(section.slug, "student_exceptions", "all"))

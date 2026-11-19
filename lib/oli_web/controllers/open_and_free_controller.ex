@@ -12,6 +12,7 @@ defmodule OliWeb.OpenAndFreeController do
   alias OliWeb.Router.Helpers, as: Routes
 
   plug :add_assigns
+  plug :authorize_section when action in [:show, :edit, :update]
 
   defp add_assigns(conn, _opts) do
     merge_assigns(conn,
@@ -19,6 +20,22 @@ defmodule OliWeb.OpenAndFreeController do
       active: :open_and_free,
       title: "Open and Free"
     )
+  end
+
+  # Only instructors and LMS admins of the section may view or edit it.
+  defp authorize_section(%Plug.Conn{params: %{"id" => id}} = conn, _opts) do
+    section = Sections.get_section_preloaded!(id)
+    user = conn.assigns.current_user
+
+    case Sections.is_instructor?(user, section.slug) or Sections.is_admin?(user, section.slug) do
+      true ->
+        assign(conn, :section, section)
+
+      false ->
+        conn
+        |> send_resp(403, "Forbidden")
+        |> halt()
+    end
   end
 
   defp available_brands() do
@@ -216,9 +233,9 @@ defmodule OliWeb.OpenAndFreeController do
     end
   end
 
-  def show(conn, %{"id" => id}) do
+  def show(conn, _params) do
     section =
-      Sections.get_section_preloaded!(id)
+      conn.assigns.section
       |> Sections.localize_section_start_end_datetimes(conn.assigns.ctx)
 
     render(conn, "show.html",
@@ -227,9 +244,9 @@ defmodule OliWeb.OpenAndFreeController do
     )
   end
 
-  def edit(conn, %{"id" => id}) do
+  def edit(conn, _params) do
     section =
-      Sections.get_section_preloaded!(id)
+      conn.assigns.section
       |> Sections.localize_section_start_end_datetimes(conn.assigns.ctx)
 
     render(conn, "edit.html",
@@ -239,11 +256,21 @@ defmodule OliWeb.OpenAndFreeController do
     )
   end
 
+  # The fields the edit form (`form.html.eex`) renders.
+  @edit_form_fields [
+    :title,
+    :start_date,
+    :end_date,
+    :brand_id,
+    :registration_open,
+    :requires_enrollment,
+    :skip_email_verification
+  ]
+
   def update(conn, %{
-        "id" => id,
         "section" => %{"start_date" => start_date, "end_date" => end_date} = section_params
       }) do
-    section = Sections.get_section_preloaded!(id)
+    section = conn.assigns.section
 
     utc_start_date = FormatDateTime.datestring_to_utc_datetime(start_date, conn.assigns.ctx)
     utc_end_date = FormatDateTime.datestring_to_utc_datetime(end_date, conn.assigns.ctx)
@@ -253,7 +280,12 @@ defmodule OliWeb.OpenAndFreeController do
       |> Map.put("start_date", utc_start_date)
       |> Map.put("end_date", utc_end_date)
 
-    case Sections.update_section(section, section_params) do
+    case SectionsAudited.update_section_settings(
+           audit_context(conn),
+           section,
+           section_params,
+           @edit_form_fields
+         ) do
       {:ok, section} ->
         conn
         |> put_flash(:info, "Section updated successfully.")
@@ -263,6 +295,15 @@ defmodule OliWeb.OpenAndFreeController do
         render(conn, "edit.html",
           section: section,
           changeset: changeset,
+          available_brands: available_brands()
+        )
+
+      {:error, _reason} ->
+        conn
+        |> put_flash(:error, "The section could not be updated.")
+        |> render("edit.html",
+          section: section,
+          changeset: Sections.change_section(section),
           available_brands: available_brands()
         )
     end

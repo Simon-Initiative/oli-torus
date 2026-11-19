@@ -256,7 +256,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       unit_2: unit_2_revision
     } = create_not_scheduled_elixir_project(%{})
 
-    {:ok, section} = Sections.update_section(section, %{title: "The best course ever!"})
+    {:ok, section} = put_section_fields(section, %{title: "The best course ever!"})
 
     # schedule start and end date for unit 1 section_resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
@@ -598,7 +598,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
 
     test "can not access when not enrolled to course", %{conn: conn, section: section} do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -653,7 +653,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       page_3: page_3
     } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -925,7 +925,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       module_1: module_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)

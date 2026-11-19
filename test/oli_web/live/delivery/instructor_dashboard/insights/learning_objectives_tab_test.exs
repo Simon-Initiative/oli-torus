@@ -155,7 +155,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       obj_revision_1: obj_revision_1
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      Sections.update_section(section, %{v25_migration: :not_started})
+      put_section_fields(section, %{v25_migration: :not_started})
 
       params = %{
         "objective_id" => Integer.to_string(obj_revision_1.resource_id),
@@ -201,7 +201,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       } = Oli.Seeder.base_project_with_larger_hierarchy()
 
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit1_resource.id]})
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
@@ -270,7 +270,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       {:ok, section} = Sections.create_section_resources(section, publication)
 
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_b.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_b.resource_id]})
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
@@ -298,7 +298,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       obj_revision_1: obj_revision_1
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      Sections.update_section(section, %{v25_migration: :not_started})
+      put_section_fields(section, %{v25_migration: :not_started})
 
       stale_objective_resource = insert(:resource)
 
@@ -343,7 +343,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       obj_revision_2: obj_revision_2
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      Sections.update_section(section, %{v25_migration: :not_started})
+      put_section_fields(section, %{v25_migration: :not_started})
 
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
@@ -370,7 +370,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       obj_revision_2: obj_revision_2
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      Sections.update_section(section, %{v25_migration: :not_started})
+      put_section_fields(section, %{v25_migration: :not_started})
 
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
@@ -411,7 +411,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       obj_revision_2: obj_revision_2
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      Sections.update_section(section, %{v25_migration: :not_started})
+      put_section_fields(section, %{v25_migration: :not_started})
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
       assert has_element?(view, "span", "#{obj_revision_1.title}")
@@ -446,7 +446,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       obj_revision_2: obj_revision_2
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      Sections.update_section(section, %{v25_migration: :not_started})
+      put_section_fields(section, %{v25_migration: :not_started})
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
       assert has_element?(
@@ -567,7 +567,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       # Setup section data
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
       Sections.rebuild_contained_objectives(section)
-      Sections.update_section(section, %{v25_migration: :not_started})
+      put_section_fields(section, %{v25_migration: :not_started})
 
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 

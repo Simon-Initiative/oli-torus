@@ -257,7 +257,7 @@ defmodule OliWeb.LtiController do
         {:ok, nil}
 
       section ->
-        Sections.update_section(section, %{
+        Sections.sync_lti_services(section, %{
           grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
           line_items_service_url: AGS.get_line_items_url(lti_params, registration),
           nrps_enabled: NRPS.nrps_enabled?(lti_params),

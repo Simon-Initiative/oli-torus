@@ -530,17 +530,49 @@ defmodule Oli.SectionsTest do
       assert {:error, %Ecto.Changeset{}} = Sections.create_section(@invalid_title)
     end
 
-    test "update_section/2 with valid data updates the section", %{section: section} do
-      assert {:ok, %Section{} = section} = Sections.update_section(section, @update_attrs)
-      assert section.end_date == ~U[2011-05-18 00:00:00Z]
-      assert section.registration_open == false
-      assert section.start_date == ~U[2011-05-18 00:00:00Z]
-      assert section.title == "some updated title"
+    test "update_section/2 writes system-derived and not yet audited fields", %{
+      section: section
+    } do
+      assert {:ok, %Section{} = section} =
+               Sections.update_section(section, %{
+                 context_id: "some updated context_id",
+                 certificate_enabled: true
+               })
+
+      assert {section.context_id, section.certificate_enabled} ==
+               {"some updated context_id", true}
     end
 
-    test "update_section/2 with long title returns error changeset", %{section: section} do
-      assert {:error, %Ecto.Changeset{} = changeset} =
-               Sections.update_section(section, @invalid_title)
+    test "update_section/2 rejects settings recorded in the Audit Log and LMS-supplied fields",
+         %{section: section} do
+      for attrs <- [
+            @update_attrs,
+            %{"title" => "Through raw params"},
+            %{assistant_enabled: true},
+            %{collab_space_config: %{}},
+            %{grade_passback_enabled: true}
+          ] do
+        assert {:error, :protected} = Sections.update_section(section, attrs)
+      end
+
+      assert_raise ArgumentError, fn -> Sections.update_section!(section, %{title: "Raised"}) end
+      assert Sections.get_section!(section.id).title == section.title
+    end
+
+    test "sync_lti_services/2 writes only the LTI service fields", %{section: section} do
+      assert {:ok, synced} =
+               Sections.sync_lti_services(section, %{
+                 grade_passback_enabled: true,
+                 nrps_enabled: true,
+                 title: "Ignored"
+               })
+
+      assert {synced.grade_passback_enabled, synced.nrps_enabled, synced.title} ==
+               {true, true, section.title}
+    end
+
+    test "settings_changeset/2 with long title returns error changeset", %{section: section} do
+      changeset = Sections.settings_changeset(section, @invalid_title)
 
       {error_message, opts} = changeset.errors[:title]
 
@@ -548,17 +580,16 @@ defmodule Oli.SectionsTest do
       assert opts[:count] == 255
     end
 
-    test "update_section/2 with invalid data returns error changeset", %{section: section} do
-      assert {:error, %Ecto.Changeset{}} = Sections.update_section(section, @invalid_attrs)
-      assert section.id == Sections.get_section!(section.id).id
+    test "settings_changeset/2 with invalid data is invalid", %{section: section} do
+      refute Sections.settings_changeset(section, @invalid_attrs).valid?
     end
 
-    test "update_section/2 persists valid unnumbered_unit_ids" do
+    test "update_section_settings/4 persists valid unnumbered_unit_ids" do
       hierarchy = Seeder.base_project_with_larger_hierarchy()
       section = hierarchy.section
 
       assert {:ok, %Section{} = updated_section} =
-               Sections.update_section(section, %{
+               update_settings(section, %{
                  unnumbered_unit_ids: [hierarchy.unit2_resource.id, hierarchy.unit1_resource.id]
                })
 
@@ -592,11 +623,11 @@ defmodule Oli.SectionsTest do
              ]
     end
 
-    test "update_section/2 rejects unnumbered_unit_ids for non-top-level containers" do
+    test "update_section_settings/4 rejects unnumbered_unit_ids for non-top-level containers" do
       hierarchy = Seeder.base_project_with_larger_hierarchy()
 
       assert {:error, %Ecto.Changeset{} = changeset} =
-               Sections.update_section(hierarchy.section, %{
+               update_settings(hierarchy.section, %{
                  unnumbered_unit_ids: [hierarchy.mod1_resource.id]
                })
 
@@ -604,12 +635,12 @@ defmodule Oli.SectionsTest do
                changeset.errors[:unnumbered_unit_ids]
     end
 
-    test "update_section/2 rejects unnumbered_unit_ids from another course" do
+    test "update_section_settings/4 rejects unnumbered_unit_ids from another course" do
       hierarchy = Seeder.base_project_with_larger_hierarchy()
       other_hierarchy = Seeder.base_project_with_larger_hierarchy()
 
       assert {:error, %Ecto.Changeset{} = changeset} =
-               Sections.update_section(hierarchy.section, %{
+               update_settings(hierarchy.section, %{
                  unnumbered_unit_ids: [other_hierarchy.unit1_resource.id]
                })
 
@@ -1622,7 +1653,7 @@ defmodule Oli.SectionsTest do
       page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
 
       {:ok, _} =
-        Oli.Delivery.Sections.update_section_resource(page1_sr, %{
+        put_section_resource_fields(page1_sr, %{
           scoring_strategy_id: 2,
           scheduling_type: :due_by,
           manually_scheduled: true,
@@ -1863,7 +1894,7 @@ defmodule Oli.SectionsTest do
         %{product: product} =
         Oli.Utils.Seeder.Project.create_product(%{}, "Product 1", project, product_tag: :product)
 
-      Oli.Delivery.Sections.update_section(product, %{apply_major_updates: true})
+      put_section_fields(product, %{apply_major_updates: true})
 
       %{section: section} =
         Oli.Utils.Seeder.Section.create_section_from_product(
@@ -1884,7 +1915,7 @@ defmodule Oli.SectionsTest do
       page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
 
       {:ok, _} =
-        Oli.Delivery.Sections.update_section_resource(page1_sr, %{
+        put_section_resource_fields(page1_sr, %{
           scoring_strategy_id: 2,
           scheduling_type: :due_by,
           manually_scheduled: true,
@@ -2110,7 +2141,7 @@ defmodule Oli.SectionsTest do
       page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
 
       {:ok, _} =
-        Oli.Delivery.Sections.update_section_resource(page1_sr, %{
+        put_section_resource_fields(page1_sr, %{
           scoring_strategy_id: 2,
           scheduling_type: :due_by,
           manually_scheduled: true,
@@ -2755,5 +2786,14 @@ defmodule Oli.SectionsTest do
     test "returns false if roles list is empty" do
       assert Oli.Delivery.Sections.contains_instructor_role?([]) == false
     end
+  end
+
+  defp update_settings(section, attrs) do
+    Oli.Delivery.Sections.Audited.update_section_settings(
+      audit_context(),
+      section,
+      attrs,
+      Map.keys(attrs)
+    )
   end
 end

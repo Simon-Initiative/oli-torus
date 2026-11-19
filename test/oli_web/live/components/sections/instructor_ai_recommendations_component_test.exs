@@ -30,6 +30,7 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponentTe
     } do
       {:ok, view, _html} =
         live_component_isolated(conn, InstructorAiRecommendationsComponent, %{
+          actor: insert(:author),
           id: "recommendations-test",
           section: section
         })
@@ -42,6 +43,7 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponentTe
     test "toggle persists instructor_recommendations_enabled", %{conn: conn, section: section} do
       {:ok, view, _html} =
         live_component_isolated(conn, InstructorAiRecommendationsComponent, %{
+          actor: insert(:author),
           id: "recommendations-test",
           section: section
         })
@@ -56,10 +58,11 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponentTe
 
     test "saving a blank prompt persists the default template", %{conn: conn, section: section} do
       {:ok, section} =
-        Sections.update_section(section, %{instructor_recommendation_prompt_template: "  "})
+        put_section_fields(section, %{instructor_recommendation_prompt_template: "  "})
 
       {:ok, view, _html} =
         live_component_isolated(conn, InstructorAiRecommendationsComponent, %{
+          actor: insert(:author),
           id: "recommendations-test",
           section: section
         })
@@ -75,6 +78,32 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponentTe
                        %{value: value}}}
 
       assert value == Prompt.default_template()
+    end
+
+    test "records the toggle as the actor", %{conn: conn, section: section} do
+      actor = insert(:user)
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, InstructorAiRecommendationsComponent, %{
+          actor: actor,
+          id: "recommendations-test",
+          section: section
+        })
+
+      view |> form("#recommendations-test-toggle-recommendations", %{}) |> render_change()
+
+      event =
+        assert_audited(:instructor_ai_recommendation_changed,
+          section_id: section.id,
+          actor: actor,
+          source: :ui
+        )
+
+      assert event.changes["instructor_recommendations_enabled"] == %{
+               "operation" => "set",
+               "before" => true,
+               "after" => false
+             }
     end
   end
 end

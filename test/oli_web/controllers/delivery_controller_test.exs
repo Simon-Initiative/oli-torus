@@ -123,7 +123,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> log_in_user(other_user)
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           end_date: Timex.now() |> Timex.subtract(Timex.Duration.from_days(1))
         })
 
@@ -146,7 +146,7 @@ defmodule OliWeb.DeliveryControllerTest do
         Plug.Test.init_test_session(conn, lti_session: nil)
         |> log_in_user(other_user)
 
-      {:ok, section} = Sections.update_section(section, %{registration_open: false})
+      {:ok, section} = put_section_fields(section, %{registration_open: false})
 
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
@@ -175,7 +175,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "redirect to requested path after login", %{conn: conn, section: section} do
-      {:ok, section} = Sections.update_section(section, %{requires_enrollment: true})
+      {:ok, section} = put_section_fields(section, %{requires_enrollment: true})
 
       conn =
         conn
@@ -600,7 +600,7 @@ defmodule OliWeb.DeliveryControllerTest do
       %{instructor: instructor, section: section, student1: student_1, student2: student_2} =
         prepare_student_progress_data()
 
-      {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
+      {:ok, section} = put_section_fields(section, %{certificate_enabled: true})
       certificate = insert(:certificate, section: section)
 
       insert(:granted_certificate, %{
@@ -1189,7 +1189,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> log_in_user(other_user)
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           start_date: Timex.now() |> Timex.add(Timex.Duration.from_days(1))
         })
 
@@ -1253,7 +1253,7 @@ defmodule OliWeb.DeliveryControllerTest do
       section = direct_delivery_section()
       later = DateTime.add(DateTime.utc_now(), 100_000)
 
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{start_date: later})
+      {:ok, section} = put_section_fields(section, %{start_date: later})
       assert {:unavailable, :before_start_date} == Oli.Delivery.Sections.available?(section)
 
       section_invite = insert(:section_invite, %{section: section})
@@ -1269,7 +1269,7 @@ defmodule OliWeb.DeliveryControllerTest do
       section = direct_delivery_section()
       in_the_past = DateTime.add(DateTime.utc_now(), -100_000)
 
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{end_date: in_the_past})
+      {:ok, section} = put_section_fields(section, %{end_date: in_the_past})
       assert {:unavailable, :after_end_date} == Oli.Delivery.Sections.available?(section)
 
       section_invite = insert(:section_invite, %{section: section})
@@ -1321,7 +1321,7 @@ defmodule OliWeb.DeliveryControllerTest do
       section = direct_delivery_section()
       later = DateTime.add(DateTime.utc_now(), 100_000)
 
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{start_date: later})
+      {:ok, section} = put_section_fields(section, %{start_date: later})
       assert {:unavailable, :before_start_date} == Oli.Delivery.Sections.available?(section)
 
       section_invite = insert(:section_invite, %{section: section})
@@ -1337,7 +1337,7 @@ defmodule OliWeb.DeliveryControllerTest do
       section = direct_delivery_section()
       in_the_past = DateTime.add(DateTime.utc_now(), -100_000)
 
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{end_date: in_the_past})
+      {:ok, section} = put_section_fields(section, %{end_date: in_the_past})
       assert {:unavailable, :after_end_date} == Oli.Delivery.Sections.available?(section)
 
       section_invite = insert(:section_invite, %{section: section})

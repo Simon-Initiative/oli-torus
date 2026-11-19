@@ -7,7 +7,9 @@ defmodule OliWeb.Api.SchedulingController do
   alias OpenApiSpex.Schema
   alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Sections.Scheduling
+  alias Oli.Auditing.Context
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Accounts
   alias Oli.Resources.Numbering
@@ -208,12 +210,25 @@ defmodule OliWeb.Api.SchedulingController do
   def update_agenda(conn, %{"agenda" => agenda}) do
     section = conn.assigns.section
 
-    case Sections.update_section(section, %{agenda: agenda}) do
-      {:ok, _section} ->
-        json(conn, %{"result" => "success", "agenda" => agenda})
+    case can_access_section?(conn, section) do
+      true ->
+        actor = conn.assigns[:current_user] || conn.assigns[:current_author]
 
-      {:error, _} ->
-        json(conn, %{"result" => "error"})
+        case SectionsAudited.update_section_settings(
+               Context.for_actor(actor, source: :api),
+               section,
+               %{agenda: agenda},
+               [:agenda]
+             ) do
+          {:ok, _section} ->
+            json(conn, %{"result" => "success", "agenda" => agenda})
+
+          {:error, _} ->
+            json(conn, %{"result" => "error"})
+        end
+
+      false ->
+        error(conn, 401, "Unauthorized")
     end
   end
 

@@ -56,7 +56,7 @@ defmodule Oli.Delivery.Sections.PostProcessing do
       end)
 
     with {:ok, section} <- maybe_project_related_activities(section, project_related_activities?) do
-      {:ok, Sections.update_section!(section, changes)}
+      {:ok, Sections.update_contained_content_flags!(section, changes)}
     end
   end
 

@@ -111,7 +111,7 @@ defmodule Oli.Delivery.PaywallTest do
       codes1: codes
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           has_grace_period: true,
           grace_period_days: 6
         })
@@ -131,7 +131,7 @@ defmodule Oli.Delivery.PaywallTest do
       user1: user
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           has_grace_period: true,
           grace_period_days: 2
         })
@@ -141,7 +141,7 @@ defmodule Oli.Delivery.PaywallTest do
       assert summary.reason == :within_grace_period
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           start_date: last_week()
         })
 
@@ -155,7 +155,7 @@ defmodule Oli.Delivery.PaywallTest do
       user1: user
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           has_grace_period: true,
           grace_period_days: 1,
           start_date: hours_ago(1)
@@ -168,7 +168,7 @@ defmodule Oli.Delivery.PaywallTest do
       assert days > 0 and days < 1
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           has_grace_period: true,
           grace_period_days: 2,
           start_date: hours_ago(1)
@@ -187,7 +187,7 @@ defmodule Oli.Delivery.PaywallTest do
            user1: user
          } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           has_grace_period: true,
           grace_period_days: 2,
           grace_period_strategy: :relative_to_student,

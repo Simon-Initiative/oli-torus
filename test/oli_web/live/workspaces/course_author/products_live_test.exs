@@ -140,7 +140,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
       {:ok, _product_2} = Blueprint.create_blueprint(project.slug, product_title_2, nil)
 
       # Archive product 1
-      Oli.Delivery.Sections.update_section!(product_1, %{status: :archived})
+      put_section_fields!(product_1, %{status: :archived})
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
@@ -249,7 +249,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
       {:ok, _follow_up_publication} =
         Oli.TestHelpers.publish_project_fixture(project, "fresh update", author.id)
 
-      Oli.Delivery.Sections.update_section!(archived_product, %{status: :archived})
+      put_section_fields!(archived_product, %{status: :archived})
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 

@@ -334,7 +334,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
     test "the duplicate is independent of later source edits", %{product: product} do
       {:ok, duplicate} = Blueprint.duplicate(product)
 
-      {:ok, _} = Sections.update_section(product, %{title: "Renamed Product"})
+      {:ok, _} = put_section_fields(product, %{title: "Renamed Product"})
 
       assert Repo.get(Oli.Delivery.Sections.Section, duplicate.id).title != "Renamed Product"
     end

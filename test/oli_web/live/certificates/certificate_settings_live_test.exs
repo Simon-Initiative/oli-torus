@@ -49,7 +49,7 @@ defmodule OliWeb.Certificates.CertificateSettingsLiveTest do
     test "renders tabs and content when certificate is enabled", ctx do
       %{conn: conn, product: product, project: project} = ctx
       # Enabling certificate_enabled
-      {:ok, product} = Sections.update_section(product, %{certificate_enabled: true})
+      {:ok, product} = put_section_fields(product, %{certificate_enabled: true})
       {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
       {:ok, view, _html} = live(conn, workspaces_lv_route(project.slug, product.slug))
 
@@ -113,7 +113,7 @@ defmodule OliWeb.Certificates.CertificateSettingsLiveTest do
     test "renders tabs and content when certificate is enabled", ctx do
       %{conn: conn, product: product} = ctx
       # Enabling certificate_enabled
-      {:ok, product} = Sections.update_section(product, %{certificate_enabled: true})
+      {:ok, product} = put_section_fields(product, %{certificate_enabled: true})
       {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
       {:ok, view, _html} = live(conn, authoring_lv_route(product.slug))
 

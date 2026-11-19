@@ -180,7 +180,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.Content do
     test "shows the bare title, with no numbering prefix, for a suppressed top-level unit",
          %{conn: conn, section: section, unit_resource: unit_resource} do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_resource.id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_resource.id]})
 
       {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
 

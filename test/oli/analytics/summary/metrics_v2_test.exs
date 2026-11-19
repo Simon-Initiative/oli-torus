@@ -37,7 +37,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
     } do
       objective_type_id = Oli.Resources.ResourceType.id_for_objective()
       page_type_id = Oli.Resources.ResourceType.id_for_page()
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
+      {:ok, section} = put_section_fields(section, %{analytics_version: :v2})
 
       id = o1.resource.id
 
@@ -105,7 +105,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
            o3: o3
          } do
       objective_type_id = Oli.Resources.ResourceType.id_for_objective()
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
+      {:ok, section} = put_section_fields(section, %{analytics_version: :v2})
 
       id = o1.resource.id
       id2 = o2.resource.id
@@ -142,7 +142,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       o3: o3
     } do
       objective_type_id = Oli.Resources.ResourceType.id_for_objective()
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
+      {:ok, section} = put_section_fields(section, %{analytics_version: :v2})
 
       id = o1.resource.id
       id2 = o2.resource.id
@@ -178,7 +178,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
            o2: o2
          } do
       objective_type_id = Oli.Resources.ResourceType.id_for_objective()
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
+      {:ok, section} = put_section_fields(section, %{analytics_version: :v2})
 
       # o1 is the parent, with o2 as its only Sub-LO.
       {:ok, o1_revision} =
@@ -227,7 +227,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       o3: o3
     } do
       objective_type_id = Oli.Resources.ResourceType.id_for_objective()
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
+      {:ok, section} = put_section_fields(section, %{analytics_version: :v2})
 
       id = o1.resource.id
       id2 = o2.resource.id

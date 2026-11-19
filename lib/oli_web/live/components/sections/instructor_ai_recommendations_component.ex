@@ -6,11 +6,14 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponent d
   - Enable/disable toggle for instructor AI recommendations
   - Prompt template editor used by summary recommendation generation
   - Save action that persists the prompt template
+
+  Changes are recorded in the Audit Log as the `actor` assign (the user or author editing).
   """
 
   use OliWeb, :live_component
 
-  alias Oli.Delivery.Sections
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.InstructorDashboard.Recommendations.Prompt
   alias OliWeb.Common.Monaco
 
@@ -90,7 +93,7 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponent d
   def handle_event("toggle_instructor_recommendations", _params, socket) do
     section = socket.assigns.section
 
-    case Sections.update_section(section, %{
+    case update_dot(socket, %{
            instructor_recommendations_enabled: !section.instructor_recommendations_enabled
          }) do
       {:ok, updated_section} ->
@@ -102,7 +105,7 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponent d
         send(self(), {:section_updated, updated_section})
         {:noreply, assign(socket, :section, updated_section)}
 
-      {:error, _changeset} ->
+      {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to update instructor AI recommendation settings"})
         {:noreply, socket}
     end
@@ -113,8 +116,6 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponent d
   end
 
   def handle_event("save_instructor_recommendation_prompt", _params, socket) do
-    section = socket.assigns.section
-
     blank_prompt? =
       blank_prompt_template?(socket.assigns.instructor_recommendation_prompt_template)
 
@@ -122,9 +123,7 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponent d
       socket.assigns.instructor_recommendation_prompt_template
       |> normalize_prompt_template()
 
-    case Sections.update_section(section, %{
-           instructor_recommendation_prompt_template: prompt_template
-         }) do
+    case update_dot(socket, %{instructor_recommendation_prompt_template: prompt_template}) do
       {:ok, updated_section} ->
         flash_message =
           if blank_prompt? do
@@ -142,10 +141,19 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponent d
          |> assign(:instructor_recommendation_prompt_template, prompt_template)
          |> push_event(set_value_event(socket.assigns.id), %{value: prompt_template})}
 
-      {:error, _changeset} ->
+      {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to save instructor AI recommendation prompt"})
         {:noreply, socket}
     end
+  end
+
+  defp update_dot(socket, attrs) do
+    SectionsAudited.update_section_dot(
+      Context.for_actor(socket.assigns.actor, source: :ui),
+      socket.assigns.section,
+      attrs,
+      Map.keys(attrs)
+    )
   end
 
   defp normalize_prompt_template(prompt_template) when is_binary(prompt_template) do

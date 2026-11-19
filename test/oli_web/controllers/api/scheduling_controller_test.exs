@@ -115,6 +115,47 @@ defmodule OliWeb.SchedulingControllerTest do
       assert sr3["end_date"] == nil
     end
 
+    test "updating the agenda records the change", %{conn: conn, map: map} do
+      user = map.teacher
+
+      conn =
+        again(conn, user)
+        |> put(Routes.scheduling_path(conn, :update_agenda, map.section.slug), %{
+          "agenda" => false
+        })
+
+      assert %{"result" => "success", "agenda" => false} = json_response(conn, 200)
+      refute Sections.get_section!(map.section.id).agenda
+
+      event =
+        assert_audited(:section_settings_changed,
+          section_id: map.section.id,
+          actor: user,
+          source: :api
+        )
+
+      assert event.changes["agenda"] == %{
+               "operation" => "set",
+               "before" => true,
+               "after" => false
+             }
+    end
+
+    test "a user without access to the section cannot update its agenda", %{
+      conn: conn,
+      map: map
+    } do
+      conn =
+        again(conn, map.someone_else)
+        |> put(Routes.scheduling_path(conn, :update_agenda, map.section.slug), %{
+          "agenda" => false
+        })
+
+      assert response(conn, 401)
+      assert Sections.get_section!(map.section.id).agenda
+      assert audit_events(:section_settings_changed, section_id: map.section.id) == []
+    end
+
     test "can catch unauthorized user access", %{
       conn: conn,
       map: map
@@ -137,7 +178,7 @@ defmodule OliWeb.SchedulingControllerTest do
       map: map
     } do
       {:ok, _section} =
-        Sections.update_section(map.section, %{unnumbered_unit_ids: [map.unit1_resource.id]})
+        put_section_fields(map.section, %{unnumbered_unit_ids: [map.unit1_resource.id]})
 
       conn = get(conn, Routes.scheduling_path(conn, :index, map.section.slug))
 

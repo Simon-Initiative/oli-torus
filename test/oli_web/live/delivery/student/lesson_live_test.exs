@@ -603,9 +603,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     })
 
     # enable collaboration spaces for all pages in the section
-    {_total_page_count, _section_resources} =
-      Oli.Resources.Collaboration.enable_all_page_collab_spaces_for_section(
-        section.slug,
+    {:ok, _total_page_count} =
+      Oli.Delivery.Sections.Audited.set_section_notes(
+        audit_context(),
+        section,
         %Oli.Resources.Collaboration.CollabSpaceConfig{
           status: :enabled,
           threaded: true,
@@ -955,7 +956,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       page_1: page_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -1139,7 +1140,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       section: section,
       page_1: page_1
     } do
-      Sections.update_section(section, %{brand_id: nil})
+      put_section_fields(section, %{brand_id: nil})
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
@@ -1171,7 +1172,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       page_1: page_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{open_and_free: false, lti_1p3_deployment_id: nil})
+        put_section_fields(section, %{open_and_free: false, lti_1p3_deployment_id: nil})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -1229,7 +1230,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       stub_current_time(~U[2024-10-15 20:00:00Z])
 
       {:ok, product} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           type: :blueprint,
           registration_open: true,
           requires_payment: true,
@@ -1504,7 +1505,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
     test "triggers CheckCertification job if certificate_enabled is true on submit", ctx do
       %{conn: conn, user: user, section: section, page_3: page_3} = ctx
-      {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
+      {:ok, section} = put_section_fields(section, %{certificate_enabled: true})
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
@@ -1724,7 +1725,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       page_2: page_2
     } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -2142,7 +2143,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         |> Oli.Repo.update_all(set: [ai_enabled: true])
 
       assert {:ok, _updated_section} =
-               Sections.update_section(section, %{assistant_enabled: false})
+               put_section_fields(section, %{assistant_enabled: false})
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
@@ -2426,7 +2427,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      Oli.Resources.Collaboration.disable_all_page_collab_spaces_for_section(section.slug)
+      {:ok, _} =
+        Oli.Delivery.Sections.Audited.set_section_notes(audit_context(), section, :disabled)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
@@ -2661,7 +2663,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       %{conn: conn, section: section, user: user, page_1: page_1} = ctx
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
-      section = Sections.update_section!(section, %{certificate_enabled: true})
+      section = put_section_fields!(section, %{certificate_enabled: true})
       # We need this initial post to show the annotation points
       {:ok, _post_1} = create_post(user, section, page_1, "This is a class note")
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
@@ -3022,7 +3024,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       %{section: section, adaptive_page: adaptive_page} = create_adaptive_with_chrome_section()
 
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -3100,7 +3102,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       unit_1: unit_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)

@@ -501,7 +501,7 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       map: map
     } do
       {:ok, section} =
-        Sections.update_section(map.section, %{unnumbered_unit_ids: [map.unit1_resource.id]})
+        put_section_fields(map.section, %{unnumbered_unit_ids: [map.unit1_resource.id]})
 
       context = build_context(section.id, map.instructor.id, %{container_type: :course})
 
