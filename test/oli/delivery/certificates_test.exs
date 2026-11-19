@@ -4,7 +4,6 @@ defmodule Oli.Delivery.CertificatesTest do
   import Oli.Factory
 
   alias Oli.Delivery.Certificates
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Certificate
   alias Oli.Repo.Paging
   alias Oli.Repo.Sorting

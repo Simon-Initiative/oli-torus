@@ -73,7 +73,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       sr = Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
 
-      Oli.Delivery.Sections.update_section_resource(sr, %{
+      put_section_resource_fields(sr, %{
         time_limit: 5,
         scheduling_type: :due_by
       })
@@ -119,7 +119,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       effective_settings = %Oli.Delivery.Settings.Combined{time_limit: 5, grace_period: 4}
       sr = Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
-      Oli.Delivery.Sections.update_section_resource(sr, %{time_limit: 5, grace_period: 4})
+      put_section_resource_fields(sr, %{time_limit: 5, grace_period: 4})
 
       Oli.Delivery.Attempts.Core.track_access(page.resource.id, section.id, user.id)
 
@@ -168,7 +168,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       sr = Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
 
-      Oli.Delivery.Sections.update_section_resource(sr, %{
+      put_section_resource_fields(sr, %{
         end_date: yesterday,
         scheduling_type: :read_by
       })
@@ -213,7 +213,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       sr = Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
 
-      Oli.Delivery.Sections.update_section_resource(sr, %{
+      put_section_resource_fields(sr, %{
         end_date: yesterday,
         scheduling_type: :due_by
       })
@@ -253,7 +253,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       sr = Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
 
-      Oli.Delivery.Sections.update_section_resource(sr, %{
+      put_section_resource_fields(sr, %{
         end_date: yesterday,
         late_start: :disallow
       })

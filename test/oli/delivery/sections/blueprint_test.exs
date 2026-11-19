@@ -63,7 +63,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       # Update page's section_resource
       {:ok, sr_page_blueprint} =
         get_section_resource_by_resource(page_resource)
-        |> Oli.Delivery.Sections.update_section_resource(@updates)
+        |> put_section_resource_fields(@updates)
 
       section_params =
         Map.merge(Map.take(blueprint, @keys_to_take), %{type: :enrollable, open_and_free: true})
@@ -200,7 +200,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
           resource_id: page.id
         )
 
-      {:ok, _} = Sections.update_section_resource(source_page, %{delivery_policy_id: policy.id})
+      {:ok, _} = put_section_resource_fields(source_page, %{delivery_policy_id: policy.id})
       {:ok, duplicate} = Blueprint.duplicate(product)
 
       copied_page =

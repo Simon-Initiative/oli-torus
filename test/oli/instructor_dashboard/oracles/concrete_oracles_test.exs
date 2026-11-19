@@ -926,7 +926,7 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       Repo.get_by!(SectionResource, section_id: map.section.id, resource_id: parent_resource_id)
 
     {:ok, _updated_parent} =
-      Sections.update_section_resource(parent_section_resource, %{
+      put_section_resource_fields(parent_section_resource, %{
         children: parent_section_resource.children ++ [section_resource.id]
       })
 

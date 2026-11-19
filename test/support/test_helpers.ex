@@ -263,6 +263,23 @@ defmodule Oli.TestHelpers do
     |> Oli.Repo.update()
   end
 
+  @doc """
+  Test fixture: creates a student exception directly from `attrs` (with `section_id`,
+  `resource_id`, and `user_id`), and records nothing.
+  """
+  def create_student_exception_fixture(attrs) do
+    %Oli.Delivery.Settings.StudentException{}
+    |> Oli.Delivery.Settings.StudentException.changeset(attrs)
+    |> Oli.Repo.insert()
+  end
+
+  @doc "Test fixture: writes student exception fields directly, and records nothing."
+  def put_student_exception_fields(%Oli.Delivery.Settings.StudentException{} = exception, attrs) do
+    exception
+    |> Oli.Delivery.Settings.StudentException.changeset(attrs)
+    |> Oli.Repo.update()
+  end
+
   @doc "Test fixture: copies the project with `project_slug` for `author`."
   def duplicate_project_fixture(project_slug, author, opts \\ []),
     do: Oli.Authoring.Audited.duplicate_project(audit_context(), project_slug, author, opts)
@@ -2915,22 +2932,22 @@ defmodule Oli.TestHelpers do
     sr3 = Sections.get_section_resource(section.id, unreachable_graded_page_1_resource.id)
     sr4 = Sections.get_section_resource(section.id, unreachable_graded_page_2_resource.id)
 
-    Sections.update_section_resource(sr1, %{
+    put_section_resource_fields(sr1, %{
       scheduling_type: :due_by,
       end_date: ~U[2023-01-12 13:30:00Z]
     })
 
-    Sections.update_section_resource(sr2, %{
+    put_section_resource_fields(sr2, %{
       scheduling_type: :due_by,
       end_date: ~U[2023-06-05 14:00:00Z]
     })
 
-    Sections.update_section_resource(sr3, %{
+    put_section_resource_fields(sr3, %{
       numbering_level: 1,
       numbering_index: 9
     })
 
-    Sections.update_section_resource(sr4, %{
+    put_section_resource_fields(sr4, %{
       numbering_level: 1,
       numbering_index: 8
     })

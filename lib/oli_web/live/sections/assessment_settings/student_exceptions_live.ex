@@ -69,6 +69,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsLive do
         assessments={@assessments}
         params={@params}
         section={@section}
+        user={@user}
         ctx={@ctx}
       />
     </div>

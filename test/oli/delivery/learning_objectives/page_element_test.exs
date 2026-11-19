@@ -383,7 +383,7 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
       page_3_sr =
         SectionResourceDepot.get_section_resource(section.id, resources.page_resource_3.id)
 
-      {:ok, page_3_sr} = Sections.update_section_resource(page_3_sr, %{hidden: true})
+      {:ok, page_3_sr} = put_section_resource_fields(page_3_sr, %{hidden: true})
       SectionResourceDepot.update_section_resource(page_3_sr)
 
       assert {:ok, objectives} =
@@ -511,7 +511,7 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
   defp force_related_activities(section, objective_resource_id, activity_resource_ids) do
     section.id
     |> SectionResourceDepot.get_section_resource(objective_resource_id)
-    |> Sections.update_section_resource(%{related_activities: activity_resource_ids})
+    |> put_section_resource_fields(%{related_activities: activity_resource_ids})
     |> case do
       {:ok, section_resource} ->
         SectionResourceDepot.update_section_resource(section_resource)
@@ -527,7 +527,7 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
 
     section.id
     |> SectionResourceDepot.get_section_resource(objective_resource_id)
-    |> Sections.update_section_resource(%{children: child_section_resource_ids})
+    |> put_section_resource_fields(%{children: child_section_resource_ids})
     |> case do
       {:ok, section_resource} ->
         SectionResourceDepot.update_section_resource(section_resource)

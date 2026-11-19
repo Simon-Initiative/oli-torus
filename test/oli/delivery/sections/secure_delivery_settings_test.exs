@@ -2,7 +2,6 @@ defmodule Oli.Delivery.Sections.SecureDeliverySettingsTest do
   use Oli.DataCase, async: false
   import Oli.Factory
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Settings.AssessmentSettings
   alias Oli.Delivery.Sections.SectionResource
   alias Lti_1p3.Roles.PlatformRoles
 
@@ -38,12 +37,19 @@ defmodule Oli.Delivery.Sections.SecureDeliverySettingsTest do
     assert Oli.Delivery.Settings.combine(revision, sr, nil).secure_delivery
     refute :secure_delivery in Oli.Delivery.Settings.StudentException.__schema__(:fields)
 
-    assert Repo.exists?(
-             from c in Oli.Delivery.Settings.SettingsChanges,
-               where:
-                 c.section_id == ^ctx.section.id and c.key == "secure_delivery" and
-                   c.new_value == "true"
-           )
+    event =
+      assert_audited(:assessment_settings_changed,
+        section_id: ctx.section.id,
+        resource_id: ctx.sr.resource_id,
+        actor: ctx.instructor,
+        source: :ui
+      )
+
+    assert event.changes["secure_delivery"] == %{
+             "operation" => "set",
+             "before" => false,
+             "after" => true
+           }
   end
 
   test "LMS context administrator without instructor role can edit secure delivery", ctx do
@@ -84,6 +90,7 @@ defmodule Oli.Delivery.Sections.SecureDeliverySettingsTest do
     assert {:error, :not_authorized} = change_setting(%{ctx | instructor: insert(:user)}, true)
     Repo.update_all(from(sr in SectionResource, where: sr.id == ^ctx.sr.id), set: [graded: false])
     assert {:error, :invalid_secure_delivery_target} = change_setting(ctx, true)
+    assert audit_events(:assessment_settings_changed, section_id: ctx.section.id) == []
   end
 
   for {description, attrs} <- [
@@ -93,7 +100,7 @@ defmodule Oli.Delivery.Sections.SecureDeliverySettingsTest do
     test "policy can be disabled after its target #{description}", ctx do
       assert {:ok, _} = change_setting(ctx, true)
       sr = Repo.get!(SectionResource, ctx.sr.id)
-      assert {:ok, sr} = Sections.update_section_resource(sr, unquote(Macro.escape(attrs)))
+      assert {:ok, sr} = put_section_resource_fields(sr, unquote(Macro.escape(attrs)))
       assert sr.secure_delivery
       Oli.Delivery.Sections.SectionResourceDepot.update_section_resource(sr)
       ctx = %{ctx | sr: sr}
@@ -118,7 +125,7 @@ defmodule Oli.Delivery.Sections.SecureDeliverySettingsTest do
     assert {:ok, _} = change_setting(ctx, true)
     Application.put_env(:oli, :supports_secure_delivery, false)
     sr = Repo.get!(SectionResource, ctx.sr.id)
-    assert {:ok, sr} = Sections.update_section_resource(sr, %{allow_hints: true})
+    assert {:ok, sr} = put_section_resource_fields(sr, %{allow_hints: true})
     assert sr.secure_delivery
     assert {:ok, _} = change_setting(ctx, false)
   end
@@ -134,9 +141,9 @@ defmodule Oli.Delivery.Sections.SecureDeliverySettingsTest do
   end
 
   defp change_setting(ctx, value) do
-    AssessmentSettings.update(
+    Oli.Delivery.Settings.Audited.update_assessment_settings(
+      Oli.Auditing.Context.for_actor(ctx.instructor, source: :ui),
       ctx.section,
-      ctx.instructor,
       ctx.sr.resource_id,
       %{secure_delivery: value},
       %{

@@ -148,7 +148,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.Content do
       page_1_section_resource = Sections.get_section_resource(section.id, page_1_resource_id)
 
       assert {:ok, updated_sr} =
-               Sections.update_section_resource(page_1_section_resource, %{title: updated_title})
+               put_section_resource_fields(page_1_section_resource, %{title: updated_title})
 
       SectionResourceDepot.update_section_resource(updated_sr)
 

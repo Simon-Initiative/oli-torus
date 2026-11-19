@@ -44,7 +44,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
       datashop_session_id_user1 = UUID.uuid4()
 
       Sections.get_section_resource(map.section.id, map.scored_page2.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         max_attempts: 3
       })
 

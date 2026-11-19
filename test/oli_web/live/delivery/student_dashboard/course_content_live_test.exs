@@ -291,7 +291,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       ## set a student exception
       student_exception_end_date = ~U[2023-10-29 12:00:00Z]
 
-      Oli.Delivery.create_delivery_setting(%{
+      create_student_exception_fixture(%{
         resource_id: p2.published_resource.resource_id,
         section_id: section.id,
         user_id: user.id,

@@ -1034,16 +1034,16 @@ defmodule Oli.Delivery.HierarchyTest do
 
     # update page's scheduling types
     Sections.get_section_resource(section.id, page_1_revision.resource_id)
-    |> Sections.update_section_resource(%{scheduling_type: :inclass_activity})
+    |> put_section_resource_fields(%{scheduling_type: :inclass_activity})
 
     Sections.get_section_resource(section.id, page_2_revision.resource_id)
-    |> Sections.update_section_resource(%{scheduling_type: :due_by})
+    |> put_section_resource_fields(%{scheduling_type: :due_by})
 
     Sections.get_section_resource(section.id, page_6_revision.resource_id)
-    |> Sections.update_section_resource(%{scheduling_type: :due_by})
+    |> put_section_resource_fields(%{scheduling_type: :due_by})
 
     Sections.get_section_resource(section.id, page_7_revision.resource_id)
-    |> Sections.update_section_resource(%{scheduling_type: :due_by})
+    |> put_section_resource_fields(%{scheduling_type: :due_by})
 
     %{
       author: author,

@@ -1,19 +1,14 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   use OliWeb, :live_component
 
-  import Ecto.Query, only: [from: 2]
   import OliWeb.ErrorHelpers
   import Phoenix.HTML.Form
 
-  alias Oli.Accounts.Author
-  alias Oli.Delivery.DepotCoordinator
+  alias Oli.Auditing.Context
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings.AssessmentSettings
-  alias Oli.Delivery.Settings
+  alias Oli.Delivery.Settings.Audited, as: SettingsAudited
   alias Oli.Delivery.Sections.SectionResource
-  alias Oli.Delivery.Sections.SectionResourceDepot
-  alias Oli.Publishing.DeliveryResolver
-  alias Oli.Repo
   alias Oli.Utils
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Common.PagedTable
@@ -485,107 +480,18 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   end
 
   def handle_event("confirm_bulk_apply", _params, socket) do
-    %{
-      section: section,
-      user: user,
-      assessments: assessments,
-      modal_assigns: %{base_assessment: base_assessment}
-    } =
+    %{section: section, user: user, modal_assigns: %{base_assessment: base_assessment}} =
       socket.assigns
 
-    common_set_values =
-      if(base_assessment.feedback_mode == :scheduled,
-        do: [feedback_scheduled_date: base_assessment.feedback_scheduled_date],
-        else: []
-      ) ++
-        [
-          max_attempts: base_assessment.max_attempts,
-          retake_mode: base_assessment.retake_mode,
-          assessment_mode: base_assessment.assessment_mode,
-          late_submit: base_assessment.late_submit,
-          late_start: base_assessment.late_start,
-          time_limit: base_assessment.time_limit,
-          grace_period: base_assessment.grace_period,
-          scoring_strategy_id: base_assessment.scoring_strategy_id,
-          review_submission: base_assessment.review_submission,
-          feedback_mode: base_assessment.feedback_mode,
-          password: base_assessment.password,
-          allow_hints: base_assessment.allow_hints
-        ]
-
-    replacement_strategy_set_values = [
-      replacement_strategy: base_assessment.replacement_strategy
-    ]
-
-    scoring_mode_set_values = [
-      batch_scoring: base_assessment.batch_scoring
-    ]
-
-    from(
-      [sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(
-        socket.assigns.section.slug
-      ),
-      where:
-        rev.resource_type_id == 1 and rev.graded == true and
-          sr.resource_id != ^base_assessment.resource_id,
-      select: sr
-    )
-    |> Repo.update_all(set: common_set_values)
-
-    basic_page_target_assessments =
-      assessments
-      |> Enum.reject(&(&1.resource_id == base_assessment.resource_id))
-      |> Enum.reject(& &1.is_adaptive)
-
-    replacement_strategy_target_resource_ids =
-      basic_page_target_assessments
-      |> Enum.map(& &1.resource_id)
-
-    current_student_started_resource_ids =
-      AssessmentSettings.student_started_resource_ids(
-        section.id,
-        replacement_strategy_target_resource_ids
-      )
-
-    from(sr in SectionResource,
-      where:
-        sr.section_id == ^section.id and
-          sr.resource_id in ^replacement_strategy_target_resource_ids
-    )
-    |> Repo.update_all(set: replacement_strategy_set_values)
-
-    scoring_mode_target_resource_ids =
-      basic_page_target_assessments
-      |> Enum.reject(&MapSet.member?(current_student_started_resource_ids, &1.resource_id))
-      |> Enum.map(& &1.resource_id)
-
-    from(sr in SectionResource,
-      where:
-        sr.section_id == ^section.id and
-          sr.resource_id in ^scoring_mode_target_resource_ids
-    )
-    |> Repo.update_all(set: scoring_mode_set_values)
-
-    # Instruct the DepotCoordinator to update the SRS for these assessments
-    srs = get_assessment_srs(socket.assigns.section.id, Enum.map(assessments, & &1.resource_id))
-
-    DepotCoordinator.update_all(SectionResourceDepot.depot_desc(), srs)
-
-    settings_changes =
-      assessments
-      |> Enum.filter(fn a -> a.resource_id != base_assessment.resource_id end)
-      |> Enum.flat_map(fn assessment ->
-        assessment
-        |> bulk_apply_set_values(
-          common_set_values,
-          replacement_strategy_set_values,
-          scoring_mode_set_values,
-          current_student_started_resource_ids
-        )
-        |> then(&generate_setting_changes(assessment, &1, section.id, user))
-      end)
-
-    Settings.bulk_insert_settings_changes(settings_changes)
+    socket =
+      case SettingsAudited.bulk_apply_assessment_settings(
+             Context.for_actor(user, source: :ui),
+             section,
+             base_assessment.resource_id
+           ) do
+        {:ok, _changed} -> socket
+        {:error, _reason} -> put_flash(socket, :error, "The settings could not be applied")
+      end
 
     {:noreply,
      redirect(socket,
@@ -669,9 +575,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       {:secure_delivery, assessment_setting_id, new_value} ->
         case Oli.Delivery.SecureAssessments.settings_available?() or new_value == false do
           true ->
-            AssessmentSettings.update(
+            SettingsAudited.update_assessment_settings(
+              Context.for_actor(user, source: :ui),
               section,
-              user,
               assessment_setting_id,
               %{secure_delivery: new_value},
               %{assessments: assessments, ctx: ctx}
@@ -703,9 +609,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
          )}
 
       {key = :password, assessment_setting_id, new_value} ->
-        AssessmentSettings.update(
+        SettingsAudited.update_assessment_settings(
+          Context.for_actor(user, source: :ui),
           section,
-          user,
           assessment_setting_id,
           %{key => new_value},
           %{assessments: assessments, ctx: ctx}
@@ -724,9 +630,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
              "Scoring mode cannot be changed because students have already started this assessment."
            )}
         else
-          AssessmentSettings.update(
+          SettingsAudited.update_assessment_settings(
+            Context.for_actor(user, source: :ui),
             section,
-            user,
             assessment_setting_id,
             %{batch_scoring: new_value},
             %{assessments: assessments, ctx: ctx}
@@ -735,9 +641,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         end
 
       {key, assessment_setting_id, new_value} when new_value != "" ->
-        AssessmentSettings.update(
+        SettingsAudited.update_assessment_settings(
+          Context.for_actor(user, source: :ui),
           section,
-          user,
           assessment_setting_id,
           %{key => new_value},
           %{assessments: assessments, ctx: ctx}
@@ -788,9 +694,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     %{section: section, ctx: ctx, user: user, assessments: assessments} = socket.assigns
     assessment = socket.assigns.modal_assigns.assessment_for_scheduled
 
-    AssessmentSettings.update(
+    SettingsAudited.update_assessment_settings(
+      Context.for_actor(user, source: :ui),
       section,
-      user,
       assessment.resource_id,
       %{
         feedback_mode: :scheduled,
@@ -807,17 +713,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
          |> assign(modal_assigns: %{show: false})
          |> assign(form_id: UUID.uuid4())}
 
-      {:error, :update_section_resource, changeset, _} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
          assign(socket,
            modal_assigns: Map.merge(socket.assigns.modal_assigns, %{changeset: changeset})
          )}
-
-      {:error, :get_section_resource, message, _} ->
-        {:noreply, flash_to_liveview(socket, :error, message)}
-
-      {:error, :settings_changes, _, _} ->
-        {:noreply, flash_to_liveview(socket, :error, "ERROR: Failed to insert the setting")}
 
       {:error, {:invalid_feedback_schedule, :feedback_scheduled_date_required}} ->
         changeset =
@@ -842,18 +742,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
      |> flash_to_liveview(:info, "Setting updated!")}
   end
 
-  defp process_updated_result({:error, :update_section_resource, _, _}, socket) do
-    {:noreply, flash_to_liveview(socket, :error, "ERROR: Failed to update the section resource")}
-  end
-
-  defp process_updated_result({:error, :get_section_resource, message, _}, socket) do
-    {:noreply, flash_to_liveview(socket, :error, message)}
-  end
-
-  defp process_updated_result({:error, :settings_changes, _, _}, socket) do
-    {:noreply, flash_to_liveview(socket, :error, "ERROR: Failed to insert the setting")}
-  end
-
   defp process_updated_result({:error, reason}, socket)
        when reason in [
               :not_authorized,
@@ -864,51 +752,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply, flash_to_liveview(socket, :error, "Secure delivery setting could not be updated")}
   end
 
-  defp generate_setting_changes(assessment, values, section_id, user) do
-    date = DateTime.utc_now() |> DateTime.truncate(:second)
-
-    Enum.map(values, fn {key, new_value} ->
-      old_value = Map.get(assessment, key, nil)
-
-      %{
-        resource_id: assessment.resource_id,
-        section_id: section_id,
-        user_id: user.id,
-        user_type: get_user_type(user),
-        key: Atom.to_string(key),
-        new_value: stringify_setting_value(new_value),
-        old_value: stringify_setting_value(old_value),
-        inserted_at: date,
-        updated_at: date
-      }
-    end)
+  defp process_updated_result({:error, :not_found}, socket) do
+    {:noreply, flash_to_liveview(socket, :error, "Could not find section resource")}
   end
 
-  defp stringify_setting_value(nil), do: nil
-  defp stringify_setting_value(value), do: Kernel.to_string(value)
-
-  defp bulk_apply_set_values(
-         %{is_adaptive: true},
-         common_set_values,
-         _replacement_strategy_set_values,
-         _scoring_mode_set_values,
-         _student_started_resource_ids
-       ),
-       do: common_set_values
-
-  defp bulk_apply_set_values(
-         assessment,
-         common_set_values,
-         replacement_strategy_set_values,
-         scoring_mode_set_values,
-         student_started_resource_ids
-       ) do
-    common_set_values ++
-      replacement_strategy_set_values ++
-      if(MapSet.member?(student_started_resource_ids, assessment.resource_id),
-        do: [],
-        else: scoring_mode_set_values
-      )
+  defp process_updated_result({:error, _reason}, socket) do
+    {:noreply, flash_to_liveview(socket, :error, "ERROR: Failed to update the section resource")}
   end
 
   defp scoring_mode_bulk_apply_warning(base_assessment, assessments) do
@@ -938,9 +787,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     assessment = socket.assigns.selected_assessment
     %{section: section, ctx: ctx, user: user, assessments: assessments} = socket.assigns
 
-    AssessmentSettings.update(
+    SettingsAudited.update_assessment_settings(
+      Context.for_actor(user, source: :ui),
       section,
-      user,
       assessment.resource_id,
       %{date_field => new_date},
       %{assessments: assessments, ctx: ctx}
@@ -954,11 +803,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            :info,
            "Setting updated.#{date_adjustment_message(date_field, applied_changes)}"
          )}
-
-      {:error, :settings_changes, _, _} ->
-        {:noreply,
-         socket
-         |> flash_to_liveview(:error, "ERROR: Setting change not be inserted")}
 
       _ ->
         {:noreply,
@@ -1219,18 +1063,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   defp flash_to_liveview(socket, type, message) do
     send(self(), {:flash_message, type, message})
     socket
-  end
-
-  defp get_user_type(%Author{} = _), do: :author
-  defp get_user_type(_), do: :instructor
-
-  defp get_assessment_srs(section_id, resource_ids) do
-    Repo.all(
-      from(s in SectionResource,
-        where: s.section_id == ^section_id and s.resource_id in ^resource_ids,
-        select: s
-      )
-    )
   end
 
   defp get_valid_assessment_id([], _), do: nil

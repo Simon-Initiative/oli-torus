@@ -231,14 +231,14 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
     # schedule start and end date for unit 1 section resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-10-31 20:00:00Z],
       end_date: ~U[2023-12-31 20:00:00Z]
     })
 
     # schedule start and end date for page 2 section resource
     Sections.get_section_resource(section.id, page_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-10 20:00:00Z],
       end_date: ~U[2023-11-14 20:00:00Z]
     })
@@ -901,7 +901,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       # Disallow review submission for this page
       section_resource = Sections.get_section_resource(section.id, page_1.resource_id)
-      Sections.update_section_resource(section_resource, %{review_submission: :disallow})
+      put_section_resource_fields(section_resource, %{review_submission: :disallow})
 
       # Create an attempt for the student
       attempt = create_attempt(student, section, page_1)
@@ -934,7 +934,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       # Disallow review submission for this page
       section_resource = Sections.get_section_resource(section.id, page_1.resource_id)
-      Sections.update_section_resource(section_resource, %{review_submission: :disallow})
+      put_section_resource_fields(section_resource, %{review_submission: :disallow})
 
       # Create an attempt for the student
       attempt = create_attempt(student, section, page_1)

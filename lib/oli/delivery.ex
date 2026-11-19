@@ -98,27 +98,6 @@ defmodule Oli.Delivery do
     |> Repo.all()
   end
 
-  @spec create_delivery_setting(
-          :invalid
-          | %{optional(:__struct__) => none, optional(atom | binary) => any}
-        ) :: any
-  @doc """
-  Creates a delivery setting.
-
-  ## Examples
-
-      iex> create_delivery_setting(%{field: new_value})
-      {:ok, %StudentException{}}
-
-      iex> create_delivery_setting(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def create_delivery_setting(attrs \\ %{}) do
-    %StudentException{}
-    |> StudentException.changeset(attrs)
-    |> Repo.insert()
-  end
-
   @doc """
   Gets a delivery setting that meets the criteria passed in the clauses.
 
@@ -134,23 +113,6 @@ defmodule Oli.Delivery do
     do: Repo.get_by(StudentException, clauses)
 
   @doc """
-  Updates a delivery setting.
-
-  ## Examples
-
-      iex> update_delivery_setting(delivery_setting, %{field: new_value})
-      {:ok, %StudentException{}}
-
-      iex> update_delivery_setting(delivery_setting, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def update_delivery_setting(%StudentException{} = delivery_setting, attrs) do
-    delivery_setting
-    |> StudentException.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
   Returns an `%Ecto.Changeset{}` for tracking delivery setting changes.
 
   ## Examples
@@ -160,31 +122,6 @@ defmodule Oli.Delivery do
   """
   def change_delivery_setting(%StudentException{} = delivery_setting, attrs \\ %{}) do
     StudentException.changeset(delivery_setting, attrs)
-  end
-
-  @doc """
-  Creates a new, or updates the existing delivery setting
-  for the given section and resource.
-
-  ## Examples
-
-      iex> upsert_delivery_setting(%{field: new_value})
-      {:ok, %StudentException{}}
-
-      iex> upsert_delivery_setting(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def upsert_delivery_setting(attrs) do
-    section_id = attrs["section_id"] || attrs.section_id
-    resource_id = attrs["resource_id"] || attrs.resource_id
-
-    case get_delivery_setting_by(%{
-           section_id: section_id,
-           resource_id: resource_id
-         }) do
-      nil -> create_delivery_setting(attrs)
-      ds -> update_delivery_setting(ds, attrs)
-    end
   end
 
   defp contains_explorations(section_slug) do

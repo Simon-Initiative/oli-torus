@@ -1590,15 +1590,22 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
-  # Section resource fields written only by the audited commands of
-  # `Oli.Delivery.Sections.Audited`.
-  @protected_section_resource_fields [:collab_space_config]
+  # Section resource fields written only by audited commands: the discussion configuration
+  # (`Oli.Delivery.Sections.Audited`) and the assessment settings
+  # (`Oli.Delivery.Settings.Audited`).
+  @protected_section_resource_fields [
+    :collab_space_config
+    | Map.keys(Oli.Auditing.EventCatalog.Fields.assessment_settings())
+  ]
 
   @doc """
   Updates a section resource's display or creation fields.
 
-  Fields recorded in the Audit Log (`collab_space_config`) are written only by
-  `Oli.Delivery.Sections.Audited`; passing one returns `{:error, :protected}` and writes nothing.
+  Fields recorded in the Audit Log are written only by their audited commands: the discussion
+  configuration by `Oli.Delivery.Sections.Audited`, the assessment settings (dates, attempts,
+  late policy, scoring, feedback, password, secure delivery) by
+  `Oli.Delivery.Settings.Audited`. Passing one returns `{:error, :protected}` and writes
+  nothing.
 
   ## Examples
       iex> update_section_resource(section_resource, %{field: new_value})

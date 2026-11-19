@@ -358,52 +358,52 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
     # schedule start and end date for unit 1 section_resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-10-31 20:00:00Z],
       end_date: ~U[2023-12-31 20:00:00Z]
     })
 
     # schedule start and end date for module 1 section_resource
     Sections.get_section_resource(section.id, module_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-01 20:00:00Z],
       end_date: ~U[2023-11-15 20:00:00Z]
     })
 
     # schedule start and end date for page 1 to 6 section_resource
     Sections.get_section_resource(section.id, page_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-01 20:00:00Z],
       end_date: ~U[2023-11-02 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-02 20:00:00Z],
       end_date: ~U[2023-11-03 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_3_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-03 20:00:00Z],
       end_date: ~U[2023-11-04 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_4_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-04 20:00:00Z],
       end_date: ~U[2023-11-05 20:00:00Z],
       time_limit: 75
     })
 
     Sections.get_section_resource(section.id, page_5_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-05 20:00:00Z],
       end_date: ~U[2023-11-06 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_6_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-07 20:00:00Z],
       end_date: ~U[2023-11-08 20:00:00Z]
     })
@@ -927,7 +927,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       stub_current_time(~U[2023-11-04 20:00:00Z])
 
       Sections.get_section_resource(section.id, page_3.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: nil,
         end_date: ~U[2023-11-04 20:00:00Z],
         scheduling_type: :due_by
@@ -1545,7 +1545,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       # Set page 3 as hidden
       section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+      put_section_resource_fields(section_resource, %{hidden: !section_resource.hidden})
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
@@ -2090,7 +2090,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       # Set page 3 as hidden
       section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+      put_section_resource_fields(section_resource, %{hidden: !section_resource.hidden})
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
@@ -2129,7 +2129,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       # Set page 3 as hidden
       section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+      put_section_resource_fields(section_resource, %{hidden: !section_resource.hidden})
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 

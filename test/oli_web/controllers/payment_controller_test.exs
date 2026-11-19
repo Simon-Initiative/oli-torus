@@ -3,7 +3,6 @@ defmodule OliWeb.PaymentControllerTest do
 
   import Oli.Factory
 
-  alias Oli.Delivery.Sections
   alias Oli.VendorProperties
 
   describe "guard action" do

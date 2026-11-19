@@ -576,21 +576,21 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
     # schedule start and end date for unit 1 section resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-10-31 20:00:00Z],
       end_date: ~U[2023-12-31 20:00:00Z]
     })
 
     # schedule start and end date for page 2 section resource
     Sections.get_section_resource(section.id, page_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-10 20:00:00Z],
       end_date: ~U[2023-11-14 20:00:00Z]
     })
 
     # configure page as one at a time
     Sections.get_section_resource(section.id, one_at_a_time_question_page_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       assessment_mode: :one_at_a_time
     })
 
@@ -598,7 +598,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       section.id,
       empty_one_at_a_time_question_page_revision.resource_id
     )
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       assessment_mode: :one_at_a_time
     })
 
@@ -1346,7 +1346,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       Sections.get_section_resource(section.id, graded_page.resource_id)
-      |> Sections.update_section_resource(%{time_limit: 20})
+      |> put_section_resource_fields(%{time_limit: 20})
 
       create_attempt(user, section, graded_page, %{lifecycle_state: :active})
 
@@ -1370,7 +1370,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       Sections.get_section_resource(section.id, graded_page.resource_id)
-      |> Sections.update_section_resource(%{batch_scoring: false})
+      |> put_section_resource_fields(%{batch_scoring: false})
 
       create_attempt(user, section, graded_page, %{lifecycle_state: :active})
 
@@ -2240,7 +2240,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       ## update the section resource needed for the test
       Sections.get_section_resource(section.id, attempt_in_progress.resource_access.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         end_date: yesterday(),
         late_submit: :disallow,
         late_start: :disallow,
@@ -2266,7 +2266,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       Sections.get_section_resource(section.id, page_3.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         end_date: yesterday(),
         late_submit: :disallow,
         late_start: :disallow,
@@ -2308,7 +2308,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       Sections.get_section_resource(section.id, page_3.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         end_date: yesterday(),
         late_submit: :disallow,
         late_start: :disallow,
@@ -2352,7 +2352,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       Sections.get_section_resource(section.id, graded_page.resource_id)
-      |> Sections.update_section_resource(%{batch_scoring: false})
+      |> put_section_resource_fields(%{batch_scoring: false})
 
       resource_access =
         Oli.Delivery.Attempts.Core.track_access(
@@ -2868,7 +2868,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       Sections.get_section_resource(section.id, graded_page.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         batch_scoring: false,
         scheduling_type: :due_by,
         end_date: ~U[2026-06-13 20:00:00Z]
@@ -2901,7 +2901,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       Sections.get_section_resource(section.id, graded_page.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         batch_scoring: false,
         end_date: nil
       })
@@ -2926,7 +2926,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       Sections.get_section_resource(section.id, graded_page.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         batch_scoring: false,
         scheduling_type: :read_by,
         end_date: ~U[2026-06-13 20:00:00Z]
@@ -2953,7 +2953,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       Sections.get_section_resource(section.id, graded_page.resource_id)
-      |> Sections.update_section_resource(%{batch_scoring: true})
+      |> put_section_resource_fields(%{batch_scoring: true})
 
       create_attempt(user, section, graded_page, %{lifecycle_state: :active})
 

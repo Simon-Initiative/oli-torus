@@ -617,7 +617,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       enroll_as_student(%{section: section, user: user})
 
       sr = Sections.get_section_resource(section.id, page_revision.resource_id)
-      Sections.update_section_resource(sr, %{password: "password"})
+      put_section_resource_fields(sr, %{password: "password"})
 
       conn = get(conn, ~p"/sections/#{section.slug}/lesson/#{page_revision.slug}")
 
@@ -822,7 +822,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       # change the start date to tomorrow
       tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
-      Sections.update_section_resource(sr, %{start_date: tomorrow})
+      put_section_resource_fields(sr, %{start_date: tomorrow})
 
       # now start the attempt
       conn =
@@ -861,7 +861,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       sr = Sections.get_section_resource(section.id, page_revision.resource_id)
 
       tomorrow = DateTime.utc_now() |> DateTime.add(-1, :day)
-      Sections.update_section_resource(sr, %{start_date: tomorrow})
+      put_section_resource_fields(sr, %{start_date: tomorrow})
 
       conn = get(conn, ~p"/sections/#{section.slug}/lesson/#{page_revision.slug}")
 
@@ -904,7 +904,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       sr = Sections.get_section_resource(section.id, page_revision.resource_id)
 
       tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
-      Sections.update_section_resource(sr, %{start_date: tomorrow})
+      put_section_resource_fields(sr, %{start_date: tomorrow})
 
       conn = get(conn, ~p"/sections/#{section.slug}/lesson/#{page_revision.slug}")
       html_response = html_response(conn, 200)
@@ -1408,7 +1408,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
       Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
-      |> Oli.Delivery.Sections.update_section_resource(%{time_limit: 5})
+      |> put_section_resource_fields(%{time_limit: 5})
 
       insert(:resource_access,
         user: user,

@@ -376,14 +376,14 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     if add_schedule? do
       # schedule start and end date for unit 1 section resource
       Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2023-10-31 20:00:00Z],
         end_date: ~U[2023-12-31 20:00:00Z]
       })
 
       # schedule start and end date for page 2 section resource
       Sections.get_section_resource(section.id, page_2_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2023-11-10 20:00:00Z],
         end_date: ~U[2023-11-14 20:00:00Z],
         late_submit: :disallow,
@@ -782,7 +782,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{max_attempts: 2})
+      put_section_resource_fields(sr, %{max_attempts: 2})
 
       _first_attempt = create_attempt(user, section, page_3)
 
@@ -819,12 +819,12 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{max_attempts: 3})
+      put_section_resource_fields(sr, %{max_attempts: 3})
 
       _first_attempt = create_attempt(user, section, page_3)
 
       sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{batch_scoring: false})
+      put_section_resource_fields(sr, %{batch_scoring: false})
 
       {:ok, view, _html} =
         live(
@@ -887,7 +887,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
       sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{password: "correct_password"})
+      put_section_resource_fields(sr, %{password: "correct_password"})
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
 
@@ -1067,7 +1067,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       _first_attempt = create_attempt(user, section, page_3)
 
       sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{review_submission: :disallow})
+      put_section_resource_fields(sr, %{review_submission: :disallow})
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
 
@@ -1103,7 +1103,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{max_attempts: 2})
+      put_section_resource_fields(sr, %{max_attempts: 2})
 
       _first_attempt = create_attempt(user, section, page_3)
       _second_attempt = create_attempt(user, section, page_3)
@@ -1799,7 +1799,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
     defp get_and_update_section_resource(section_id, resource_id, updated_params) do
       Sections.get_section_resource(section_id, resource_id)
-      |> Sections.update_section_resource(updated_params)
+      |> put_section_resource_fields(updated_params)
     end
   end
 

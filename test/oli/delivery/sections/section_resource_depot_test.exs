@@ -454,7 +454,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
       sub_objective_sr =
         Sections.get_section_resource(section_id, sub_objective_revision.resource_id)
 
-      Sections.update_section_resource(sub_objective_sr, %{hidden: true})
+      put_section_resource_fields(sub_objective_sr, %{hidden: true})
 
       assert [%SectionResource{revision_id: revision_id}] =
                SectionResourceDepot.objectives(section_id, hidden: false)
@@ -610,7 +610,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
 
     # Set page as hidden
     section_resource = Sections.get_section_resource(section.id, hidden_page_revision.resource_id)
-    Sections.update_section_resource(section_resource, %{hidden: true})
+    put_section_resource_fields(section_resource, %{hidden: true})
 
     %{
       section: section,

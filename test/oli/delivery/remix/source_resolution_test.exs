@@ -78,7 +78,7 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
       |> Sections.get_section_resources()
       |> Enum.find(&(&1.resource_id == hidden_page.resource_id))
 
-    {:ok, _} = Sections.update_section_resource(hidden_page_section_resource, %{hidden: true})
+    {:ok, _} = put_section_resource_fields(hidden_page_section_resource, %{hidden: true})
 
     hidden_container_section_resource =
       product.id
@@ -86,7 +86,7 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
       |> Enum.find(&(&1.resource_id == hidden_container.resource_id))
 
     {:ok, _} =
-      Sections.update_section_resource(hidden_container_section_resource, %{hidden: true})
+      put_section_resource_fields(hidden_container_section_resource, %{hidden: true})
 
     target = insert(:section, base_project: project)
     {:ok, _} = Sections.create_section_resources(target, publication)
@@ -233,7 +233,7 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
     root_section_resource = Oli.Repo.get!(SectionResource, product.root_section_resource_id)
 
     {:ok, _root_section_resource} =
-      Sections.update_section_resource(root_section_resource, %{
+      put_section_resource_fields(root_section_resource, %{
         children: root_section_resource.children ++ [older_page_section_resource.id]
       })
 

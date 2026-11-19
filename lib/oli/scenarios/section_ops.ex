@@ -7,6 +7,7 @@ defmodule Oli.Scenarios.SectionOps do
   alias Oli.Auditing.Context
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Audited, as: SectionsAudited
+  alias Oli.Delivery.Settings.Audited, as: SettingsAudited
   alias Oli.Delivery.Settings.AssessmentSettings
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
@@ -67,24 +68,17 @@ defmodule Oli.Scenarios.SectionOps do
             section
 
           assessment_params ->
+            # The section's hidden instructor passes the secure-delivery editor check.
             {:ok, {actor, _token}} = Sections.fetch_hidden_instructor(section.id)
 
-            case AssessmentSettings.update(
+            case SettingsAudited.update_assessment_settings(
+                   Context.for_actor(actor, source: :scenario),
                    section,
-                   actor,
                    section_resource.resource_id,
-                   Map.new(assessment_params)
+                   Map.new(assessment_params),
+                   %{include_ungraded: true}
                  ) do
               {:ok, _result} ->
-                section
-
-              {:error, {:assessment_not_found, _resource_id}} ->
-                apply_direct_section_resource_updates!(
-                  section_resource,
-                  assessment_params,
-                  target
-                )
-
                 section
 
               {:error, reason} ->
@@ -107,16 +101,6 @@ defmodule Oli.Scenarios.SectionOps do
       end
     else
       raise "Section resource '#{target}' not found in section"
-    end
-  end
-
-  defp apply_direct_section_resource_updates!(section_resource, params, target) do
-    case Sections.update_section_resource(section_resource, Map.new(params)) do
-      {:ok, _updated_resource} ->
-        :ok
-
-      {:error, changeset} ->
-        raise "Failed to update section resource '#{target}': #{inspect(changeset.errors)}"
     end
   end
 

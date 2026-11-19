@@ -121,7 +121,7 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
         Sections.get_section_resource(section.id, revisions.page_revision_2.resource_id)
 
       {:ok, section_resource} =
-        Sections.update_section_resource(section_resource, %{ai_enabled: true})
+        put_section_resource_fields(section_resource, %{ai_enabled: true})
 
       SectionResourceDepot.update_section_resource(section_resource)
 

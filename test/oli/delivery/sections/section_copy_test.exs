@@ -1089,7 +1089,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       {:ok, copy} = copy(source, @all_groups)
 
       copied_page = page_resource(copy, page1)
-      {:ok, _} = Sections.update_section_resource(copied_page, %{hidden: true})
+      {:ok, _} = put_section_resource_fields(copied_page, %{hidden: true})
 
       refute page_resource(source, page1).hidden
     end
@@ -1155,7 +1155,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
   end
 
   defp update_page_settings(section, page, attrs) do
-    {:ok, _} = section |> page_resource(page) |> Sections.update_section_resource(attrs)
+    {:ok, _} = section |> page_resource(page) |> put_section_resource_fields(attrs)
   end
 
   defp pinned_revision(%Section{id: id}, page) do

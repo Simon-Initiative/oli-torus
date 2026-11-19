@@ -699,7 +699,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         |> Oli.Repo.update!()
 
       Sections.get_section_resource(section.id, page_revision.resource_id)
-      |> Sections.update_section_resource(%{batch_scoring: true})
+      |> put_section_resource_fields(%{batch_scoring: true})
 
       attempt_map =
         map

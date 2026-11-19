@@ -1,16 +1,15 @@
-defmodule Oli.Delivery.Settings.StudentExceptionsTest do
+defmodule Oli.Delivery.Settings.AuditedStudentExceptionsTest do
   use Oli.DataCase
   use Oban.Testing, repo: Oli.Repo
 
   alias Oli.Delivery.Attempts.AutoSubmit.Worker
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Settings.StudentExceptions
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Sections
   alias Oli.Repo
   alias Oli.Seeder
 
-  describe "set_exception/4 auto submit maintenance" do
+  describe "set_student_exception/6 auto submit maintenance" do
     setup do
       Seeder.base_project_with_resource2()
       |> Seeder.create_section()
@@ -43,13 +42,13 @@ defmodule Oli.Delivery.Settings.StudentExceptionsTest do
       resource_id = graded_page1.resource.id
       new_due_date = DateTime.utc_now() |> DateTime.add(2, :day) |> DateTime.truncate(:second)
 
-      assert {:ok, exception} = StudentExceptions.set_exception(section, resource_id, user.id)
+      assert {:ok, exception} = set_exception(section, resource_id, user.id)
       assert is_nil(exception.late_submit)
 
       old_job_id = attempt.auto_submit_job_id
 
       assert {:ok, _updated_exception} =
-               StudentExceptions.set_exception(section, resource_id, user.id, %{
+               set_exception(section, resource_id, user.id, %{
                  due_date: new_due_date
                })
 
@@ -73,13 +72,13 @@ defmodule Oli.Delivery.Settings.StudentExceptionsTest do
     } do
       resource_id = graded_page1.resource.id
 
-      assert {:ok, exception} = StudentExceptions.set_exception(section, resource_id, user.id)
+      assert {:ok, exception} = set_exception(section, resource_id, user.id)
       assert is_nil(exception.late_submit)
 
       old_job_id = attempt.auto_submit_job_id
 
       assert {:ok, _updated_exception} =
-               StudentExceptions.set_exception(section, resource_id, user.id, %{
+               set_exception(section, resource_id, user.id, %{
                  late_policy: :allow_late_start_and_late_submit
                })
 
@@ -101,7 +100,7 @@ defmodule Oli.Delivery.Settings.StudentExceptionsTest do
       section_resource = Sections.get_section_resource(section.id, resource_id)
 
       assert {:ok, _section_resource} =
-               Sections.update_section_resource(section_resource, %{
+               put_section_resource_fields(section_resource, %{
                  late_start: :allow,
                  late_submit: :allow
                })
@@ -109,14 +108,14 @@ defmodule Oli.Delivery.Settings.StudentExceptionsTest do
       assert {:ok, 1} =
                Oli.Delivery.Settings.AutoSubmitCustodian.cancel(section.id, resource_id, user.id)
 
-      assert {:ok, exception} = StudentExceptions.set_exception(section, resource_id, user.id)
+      assert {:ok, exception} = set_exception(section, resource_id, user.id)
       assert is_nil(exception.late_submit)
 
       attempt = Core.get_resource_attempt_by(attempt_guid: attempt.attempt_guid)
       assert is_nil(attempt.auto_submit_job_id)
 
       assert {:ok, _updated_exception} =
-               StudentExceptions.set_exception(section, resource_id, user.id, %{
+               set_exception(section, resource_id, user.id, %{
                  late_policy: :disallow_late_start_and_late_submit
                })
 
@@ -138,7 +137,7 @@ defmodule Oli.Delivery.Settings.StudentExceptionsTest do
   defp configure_section_settings(map, page_key, attrs) do
     resource = map[page_key].resource
     section_resource = Sections.get_section_resource(map.section.id, resource.id)
-    {:ok, _section_resource} = Sections.update_section_resource(section_resource, attrs)
+    {:ok, _section_resource} = put_section_resource_fields(section_resource, attrs)
     map
   end
 
@@ -162,4 +161,14 @@ defmodule Oli.Delivery.Settings.StudentExceptionsTest do
 
     Map.put(map, attempt_key, attempt)
   end
+
+  defp set_exception(section, resource_id, user_id, attrs \\ %{}),
+    do:
+      Oli.Delivery.Settings.Audited.set_student_exception(
+        audit_context(),
+        section,
+        resource_id,
+        user_id,
+        attrs
+      )
 end

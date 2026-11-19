@@ -344,7 +344,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
     # schedule start and end date for unit 1 section resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-10-31 20:00:00Z],
       end_date: ~U[2023-12-31 20:00:00Z]
     })

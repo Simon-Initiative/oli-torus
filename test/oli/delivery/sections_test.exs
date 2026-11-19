@@ -344,33 +344,33 @@ defmodule Oli.Delivery.SectionsTest do
 
     # schedule start and end date for unit 1 section_resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-10-31 20:00:00Z],
       end_date: ~U[2023-12-31 20:00:00Z]
     })
 
     # schedule start and end date for module 1 section_resource
     Sections.get_section_resource(section.id, module_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-01 20:00:00Z],
       end_date: ~U[2023-11-15 20:00:00Z]
     })
 
     # schedule start and end date for page 1 to 3 section_resource
     Sections.get_section_resource(section.id, page_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-01 20:00:00Z],
       end_date: ~U[2023-11-02 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-02 20:00:00Z],
       end_date: ~U[2023-11-03 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_3_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-03 20:00:00Z],
       end_date: ~U[2023-11-04 20:00:00Z]
     })

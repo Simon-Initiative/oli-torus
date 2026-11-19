@@ -197,4 +197,92 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
 
     assert_audited(:publication_update_policy_changed, [section_id: product.id] ++ scenario)
   end
+
+  test "assessment settings and student exception directives record their events" do
+    author = Oli.Utils.Seeder.AccountsFixtures.author_fixture()
+
+    yaml = """
+    - project:
+        name: source
+        title: Source
+        root:
+          children:
+            - page: "Quiz Page"
+
+    - edit_page:
+        project: source
+        page: "Quiz Page"
+        content: |
+          title: "Quiz Page"
+          graded: true
+          blocks: []
+
+    - publish:
+        to: source
+        description: "Graded page"
+
+    - section:
+        name: course
+        title: Course
+        from: source
+
+    - user:
+        name: student_1
+        type: student
+        email: audited_directive_student@test.edu
+
+    - enroll:
+        user: student_1
+        section: course
+        role: student
+
+    - manipulate:
+        to: course
+        ops:
+          - revise:
+              target: "Quiz Page"
+              set:
+                max_attempts: 4
+
+    - student_exception:
+        action: "set"
+        student: student_1
+        section: course
+        page: "Quiz Page"
+        set:
+          max_attempts: 6
+
+    - student_exception:
+        action: "remove"
+        student: student_1
+        section: course
+        page: "Quiz Page"
+    """
+
+    %ExecutionResult{errors: errors, state: state} =
+      yaml
+      |> Oli.Scenarios.DirectiveParser.parse_yaml!()
+      |> Oli.Scenarios.execute(author: author)
+
+    assert errors == []
+
+    section = Engine.get_section(state, "course")
+    student = state.users["student_1"]
+
+    # The settings change acts as the section's hidden instructor, which passes the
+    # secure-delivery editor check.
+    settings =
+      assert_audited(:assessment_settings_changed, section_id: section.id, source: :scenario)
+
+    assert settings.changes["max_attempts"]["after"] == 4
+
+    for event <- [:student_exception_created, :student_exception_deleted] do
+      assert_audited(event,
+        section_id: section.id,
+        affected_user_id: student.id,
+        actor: author,
+        source: :scenario
+      )
+    end
+  end
 end
