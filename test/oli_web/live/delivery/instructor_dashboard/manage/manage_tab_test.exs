@@ -41,6 +41,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
   describe "instructor" do
     setup [:instructor_conn, :section_with_assessment]
 
+    for open_and_free <- [false, true] do
+      @open_and_free open_and_free
+      test "hides the course URL for instructors when open_and_free is #{open_and_free}", %{
+        instructor: instructor,
+        conn: conn
+      } do
+        section = insert(:section, type: :enrollable, open_and_free: @open_and_free)
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+        {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
+
+        assert has_element?(view, "label", "Course Section ID")
+        refute has_element?(view, "label", "URL")
+      end
+    end
+
     test "cannot access page if not enrolled to section", %{conn: conn, section: section} do
       redirect_path = "/unauthorized"
 
@@ -141,6 +157,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
 
       assert has_element?(view, "label", "Template")
       refute has_element?(view, "label", "Product")
+    end
+  end
+
+  for admin_setup <- [:content_admin_conn, :account_admin_conn, :admin_conn] do
+    describe "course URL visibility with #{admin_setup}" do
+      setup [admin_setup]
+
+      for open_and_free <- [false, true] do
+        @open_and_free open_and_free
+        test "shows the course URL when open_and_free is #{open_and_free}", %{conn: conn} do
+          section = insert(:section, type: :enrollable, open_and_free: @open_and_free)
+
+          {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
+
+          assert has_element?(view, "label", "URL")
+          assert has_element?(view, "input[value='#{url(~p"/sections/#{section.slug}")}']")
+        end
+      end
     end
   end
 
