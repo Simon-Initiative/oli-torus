@@ -240,6 +240,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
             id={Integer.to_string(@current_activity.id) <> "_eventually_correct"}
             value={@all_attempt_pct}
             label="Eventually Correct"
+            description="Percentage of learners who answered every scored part correctly at least once. Parts may have been correct on different attempts."
           />
         </div>
       </div>

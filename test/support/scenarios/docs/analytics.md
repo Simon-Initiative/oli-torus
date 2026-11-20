@@ -60,6 +60,33 @@ Specify exactly one target matching `resource_type`:
 Count metrics are compared exactly. `eventually_correct`, `first_attempt_correct`, and
 `relative_difficulty` use the configured tolerance.
 
+For individual activity parts, `eventually_correct` is the fraction of learners
+with at least one full-credit evaluation of that part. Each learner counts once
+per section and part. Later incorrect answers do not remove success, and retries
+do not add learners. Whole-question displays (including adaptive screen rows)
+require every scored part to have been correct for the same learner in the same
+section, possibly on different attempts. A required part that was never attempted
+prevents question success. The denominator includes learners who attempted any
+required part; unattempted questions do not add learners.
+
+Pages and objectives retain their existing response-accuracy calculation,
+`num_correct / NULLIF(num_attempts, 0)`, displayed as **% Correct**. The existing
+API field `eventually_correct` is retained for these rows for compatibility. It
+counts full-credit part evaluations divided by all associated part evaluations,
+including retries; it does not measure eventual success or mastery.
+
+All correctness calculations use existing `ResourceSummary` counters. Question
+part definitions come from content already resolved for display. There are no
+joins to resource, activity, or part attempt history, no historical objective JSON
+expansion, and no OLAP dependency, migration, or analytics replay.
+
+Missing learner evidence makes part/question Eventually Correct unavailable,
+including incomplete cross-section evidence. It never falls back to submission
+accuracy or a measured zero. A measured zero requires attempted learners with no
+successes. First Attempt Correct, submission counts, and relative difficulty keep
+their existing calculations. Ordinary activity sorts page before fetching learner
+counts; sorting by Eventually Correct considers all matching activity candidates.
+
 ### Activity example
 
 ```yaml

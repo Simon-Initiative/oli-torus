@@ -2,6 +2,7 @@ defmodule Oli.Scenarios.Directives.Assert.ActivityObjectivesAssertionTest do
   use Oli.DataCase
 
   alias Oli.Resources
+  alias Oli.Repo
   alias Oli.Scenarios.{DirectiveParser, Engine}
   alias Oli.Scenarios.DirectiveTypes.{AssertDirective, ExecutionState}
   alias Oli.Scenarios.Directives.Assert.ActivityObjectivesAssertion
@@ -71,8 +72,13 @@ defmodule Oli.Scenarios.Directives.Assert.ActivityObjectivesAssertionTest do
     activity_revision =
       result.state.activity_virtual_ids[{"objective_course", "practice_activity"}]
 
+    # An unresolved reference must still satisfy the objective ID format.
+    missing_objective_id = Repo.aggregate(Resources.Resource, :max, :id) + 1
+
     assert {:ok, _revision} =
-             Resources.update_revision(activity_revision, %{objectives: %{"attached" => [-1]}})
+             Resources.update_revision(activity_revision, %{
+               objectives: %{"attached" => [missing_objective_id]}
+             })
 
     directive = %AssertDirective{
       activity_objectives: %{
@@ -86,7 +92,10 @@ defmodule Oli.Scenarios.Directives.Assert.ActivityObjectivesAssertionTest do
              ActivityObjectivesAssertion.assert(directive, result.state)
 
     refute verification.passed
-    assert verification.message =~ "Unresolved objective resource ids: [-1]"
+
+    assert verification.message =~
+             "Unresolved objective resource ids: #{inspect([missing_objective_id])}"
+
     assert verification.actual == nil
   end
 end
