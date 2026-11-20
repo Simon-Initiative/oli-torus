@@ -48,6 +48,12 @@ export const AccessibleFilterDropdown: Hook<AccessibleFilterDropdownState> = {
     };
     this.onPanelKeydown = (event: Event) => {
       const keyboardEvent = event as KeyboardEvent;
+      const target = keyboardEvent.target as HTMLInputElement | HTMLSelectElement | null;
+      const usesNativeArrowNavigation =
+        target instanceof HTMLInputElement && ['number', 'radio'].includes(target.type);
+
+      if (usesNativeArrowNavigation || target instanceof HTMLSelectElement) return;
+
       const elements = focusableElements();
       const currentIndex = elements.indexOf(document.activeElement as HTMLElement);
       switch (keyboardEvent.key) {
