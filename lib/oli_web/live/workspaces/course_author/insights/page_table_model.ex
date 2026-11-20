@@ -6,6 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Insights.PageTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
+  @doc "Builds the page analytics table, labeling part-evaluation accuracy as % Correct."
   def new(rows, project_slug, ctx) do
     SortableTableModel.new(
       rows: rows,
@@ -30,7 +31,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Insights.PageTableModel do
         },
         %ColumnSpec{
           name: :eventually_correct,
-          label: "Eventually Correct%",
+          label: "% Correct",
+          tooltip:
+            "Percentage of evaluated question-part responses that earned full credit. Includes repeated attempts.",
           render_fn: &render_percentage/3
         },
         %ColumnSpec{
