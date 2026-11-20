@@ -16,6 +16,12 @@ defmodule OliWeb.AuthorAuth do
   @remember_me_cookie "_oli_web_author_remember_me"
   @remember_me_options [sign: true, max_age: @max_age, same_site: "Lax"]
 
+  # Shared by the role plugs and their on_mount counterparts so both entry points
+  # show the same message.
+  @admin_required_message "You are not authorized to access this page."
+  @account_admin_required_message "You must be an account admin to access this page."
+  @system_admin_required_message "You must be a system admin to access this page."
+
   @doc """
   Logs the author in.
   """
@@ -210,6 +216,13 @@ defmodule OliWeb.AuthorAuth do
     * `:redirect_if_author_is_authenticated` - Authenticates the author from the session.
       Redirects to signed_in_path if there's a logged author.
 
+    * `:ensure_admin`, `:ensure_account_admin`, `:ensure_system_admin` - Behave like
+      `:ensure_authenticated` and additionally require the author to hold the given
+      admin role, mirroring the `require_admin/2`, `require_account_admin/2` and
+      `require_system_admin/2` plugs. Unlike the plugs, they also run on live
+      navigation, so role-restricted LiveViews must use them.
+      Redirects to the course author workspace if the author lacks the role.
+
   ## Examples
 
   Use the `on_mount` lifecycle macro in LiveViews to mount or authenticate
@@ -254,6 +267,53 @@ defmodule OliWeb.AuthorAuth do
       {:halt, Phoenix.LiveView.redirect(socket, to: signed_in_path(socket))}
     else
       {:cont, socket}
+    end
+  end
+
+  def on_mount(:ensure_admin, params, session, socket) do
+    ensure_role(
+      params,
+      session,
+      socket,
+      &Accounts.is_admin?/1,
+      @admin_required_message
+    )
+  end
+
+  def on_mount(:ensure_account_admin, params, session, socket) do
+    ensure_role(
+      params,
+      session,
+      socket,
+      &Accounts.at_least_account_admin?/1,
+      @account_admin_required_message
+    )
+  end
+
+  def on_mount(:ensure_system_admin, params, session, socket) do
+    ensure_role(
+      params,
+      session,
+      socket,
+      &Accounts.is_system_admin?/1,
+      @system_admin_required_message
+    )
+  end
+
+  defp ensure_role(params, session, socket, authorized?, message) do
+    with {:cont, socket} <- on_mount(:ensure_authenticated, params, session, socket) do
+      case authorized?.(socket.assigns.current_author) do
+        true ->
+          {:cont, socket}
+
+        false ->
+          socket =
+            socket
+            |> Phoenix.LiveView.put_flash(:error, message)
+            |> Phoenix.LiveView.redirect(to: ~p"/workspaces/course_author")
+
+          {:halt, socket}
+      end
     end
   end
 
@@ -356,7 +416,7 @@ defmodule OliWeb.AuthorAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You are not authorized to access this page.")
+      |> put_flash(:error, @admin_required_message)
       |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end
@@ -367,7 +427,7 @@ defmodule OliWeb.AuthorAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You must be an account admin to access this page.")
+      |> put_flash(:error, @account_admin_required_message)
       |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end
@@ -389,7 +449,7 @@ defmodule OliWeb.AuthorAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You must be a system admin to access this page.")
+      |> put_flash(:error, @system_admin_required_message)
       |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end
