@@ -28,7 +28,10 @@ defmodule Oli.Delivery.Sections.Audited do
   alias Oli.Auditing.Context
   alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Sections.Audited.{Discussions, Lifecycle, SectionSettings}
+  alias Oli.Accounts.Author
+  alias Oli.Delivery.Remix.State, as: RemixState
+  alias Oli.Delivery.Sections.Audited.{Discussions, Lifecycle, PublicationUpdates, Remix}
+  alias Oli.Delivery.Sections.Audited.SectionSettings
   alias Oli.Publishing.Publications.Publication
   alias Oli.Resources.Collaboration.CollabSpaceConfig
 
@@ -284,4 +287,58 @@ defmodule Oli.Delivery.Sections.Audited do
       do: Discussions.set_notes(context, section, config)
 
   def set_section_notes(_context, _section, _config), do: {:error, :invalid_request}
+
+  @doc """
+  Saves a remix: materializes draft containers, writes template container edits, rebuilds the
+  curriculum and pinned publications of the remix state's section, and initializes the Deep
+  Link selections of added pages, all in one transaction under the section lock.
+
+  Records one `section_remix_saved` per curriculum entry whose parent, position, visibility,
+  numbering, or source publication changed, including added and removed entries. `author`
+  is the author the materialized containers and template edits are written as; the actor is
+  `context`'s, so an instructor who is a `User` is recorded as such.
+
+  Returns `{:ok, section}` with the section read again, or `{:error, reason}` with nothing
+  written or recorded; `{:error, :nested_transaction}` inside another transaction.
+  """
+  @spec save_remix(Context.t(), RemixState.t(), Author.t() | nil) ::
+          {:ok, Section.t()} | {:error, command_error()}
+  def save_remix(%Context{} = context, %RemixState{} = state, author),
+    do: Remix.save(context, state, author)
+
+  def save_remix(_context, _state, _author), do: {:error, :invalid_request}
+
+  @doc """
+  Applies the publication with `publication_id` to `section`, keeping the section's own
+  curriculum changes, in one transaction under the section lock.
+
+  Records `publication_applied` with the previous and resulting publications when the
+  section's publication of that project changes; re-applying the publication already in place
+  records nothing. Section caches are cleared and progress is broadcast after the commit.
+
+  Returns `{:ok, section}` or `{:error, reason}` with nothing written or recorded;
+  `{:error, :nested_transaction}` inside another transaction.
+  """
+  @spec apply_publication_update(Context.t(), Section.t(), pos_integer()) ::
+          {:ok, Section.t()} | {:error, command_error()}
+  def apply_publication_update(%Context{} = context, %Section{} = section, publication_id)
+      when is_integer(publication_id),
+      do: PublicationUpdates.apply(context, section, publication_id)
+
+  def apply_publication_update(_context, _section, _publication_id),
+    do: {:error, :invalid_request}
+
+  @doc """
+  Enqueues a job that applies the publication with `publication_id` to `section` with
+  `apply_publication_update/3`. The job carries `context`, so its event records the same actor
+  with source `:job`, linked to `context`'s operation.
+  """
+  @spec enqueue_publication_update(Context.t(), Section.t(), pos_integer()) ::
+          {:ok, Oban.Job.t()} | {:error, term()}
+  def enqueue_publication_update(%Context{} = context, %Section{} = section, publication_id)
+      when is_integer(publication_id),
+      do: PublicationUpdates.enqueue(context, section, publication_id)
+
+  def enqueue_publication_update(_context, _section, _publication_id),
+    do: {:error, :invalid_request}
 end

@@ -6,6 +6,7 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
   import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
 
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections
 
@@ -14,8 +15,7 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
     CopyOptions,
     Section,
     SectionResource,
-    SectionSpecification,
-    Updates
+    SectionSpecification
   }
 
   alias Oli.Delivery.Sections.SectionsProjectsPublications
@@ -110,7 +110,11 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
       publication = publish(ctx.state)
 
       assert {:ok, _} =
-               Updates.apply_publication_update(Repo.preload(copy, :blueprint), publication.id)
+               SectionsAudited.apply_publication_update(
+                 audit_context(),
+                 Repo.preload(copy, :blueprint),
+                 publication.id
+               )
 
       assert link(copy, added_id).custom == %{"mode" => "newly-published"}
       assert link(copy, id).custom == %{"mode" => "copied-course"}
@@ -118,7 +122,8 @@ defmodule Oli.Scenarios.LtiExternalTool.InheritanceTest do
       assert pins(ctx.source) != pins(copy)
 
       assert {:ok, _} =
-               Updates.apply_publication_update(
+               SectionsAudited.apply_publication_update(
+                 audit_context(),
                  Repo.preload(ctx.source, :blueprint),
                  publication.id
                )

@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Remix.SaveTest do
   import Oli.Factory
 
   alias Oli.Delivery.Remix
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Delivery.Sections
 
   @tag :remix_save
@@ -39,7 +40,7 @@ defmodule Oli.Delivery.Remix.SaveTest do
     target_uuid = hd(state.active.children).uuid
     {:ok, state} = Remix.toggle_hidden(state, target_uuid)
 
-    {:ok, _section} = Remix.save(state, author)
+    {:ok, _section} = SectionsAudited.save_remix(audit_context(), state, author)
 
     # verify persisted
     sr = Sections.get_section_resource(section.id, hd(state.active.children).revision.resource_id)

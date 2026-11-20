@@ -5,6 +5,7 @@ defmodule Oli.Delivery.RemixContainerTest do
   import Ecto.Query, warn: false
 
   alias Oli.Repo
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Delivery.Remix
   alias Oli.Delivery.Remix.State
   alias Oli.Delivery.Sections
@@ -159,7 +160,7 @@ defmodule Oli.Delivery.RemixContainerTest do
         Remix.add_materials(active_state, [{ctx.source_pub.id, ctx.source_page.id}])
 
       # Save triggers redirect to product overview (materializes drafts then persists)
-      {:ok, _section} = Remix.save(populated_state, ctx.author)
+      {:ok, _section} = SectionsAudited.save_remix(audit_context(), populated_state, ctx.author)
 
       # Reload hierarchy — the container now has a real positive resource_id
       reloaded = DeliveryResolver.full_hierarchy(ctx.section.slug)
@@ -189,7 +190,10 @@ defmodule Oli.Delivery.RemixContainerTest do
 
     test "editing blueprint unit options updates all project publications on save", ctx do
       created_state = Remix.create_container(ctx.state, :unit, "New Unit")
-      {:ok, saved_section} = Remix.save(created_state, ctx.author)
+
+      {:ok, saved_section} =
+        SectionsAudited.save_remix(audit_context(), created_state, ctx.author)
+
       {:ok, reloaded_state} = Remix.init_open_and_free(saved_section)
 
       new_unit =
@@ -209,7 +213,7 @@ defmodule Oli.Delivery.RemixContainerTest do
 
       assert edited_state.has_unsaved_changes
 
-      {:ok, _section} = Remix.save(edited_state, ctx.author)
+      {:ok, _section} = SectionsAudited.save_remix(audit_context(), edited_state, ctx.author)
 
       reloaded_hierarchy = DeliveryResolver.full_hierarchy(ctx.section.slug)
 

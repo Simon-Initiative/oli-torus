@@ -101,8 +101,12 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
     {:ok, remix_state} =
       Remix.add_materials(remix_state, selection, published_resources_by_resource_id)
 
-    # Persist via Remix.save/2
-    {:ok, refreshed_section} = Remix.save(remix_state, state.current_author)
+    {:ok, refreshed_section} =
+      Oli.Delivery.Sections.Audited.save_remix(
+        Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
+        remix_state,
+        state.current_author
+      )
 
     # Update state with the refreshed section or product
     updated_state =
@@ -160,7 +164,14 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
     {:ok, remix_state} =
       Remix.add_materials_from_sources(remix_state, [selection], %{selection => source.key})
 
-    {:ok, refreshed_section} = Remix.save(remix_state, state.current_author)
+    # The instructor remixes; the scenario's author writes any container it materializes
+    {:ok, refreshed_section} =
+      Oli.Delivery.Sections.Audited.save_remix(
+        Oli.Auditing.Context.for_actor(user, source: :scenario),
+        remix_state,
+        state.current_author
+      )
+
     {:ok, Engine.put_section(state, section_name, refreshed_section)}
   end
 

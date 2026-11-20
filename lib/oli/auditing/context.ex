@@ -108,6 +108,75 @@ defmodule Oli.Auditing.Context do
   @spec sources() :: [source()]
   def sources, do: @sources
 
+  @doc """
+  Serializes `context` into JSON-safe job arguments: the actor kind, ID or system key,
+  snapshot, and operation ID. `from_job_args/1` rebuilds the context of the job from them.
+  """
+  @spec to_job_args(t()) :: map()
+  def to_job_args(%__MODULE__{} = context) do
+    %{
+      "actor_type" => Atom.to_string(context.actor_type),
+      "actor_id" => context.user_id || context.author_id,
+      "system_key" => context.system_key && Atom.to_string(context.system_key),
+      "actor_snapshot" => context.actor_snapshot,
+      "operation_id" => context.operation_id
+    }
+  end
+
+  @doc """
+  Rebuilds the context of a job from the arguments of `to_job_args/1`, without a query: the
+  actor keeps the snapshot taken when the job was enqueued, even if the account was deleted
+  since. The job's operation is new, with source `:job`, and its parent is the operation that
+  enqueued it.
+
+  Returns `:error` for arguments that do not name a known actor kind.
+  """
+  @spec from_job_args(map()) :: {:ok, t()} | :error
+  def from_job_args(%{"actor_type" => actor_type, "operation_id" => parent} = args) do
+    with {:ok, actor} <- job_actor(actor_type, args),
+         {:ok, parent} <- Ecto.UUID.cast(parent) do
+      {:ok,
+       struct!(
+         __MODULE__,
+         Map.merge(actor, %{
+           source: :job,
+           operation_id: Ecto.UUID.generate(),
+           parent_operation_id: parent
+         })
+       )}
+    end
+  end
+
+  def from_job_args(_args), do: :error
+
+  defp job_actor(type, %{"actor_id" => id, "actor_snapshot" => %{} = snapshot})
+       when type in ["user", "author"] and is_integer(id) and id > 0 do
+    {id_key, actor_type} =
+      case type do
+        "user" -> {:user_id, :user}
+        "author" -> {:author_id, :author}
+      end
+
+    {:ok, %{actor_type: actor_type, actor_snapshot: snapshot} |> Map.put(id_key, id)}
+  end
+
+  defp job_actor("system", %{"system_key" => key}) when is_binary(key) do
+    case Enum.find(Map.keys(@system_actors), &(Atom.to_string(&1) == key)) do
+      nil ->
+        :error
+
+      system_key ->
+        {:ok,
+         %{
+           actor_type: :system,
+           system_key: system_key,
+           actor_snapshot: %{"key" => key, "label" => Map.fetch!(@system_actors, system_key)}
+         }}
+    end
+  end
+
+  defp job_actor(_type, _args), do: :error
+
   defp build(actor_type, ids, snapshot, opts, allowed_sources) do
     opts = Keyword.validate!(opts, [:source, :operation_id, :parent_operation_id])
 

@@ -6,6 +6,7 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
   import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
 
   alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Delivery.Remix
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Lti.PlatformExternalTools
@@ -46,6 +47,26 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
       assert Map.take(copied, @fields) == Map.take(source, @fields)
       assert copied.id != source.id
       assert copied.section_id == destination.id
+    end
+
+    # The template is remixed by the Scenario's author, the course by its instructor; each
+    # added lesson records the publication it comes from
+    tool_lesson = state.projects["deep_linking_project"].rev_by_title["Tool Lesson"].resource_id
+
+    for {destination, actor} <- [
+          {state.products["destination_template"], state.current_author},
+          {state.sections["destination_course"], state.users["remix_instructor"]}
+        ] do
+      added =
+        assert_audited(:section_remix_saved,
+          section_id: destination.id,
+          resource_id: tool_lesson,
+          actor: actor,
+          source: :scenario
+        )
+
+      refute Map.has_key?(added.changes["position"], "before")
+      assert [%{"role" => "source", "type" => "publication"}] = added.refs
     end
   end
 
@@ -94,7 +115,7 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
       assert MapSet.new(Map.values(remix.material_sources)) ==
                MapSet.new(Enum.map(product_ids, &{:section, &1}))
 
-      assert {:ok, _} = Remix.save(remix, state.current_author)
+      assert {:ok, _} = SectionsAudited.save_remix(audit_context(), remix, state.current_author)
       assert link(destination, Hooks.activity(state).resource_id)
 
       assert Enum.any?(
@@ -130,7 +151,9 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
       publish(ctx.state)
       save_selection(ctx.state, "configured", selection("draft-only"))
 
-      assert {:ok, _} = Remix.save(remix, ctx.state.current_author)
+      assert {:ok, _} =
+               SectionsAudited.save_remix(audit_context(), remix, ctx.state.current_author)
+
       assert link(destination, ctx.id).custom == ctx.state.params.draft["custom"]
       assert Enum.member?(pins(destination), {Hooks.project(ctx.state).id, elem(tuple, 0)})
       assert link(ctx.template, ctx.id).custom == ctx.state.params.draft["custom"]
@@ -148,7 +171,10 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
       # Current means read at save, not when the picker was opened.
       put_selection(ctx.template, ctx.id, chosen)
       save_selection(ctx.state, "configured", selection("project-draft"))
-      assert {:ok, _} = Remix.save(remix, ctx.state.current_author)
+
+      assert {:ok, _} =
+               SectionsAudited.save_remix(audit_context(), remix, ctx.state.current_author)
+
       copied = link(ctx.destination, ctx.id)
       assert Map.take(copied, @fields) == Map.take(link(ctx.template, ctx.id), @fields)
       assert copied.id != link(ctx.template, ctx.id).id
@@ -180,7 +206,14 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
 
     put_selection(other, ctx.id, selection("other"))
     put_selection(ctx.template, ctx.id, selection("chosen"))
-    assert {:ok, _} = Remix.save(add_template(%{ctx | state: state}), state.current_author)
+
+    assert {:ok, _} =
+             SectionsAudited.save_remix(
+               audit_context(),
+               add_template(%{ctx | state: state}),
+               state.current_author
+             )
+
     assert link(ctx.destination, ctx.id).custom == %{"mode" => "chosen"}
   end
 
@@ -188,7 +221,13 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
     assert {:ok, _} =
              Oli.TestHelpers.delete_deep_link_fixture(link(ctx.template, ctx.id))
 
-    assert {:ok, _} = Remix.save(add_template(ctx), ctx.state.current_author)
+    assert {:ok, _} =
+             SectionsAudited.save_remix(
+               audit_context(),
+               add_template(ctx),
+               ctx.state.current_author
+             )
+
     assert links(ctx.destination) == []
     assert Hooks.activity(ctx.state).content["deepLink"] != nil
   end
@@ -198,10 +237,15 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
     test "#{source} remix preserves existing destination selections", ctx do
       remix = add(ctx, @source)
       # Existing resource membership and selection may already belong to another remixed page.
-      assert {:ok, _} = Remix.save(remix, ctx.state.current_author)
+      assert {:ok, _} =
+               SectionsAudited.save_remix(audit_context(), remix, ctx.state.current_author)
+
       put_selection(ctx.destination, ctx.id, selection("instructor"))
       existing = link(ctx.destination, ctx.id)
-      assert {:ok, _} = Remix.save(remix, ctx.state.current_author)
+
+      assert {:ok, _} =
+               SectionsAudited.save_remix(audit_context(), remix, ctx.state.current_author)
+
       assert link(ctx.destination, ctx.id) == existing
     end
 
@@ -215,7 +259,10 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
         )
 
       assert {:ok, remix} = Remix.remove(remix, page.uuid)
-      assert {:ok, _} = Remix.save(remix, ctx.state.current_author)
+
+      assert {:ok, _} =
+               SectionsAudited.save_remix(audit_context(), remix, ctx.state.current_author)
+
       assert links(ctx.destination) == []
       refute Enum.any?(resources(ctx.destination), &(&1.resource_id == page_id(ctx.state)))
     end
@@ -239,24 +286,32 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
       )
 
       assert {:error, :lti_deep_link_initialization_failed} =
-               Remix.save(remix, ctx.state.current_author)
+               SectionsAudited.save_remix(audit_context(), remix, ctx.state.current_author)
 
       assert {resources(ctx.destination), pins(ctx.destination), links(ctx.destination)} == before
       Repo.query!("ALTER TABLE lti_section_resource_deep_links DROP CONSTRAINT reject_remix")
-      assert {:ok, _} = Remix.save(remix, ctx.state.current_author)
+
+      assert {:ok, _} =
+               SectionsAudited.save_remix(audit_context(), remix, ctx.state.current_author)
+
       assert link(ctx.destination, ctx.id).url == "https://tool.example/reject"
     end
   end
 
   test "reordering existing content does not backfill an unrelated missing choice", ctx do
-    assert {:ok, _} = Remix.save(add(ctx, :project), ctx.state.current_author)
+    assert {:ok, _} =
+             SectionsAudited.save_remix(
+               audit_context(),
+               add(ctx, :project),
+               ctx.state.current_author
+             )
 
     assert {:ok, _} =
              Oli.TestHelpers.delete_deep_link_fixture(link(ctx.destination, ctx.id))
 
     assert {:ok, remix} = Remix.init(ctx.destination, ctx.state.current_author)
     assert {:ok, remix} = Remix.reorder(remix, 0, 1)
-    assert {:ok, _} = Remix.save(remix, ctx.state.current_author)
+    assert {:ok, _} = SectionsAudited.save_remix(audit_context(), remix, ctx.state.current_author)
     assert links(ctx.destination) == []
   end
 
@@ -285,7 +340,7 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
 
     assert {:ok, remix} = Remix.move(remix, page.uuid, remix.hierarchy.uuid)
     assert {:ok, remix} = Remix.remove(remix, added_container.uuid)
-    assert {:ok, _} = Remix.save(remix, ctx.state.current_author)
+    assert {:ok, _} = SectionsAudited.save_remix(audit_context(), remix, ctx.state.current_author)
     assert link(ctx.destination, ctx.id).custom == ctx.state.params.draft["custom"]
   end
 
@@ -310,7 +365,7 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
 
     assert {:ok, remix} = Remix.init(ctx.destination, ctx.state.current_author)
     assert {:ok, remix} = Remix.add_materials(remix, [{pub.id, pub.root_resource_id}])
-    assert {:ok, _} = Remix.save(remix, ctx.state.current_author)
+    assert {:ok, _} = SectionsAudited.save_remix(audit_context(), remix, ctx.state.current_author)
     assert links(ctx.destination) == []
   end
 
@@ -333,7 +388,14 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
       """)
 
     publish(state)
-    assert {:ok, _} = Remix.save(add(%{ctx | state: state}, :project), state.current_author)
+
+    assert {:ok, _} =
+             SectionsAudited.save_remix(
+               audit_context(),
+               add(%{ctx | state: state}, :project),
+               state.current_author
+             )
+
     unused_id = Hooks.activity(state, "unused").resource_id
     assert Enum.any?(resources(ctx.destination), &(&1.resource_id == unused_id))
     assert link(ctx.destination, unused_id) == nil
@@ -352,7 +414,10 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
       )
 
     assert {:ok, source_edit} = Remix.toggle_hidden(source_edit, page.uuid)
-    assert {:ok, _} = Remix.save(source_edit, ctx.state.current_author)
+
+    assert {:ok, _} =
+             SectionsAudited.save_remix(audit_context(), source_edit, ctx.state.current_author)
+
     user = ctx.state.users["remix_instructor"] |> Repo.preload(:author)
     assert {:ok, remix} = Remix.init(ctx.destination, user)
 
@@ -366,7 +431,7 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
     assert hierarchy.children == []
     assert {:ok, tuple} = Remix.selection_tuple(source, hierarchy)
     assert {:ok, remix} = Remix.add_materials_from_sources(remix, [tuple], %{tuple => source.key})
-    assert {:ok, _} = Remix.save(remix, ctx.state.current_author)
+    assert {:ok, _} = SectionsAudited.save_remix(audit_context(), remix, ctx.state.current_author)
     assert link(ctx.destination, ctx.id) == nil
   end
 
@@ -381,7 +446,13 @@ defmodule Oli.Scenarios.LtiExternalTool.RemixTest do
       end
 
       pub = publish(ctx.state)
-      assert {:ok, _} = Remix.save(add(ctx, :project), ctx.state.current_author)
+
+      assert {:ok, _} =
+               SectionsAudited.save_remix(
+                 audit_context(),
+                 add(ctx, :project),
+                 ctx.state.current_author
+               )
 
       Repo.delete_all(
         from l in LtiSectionResourceDeepLink, where: l.section_id == ^ctx.destination.id

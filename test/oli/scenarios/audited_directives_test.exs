@@ -99,6 +99,24 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
         section: standalone
         to: root
 
+    # Hiding a page is a curriculum change, saved as a remix
+    - manipulate:
+        to: from_project
+        ops:
+          - revise:
+              target: "Page"
+              set:
+                hidden: true
+
+    # A second publication of the section's project, applied to it
+    - publish:
+        to: section_source
+        description: "Second publication"
+
+    - update:
+        from: section_source
+        to: from_project
+
     # An author user becomes the represented author, so it comes last.
     - user:
         name: collaborator
@@ -160,9 +178,17 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
 
     # Publish, section, product, and remix directives publish their source when it has no
     # publication yet.
-    for name <- ["published", "section_source", "product_source", "remix_source"] do
+    for name <- ["published", "product_source", "remix_source"] do
       assert_audited(:project_published, [project_id: project_id.(name)] ++ scenario)
     end
+
+    # The section's project is published again for the update directive
+    assert length(
+             audit_events(
+               :project_published,
+               [project_id: project_id.("section_source")] ++ scenario
+             )
+           ) == 2
 
     # A standalone section creates and publishes its own backing project.
     backing = Repo.get_by!(Oli.Authoring.Course.Project, title: "Standalone Project")
@@ -196,6 +222,24 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
     assert discussions.changes["anonymous_posting"]["after"] == false
 
     assert_audited(:publication_update_policy_changed, [section_id: product.id] ++ scenario)
+
+    # The update and remix directives
+    assert_audited(
+      :publication_applied,
+      [section_id: section_id.("from_project"), project_id: project_id.("section_source")] ++
+        scenario
+    )
+
+    assert [_ | _] =
+             audit_events(
+               :section_remix_saved,
+               [section_id: section_id.("standalone")] ++ scenario
+             )
+
+    hidden =
+      assert_audited(:section_remix_saved, [section_id: section_id.("from_project")] ++ scenario)
+
+    assert hidden.changes["hidden"] == %{"operation" => "set", "before" => false, "after" => true}
   end
 
   test "assessment settings and student exception directives record their events" do

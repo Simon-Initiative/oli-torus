@@ -5,6 +5,8 @@ defmodule Oli.Scenarios.SectionOps do
   """
 
   alias Oli.Auditing.Context
+  alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Remix
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Delivery.Settings.Audited, as: SettingsAudited
@@ -23,11 +25,11 @@ defmodule Oli.Scenarios.SectionOps do
     end)
   end
 
-  defp apply_op(%{"revise" => params}, section, _context) do
+  defp apply_op(%{"revise" => params}, section, context) do
     target = params["target"]
     set_params = params["set"] || %{}
 
-    revise_section_resource!(section, target, set_params)
+    revise_section_resource!(section, target, set_params, context)
   end
 
   defp apply_op(%{"change" => params}, section, context) do
@@ -38,7 +40,7 @@ defmodule Oli.Scenarios.SectionOps do
     raise "Unsupported section operation: #{inspect(op)}"
   end
 
-  defp revise_section_resource!(section, target, set_params) do
+  defp revise_section_resource!(section, target, set_params, context) do
     # Get the hierarchy to find the target resource
     hierarchy = DeliveryResolver.full_hierarchy(section.slug)
     node = find_node_by_title(hierarchy, target)
@@ -86,6 +88,16 @@ defmodule Oli.Scenarios.SectionOps do
             end
         end
 
+      # Visibility is a curriculum change, saved as a remix
+      {hidden_params, other_params} =
+        Enum.split_with(other_params, fn {key, _value} -> key == :hidden end)
+
+      section =
+        case hidden_params do
+          [] -> section
+          [{:hidden, hidden}] -> set_hidden!(section, section_resource, hidden, context)
+        end
+
       case other_params do
         [] ->
           section
@@ -95,12 +107,33 @@ defmodule Oli.Scenarios.SectionOps do
             {:ok, _updated_resource} ->
               section
 
-            {:error, changeset} ->
-              raise "Failed to update section resource '#{target}': #{inspect(changeset.errors)}"
+            {:error, %Ecto.Changeset{errors: errors}} ->
+              raise "Failed to update section resource '#{target}': #{inspect(errors)}"
+
+            {:error, reason} ->
+              raise "Failed to update section resource '#{target}': #{inspect(reason)}"
           end
       end
     else
       raise "Section resource '#{target}' not found in section"
+    end
+  end
+
+  defp set_hidden!(section, %SectionResource{hidden: hidden}, hidden, _context), do: section
+
+  defp set_hidden!(section, %SectionResource{resource_id: resource_id}, _hidden, context) do
+    {:ok, state} = Remix.init_open_and_free(section)
+
+    node =
+      state.hierarchy
+      |> Hierarchy.flatten_hierarchy()
+      |> Enum.find(&(&1.resource_id == resource_id))
+
+    {:ok, state} = Remix.toggle_hidden(state, node.uuid)
+
+    case SectionsAudited.save_remix(context, state, nil) do
+      {:ok, section} -> section
+      {:error, reason} -> raise "Failed to change the visibility: #{inspect(reason)}"
     end
   end
 

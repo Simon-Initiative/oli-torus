@@ -37,7 +37,6 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.DataProviders.EctoProvider
   alias Oli.Lti.Tool.{Deployment, Registration}
   alias Oli.Lti.LaunchIdentity
-  alias Oli.Lti.PlatformExternalTools
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Paywall.Payment
@@ -49,11 +48,9 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
   alias Oli.Publishing.PublishedResource
-  alias Oli.Publishing.Publications.{PublicationDiff}
   alias Oli.Accounts.User
   alias Lti_1p3.Roles.ContextRoles
   alias Lti_1p3.Roles.PlatformRoles
-  alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Utils.Slug
@@ -1595,17 +1592,18 @@ defmodule Oli.Delivery.Sections do
   # (`Oli.Delivery.Settings.Audited`).
   @protected_section_resource_fields [
     :collab_space_config
-    | Map.keys(Oli.Auditing.EventCatalog.Fields.assessment_settings())
+    | Map.keys(Oli.Auditing.EventCatalog.Fields.assessment_settings()) ++
+        Map.keys(Oli.Auditing.EventCatalog.Fields.remix())
   ]
 
   @doc """
   Updates a section resource's display or creation fields.
 
   Fields recorded in the Audit Log are written only by their audited commands: the discussion
-  configuration by `Oli.Delivery.Sections.Audited`, the assessment settings (dates, attempts,
-  late policy, scoring, feedback, password, secure delivery) by
-  `Oli.Delivery.Settings.Audited`. Passing one returns `{:error, :protected}` and writes
-  nothing.
+  configuration and the curriculum fields a remix saves (visibility, numbering) by
+  `Oli.Delivery.Sections.Audited`, the assessment settings (dates, attempts, late policy,
+  scoring, feedback, password, secure delivery) by `Oli.Delivery.Settings.Audited`. Passing one
+  returns `{:error, :protected}` and writes nothing.
 
   ## Examples
       iex> update_section_resource(section_resource, %{field: new_value})
@@ -4701,358 +4699,6 @@ defmodule Oli.Delivery.Sections do
       select: %{title: rev.title}
     )
     |> Repo.all()
-  end
-
-  @doc """
-  Serializes projection writes with JIT migration by locking the Section first.
-
-  Gracefully applies the specified publication update to a given section by leaving the existing
-  curriculum and section modifications in-tact while applying the structural changes that
-  occurred between the old and new publication.
-
-  This implementation makes the assumption that a resource_id is unique within a curriculum.
-  That is, a resource can only allowed to be added once in a single location within a curriculum.
-  This makes it simpler to apply changes to the existing curriculum but if necessary, this implementation
-  could be extended to not just apply the changes to the first node found that contains the changed resource,
-  but any/all nodes in the hierarchy which reference the changed resource.
-
-  Missing LTI selections (resource configurations chosen in external tools) are
-  initialized within the update transaction, preserving existing section choices.
-  Failed initialization never reports a completed update.
-  """
-  @spec apply_publication_update(%Section{}, integer()) :: {:ok, {:ok}} | {:error, term()}
-  def apply_publication_update(
-        %Section{id: section_id} = section,
-        publication_id
-      ) do
-    Broadcaster.broadcast_update_progress(section.id, publication_id, 0)
-
-    new_publication = Publishing.get_publication!(publication_id)
-    project_id = new_publication.project_id
-    current_publication = get_current_publication(section_id, project_id)
-
-    # fetch diff from cache if one is available. If not, compute one on the fly
-    diff = Publishing.get_publication_diff(current_publication, new_publication)
-
-    result =
-      case diff do
-        %PublicationDiff{classification: classification}
-        when classification in [:minor, :no_changes] ->
-          current_hierarchy = MinimalHierarchy.full_hierarchy(section.slug)
-          perform_update(:minor, section, project_id, new_publication, current_hierarchy)
-
-        %PublicationDiff{classification: :major} ->
-          cond do
-            # Case 1: The course section is based on this project, but is not a product and is not seeded from a product
-            section.base_project_id == project_id and section.type == :enrollable and
-                is_nil(section.blueprint_id) ->
-              perform_update(
-                :major,
-                section,
-                project_id,
-                current_publication,
-                new_publication
-              )
-
-            # Case 2: The course section is based on this project and was seeded from a product
-            section.base_project_id == project_id and !is_nil(section.blueprint_id) ->
-              if section.blueprint.apply_major_updates do
-                perform_update(:major, section, project_id, current_publication, new_publication)
-              else
-                current_hierarchy = MinimalHierarchy.full_hierarchy(section.slug)
-                perform_update(:minor, section, project_id, new_publication, current_hierarchy)
-              end
-
-            # Case 3: The course section is a product based on this project
-            section.base_project_id == project_id and section.type == :blueprint ->
-              current_hierarchy = MinimalHierarchy.full_hierarchy(section.slug)
-              perform_update(:minor, section, project_id, new_publication, current_hierarchy)
-
-            # Case 4: The course section is not based on this project (but it remixes some materials from project)
-            true ->
-              current_hierarchy = MinimalHierarchy.full_hierarchy(section.slug)
-              perform_update(:minor, section, project_id, new_publication, current_hierarchy)
-          end
-      end
-
-    case result do
-      {:ok, _} -> Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
-      _ -> Broadcaster.broadcast_update_progress(section.id, new_publication.id, 0)
-    end
-
-    result
-  end
-
-  # Applies a minor publication change using the current section hierarchy and new
-  # publication pin. Missing tool configurations are initialized in the same
-  # transaction, while existing instructor choices are preserved.
-  defp perform_update(:minor, section, project_id, new_publication, current_hierarchy) do
-    mark = Oli.Timing.mark()
-
-    result =
-      Repo.transaction(fn ->
-        SectionResourceMigration.lock_section!(section.id)
-
-        # Update the section project publication to the new publication
-        update_section_project_publication(section, project_id, new_publication.id)
-
-        project_publications = get_pinned_project_publications(section.id)
-        rebuild_section_curriculum(section, current_hierarchy, project_publications)
-
-        case PlatformExternalTools.initialize_section_deep_links(section.id, new_publication.id) do
-          {:ok, _} -> {:ok}
-          {:error, reason} -> Repo.rollback(reason)
-        end
-      end)
-
-    Logger.info(
-      "perform_update.MINOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
-    )
-
-    result
-  end
-
-  # Reconciles the major publication diff with the section's existing curriculum
-  # using the AIRRO steps below. Missing tool configurations are initialized only
-  # after the destination resources are finalized, within the same transaction.
-  defp perform_update(:major, section, project_id, prev_publication, new_publication) do
-    mark = Oli.Timing.mark()
-
-    result =
-      Repo.transaction(fn ->
-        SectionResourceMigration.lock_section!(section.id)
-
-        container = ResourceType.id_for_container()
-
-        prev_published_resources_map =
-          MinimalHierarchy.published_resources_map(prev_publication.id)
-
-        new_published_resources_map = MinimalHierarchy.published_resources_map(new_publication.id)
-
-        # Update the section project publication to the new publication
-        update_section_project_publication(section, project_id, new_publication.id)
-
-        # Bulk create new placeholder section resource records for new published resources.
-        # The children of these records may need the id of other section resource records
-        # created here, so children will be set to nil initially and set in the next step.
-        #
-        # This is more efficient than DFS traversing the hierarchy and creating these records
-        # one at a time in order to ensure that child record ids are available for the parent
-        # children.
-        now = DateTime.utc_now() |> DateTime.truncate(:second)
-        placeholders = %{timestamp: now}
-
-        section_resource_rows =
-          new_published_resources_map
-          |> Enum.filter(fn {resource_id, _pr} ->
-            !Map.has_key?(prev_published_resources_map, resource_id)
-          end)
-          |> Enum.map(fn {resource_id, pr} ->
-            %{
-              resource_id: resource_id,
-              project_id: project_id,
-              section_id: section.id,
-              # we set children to nil here so that we know it needs to be set in the next step
-              children: nil,
-              scoring_strategy_id: pr.scoring_strategy_id,
-              ai_enabled: pr.ai_enabled,
-              slug: Oli.Utils.Slug.generate("section_resources", pr.title),
-              inserted_at: {:placeholder, :timestamp},
-              updated_at: {:placeholder, :timestamp}
-            }
-          end)
-
-        Database.batch_insert_all(SectionResource, section_resource_rows,
-          placeholders: placeholders,
-          on_conflict:
-            {:replace_all_except,
-             [
-               :inserted_at,
-               :scoring_strategy_id,
-               :scheduling_type,
-               :manually_scheduled,
-               :removed_from_schedule,
-               :secure_delivery,
-               :start_date,
-               :end_date,
-               :collab_space_config,
-               :explanation_strategy,
-               :max_attempts,
-               :retake_mode,
-               :assessment_mode,
-               :password,
-               :late_submit,
-               :late_start,
-               :time_limit,
-               :grace_period,
-               :review_submission,
-               :feedback_mode,
-               :feedback_scheduled_date
-             ]},
-          conflict_target: [:section_id, :resource_id]
-        )
-
-        # get all section resources including freshly minted ones
-        section_resources = get_section_resources(section.id)
-
-        # build mappings from section_resource_id to resource_id and the inverse
-        {sr_id_to_resource_id, resource_id_to_sr_id} =
-          section_resources
-          |> Enum.reduce({%{}, %{}}, fn %SectionResource{id: id, resource_id: resource_id},
-                                        {sr_id_to_resource_id, resource_id_to_sr_id} ->
-            {Map.put(sr_id_to_resource_id, id, resource_id),
-             Map.put(resource_id_to_sr_id, resource_id, id)}
-          end)
-
-        # For all container section resources in the course project whose children attribute differs
-        # from the new publication’s container children, execute the three way merge algorithm
-        merged_section_resources =
-          section_resources
-          |> Enum.map(fn section_resource ->
-            %SectionResource{
-              resource_id: resource_id,
-              children: current_children
-            } = section_resource
-
-            prev_published_resource = prev_published_resources_map[resource_id]
-
-            is_container? =
-              case prev_published_resource do
-                %{resource_type_id: ^container} ->
-                  true
-
-                _ ->
-                  false
-              end
-
-            # Guard: skip resources not in this publication (e.g., remixed from another project)
-            new_published_resource = new_published_resources_map[resource_id]
-
-            if (is_container? or is_nil(current_children)) and not is_nil(new_published_resource) do
-              new_children = new_published_resource.children
-
-              updated_section_resource =
-                case current_children do
-                  nil ->
-                    # this section resource was just created so it can assume the newly published value
-                    %SectionResource{} = sr = section_resource
-
-                    %SectionResource{
-                      sr
-                      | children: Enum.map(new_children, &resource_id_to_sr_id[&1])
-                    }
-
-                  current_children ->
-                    # ensure we are comparing resource_ids to resource_ids (and not section_resource_ids)
-                    # by translating the current section_resource children ids to resource_ids
-                    current_children_resource_ids =
-                      Enum.map(current_children, &sr_id_to_resource_id[&1])
-
-                    # check if the children resource_ids have diverged from the new value
-                    if current_children_resource_ids != new_children do
-                      # There is a merge conflict between the current section resource and the new published resource.
-                      # Use the AIRRO three way merge algorithm to resolve
-                      base = prev_published_resource.children
-                      source = new_published_resource.children
-                      target = current_children_resource_ids
-
-                      case Oli.Publishing.Updating.Merge.merge(base, source, target) do
-                        {:ok, merged} ->
-                          %SectionResource{} = sr = section_resource
-
-                          %SectionResource{
-                            sr
-                            | children: Enum.map(merged, &resource_id_to_sr_id[&1])
-                          }
-
-                        {:no_change} ->
-                          section_resource
-                      end
-                    else
-                      section_resource
-                    end
-                end
-
-              clean_children(
-                updated_section_resource,
-                sr_id_to_resource_id,
-                new_published_resources_map
-              )
-            else
-              section_resource
-            end
-          end)
-
-        # Upsert all merged section resource records. Some of these records may have just been created
-        # and some may not have been changed, but that's okay we will just update them again
-        now = DateTime.utc_now() |> DateTime.truncate(:second)
-        placeholders = %{timestamp: now}
-
-        section_resource_rows =
-          merged_section_resources
-          |> Enum.map(fn section_resource ->
-            %{
-              SectionResource.to_map(section_resource)
-              | updated_at: {:placeholder, :timestamp}
-            }
-          end)
-
-        Database.batch_insert_all(SectionResource, section_resource_rows,
-          placeholders: placeholders,
-          on_conflict:
-            {:replace_all_except,
-             [
-               :inserted_at,
-               :scoring_strategy_id,
-               :scheduling_type,
-               :manually_scheduled,
-               :removed_from_schedule,
-               :secure_delivery,
-               :start_date,
-               :end_date,
-               :collab_space_config,
-               :explanation_strategy,
-               :max_attempts,
-               :retake_mode,
-               :assessment_mode,
-               :password,
-               :late_submit,
-               :late_start,
-               :time_limit,
-               :grace_period,
-               :review_submission,
-               :feedback_mode,
-               :feedback_scheduled_date
-             ]},
-          conflict_target: [:section_id, :resource_id]
-        )
-
-        # Finally, we must fetch and renumber the final hierarchy in order to generate the proper numberings
-        {new_hierarchy, _numberings} =
-          MinimalHierarchy.full_hierarchy(section.slug)
-          |> Numbering.renumber_hierarchy()
-
-        # Rebuild the section curriculum using the new hierarchy, adding any new non-hierarchical
-        # resources and cleaning up any deleted ones
-        pinned_project_publications = get_pinned_project_publications(section.id)
-        rebuild_section_curriculum(section, new_hierarchy, pinned_project_publications)
-
-        PostProcessing.apply(section, :all)
-
-        Oli.Delivery.maybe_update_section_contains_explorations(section)
-        Oli.Delivery.maybe_update_section_contains_deliberate_practice(section)
-
-        case PlatformExternalTools.initialize_section_deep_links(section.id, new_publication.id) do
-          {:ok, _} -> {:ok}
-          {:error, reason} -> Repo.rollback(reason)
-        end
-      end)
-
-    Logger.info(
-      "perform_update.MAJOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
-    )
-
-    result
   end
 
   # For a given section resource, clean the children attribute to ensure that:

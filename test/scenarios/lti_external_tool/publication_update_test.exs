@@ -6,7 +6,8 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
   import Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers
 
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications, Updates}
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
+  alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
   alias Oli.Delivery.Updates.{Subscriber, Worker}
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Publishing
@@ -37,9 +38,7 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
         assert links(ctx.section) == before
       end
 
-      for api <- [:current, :legacy] do
-        assert {:ok, _} = apply_update(api, ctx.section, ctx.state.params.draft_publication)
-      end
+      assert {:ok, _} = apply_update(ctx.section, ctx.state.params.draft_publication)
 
       assert links(ctx.section) == before
     end
@@ -66,43 +65,40 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
       assert links(ctx.section) == after_initialization
     end
 
-    for api <- [:current, :legacy] do
-      @api api
-      test "#{api} reapplies the same publication through normal processing and fills missing links",
-           ctx do
-        id = Hooks.activity(ctx.state).resource_id
+    test "reapplies the same publication through normal processing and fills missing links",
+         ctx do
+      id = Hooks.activity(ctx.state).resource_id
 
-        assert {:ok, _} =
-                 Oli.TestHelpers.delete_deep_link_fixture(link(ctx.section, id))
+      assert {:ok, _} =
+               Oli.TestHelpers.delete_deep_link_fixture(link(ctx.section, id))
 
-        before = snapshot(ctx.section)
+      before = snapshot(ctx.section)
 
-        assert {:ok, _} = apply_update(@api, ctx.section, ctx.state.params.draft_publication)
+      assert {:ok, _} = apply_update(ctx.section, ctx.state.params.draft_publication)
 
-        assert Enum.sort(Enum.map(snapshot(ctx.section).resources, & &1.resource_id)) ==
-                 Enum.sort(Enum.map(before.resources, & &1.resource_id))
+      assert Enum.sort(Enum.map(snapshot(ctx.section).resources, & &1.resource_id)) ==
+               Enum.sort(Enum.map(before.resources, & &1.resource_id))
 
-        assert_current_publication(ctx.section, ctx.state.params.draft_publication)
-        assert link(ctx.section, id).custom == ctx.state.params.draft["custom"]
-      end
+      assert_current_publication(ctx.section, ctx.state.params.draft_publication)
+      assert link(ctx.section, id).custom == ctx.state.params.draft["custom"]
+    end
 
-      test "#{api} applies an unchanged publication through normal processing", ctx do
-        publication = publish(ctx.state)
-        assert publication.id != ctx.state.params.draft_publication.id
+    test "applies an unchanged publication through normal processing", ctx do
+      publication = publish(ctx.state)
+      assert publication.id != ctx.state.params.draft_publication.id
 
-        assert Publishing.get_publication_diff(ctx.state.params.draft_publication, publication).classification ==
-                 :no_changes
+      assert Publishing.get_publication_diff(ctx.state.params.draft_publication, publication).classification ==
+               :no_changes
 
-        before = snapshot(ctx.section)
+      before = snapshot(ctx.section)
 
-        assert {:ok, _} = apply_update(@api, ctx.section, publication)
+      assert {:ok, _} = apply_update(ctx.section, publication)
 
-        assert Enum.sort(Enum.map(snapshot(ctx.section).resources, & &1.resource_id)) ==
-                 Enum.sort(Enum.map(before.resources, & &1.resource_id))
+      assert Enum.sort(Enum.map(snapshot(ctx.section).resources, & &1.resource_id)) ==
+               Enum.sort(Enum.map(before.resources, & &1.resource_id))
 
-        assert links(ctx.section) == before.links
-        assert_current_publication(ctx.section, publication)
-      end
+      assert links(ctx.section) == before.links
+      assert_current_publication(ctx.section, publication)
     end
 
     test "the worker fills an existing unconfigured activity from the applied snapshot, not the newer draft",
@@ -117,7 +113,7 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
       assert {:ok, _} = save_selection(ctx.state, "unconfigured", selection("unpublished"))
       before = link(ctx.section, Hooks.activity(ctx.state).resource_id)
 
-      assert {:ok, _} = Worker.perform_now(ctx.section.slug, publication.id)
+      assert {:ok, _} = Worker.perform_now(audit_context(), ctx.section.slug, publication.id)
 
       assert link(ctx.section, Hooks.activity(ctx.state, "unconfigured").resource_id).custom ==
                selected["custom"]
@@ -153,7 +149,11 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
         publication = publish(ctx.state)
 
         assert {:ok, _} =
-                 Updates.apply_publication_update(Repo.reload!(ctx.section), publication.id)
+                 SectionsAudited.apply_publication_update(
+                   audit_context(),
+                   Repo.reload!(ctx.section),
+                   publication.id
+                 )
 
         assert link(ctx.section, id) == before
       end
@@ -208,7 +208,8 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
       assert {:ok, _} = save_selection(state, "unconfigured", selection("template-update"))
       publication = publish(state)
 
-      assert {:ok, _} = Updates.apply_publication_update(section, publication.id)
+      assert {:ok, _} =
+               SectionsAudited.apply_publication_update(audit_context(), section, publication.id)
 
       assert link(section, Hooks.activity(state, "unconfigured").resource_id).custom ==
                %{"mode" => "template-update"}
@@ -250,7 +251,8 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
       assert {:ok, _} = save_selection(state, "unconfigured", selection("remixed"))
       publication = publish(state)
 
-      assert {:ok, _} = Updates.apply_publication_update(section, publication.id)
+      assert {:ok, _} =
+               SectionsAudited.apply_publication_update(audit_context(), section, publication.id)
 
       assert link(section, Hooks.activity(state, "unconfigured").resource_id).custom == %{
                "mode" => "remixed"
@@ -261,10 +263,9 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
       assert links(ctx.section) |> length() == 1
     end
 
-    for api <- [:current, :legacy], major? <- [false, true] do
-      @api api
+    for major? <- [false, true] do
       @major major?
-      test "#{api} #{if major?, do: "major", else: "minor"} update rolls back resources/publication on a failed insert",
+      test "#{if major?, do: "major", else: "minor"} update rolls back resources/publication on a failed insert",
            ctx do
         assert {:ok, _} = save_selection(ctx.state, "unconfigured", selection("reject"))
 
@@ -292,7 +293,7 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
         CHECK (url IS DISTINCT FROM 'https://tool.example/reject')
         """)
 
-        result = apply_update(@api, ctx.section, publication)
+        result = apply_update(ctx.section, publication)
 
         assert {:error, _} = result
         assert snapshot(ctx.section) == before
@@ -302,7 +303,7 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
           "ALTER TABLE lti_section_resource_deep_links DROP CONSTRAINT reject_lti_initialization"
         )
 
-        result = apply_update(@api, ctx.section, publication)
+        result = apply_update(ctx.section, publication)
 
         assert {:ok, _} = result
 
@@ -318,11 +319,8 @@ defmodule Oli.Scenarios.LtiExternalTool.PublicationUpdateTest do
   defp initialize(section, publication),
     do: PlatformExternalTools.initialize_section_deep_links(section.id, publication.id)
 
-  defp apply_update(:current, section, publication),
-    do: Updates.apply_publication_update(section, publication.id)
-
-  defp apply_update(:legacy, section, publication),
-    do: Sections.apply_publication_update(section, publication.id)
+  defp apply_update(section, publication),
+    do: SectionsAudited.apply_publication_update(audit_context(), section, publication.id)
 
   defp assert_current_publication(section, publication),
     do:

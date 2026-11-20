@@ -46,7 +46,11 @@ defmodule Oli.Scenarios.Directives.UpdateHandler do
 
     # Apply the publication update to the product (which is actually a Section with type :blueprint)
     result =
-      Oli.Delivery.Sections.Updates.apply_publication_update(product, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        scenario_context(state),
+        product,
+        latest_publication.id
+      )
 
     # Check if result looks like an error
     case result do
@@ -94,7 +98,11 @@ defmodule Oli.Scenarios.Directives.UpdateHandler do
 
     # Apply the publication update to the section
     result =
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        scenario_context(state),
+        section,
+        latest_publication.id
+      )
 
     # Check if result looks like an error
     case result do
@@ -115,4 +123,8 @@ defmodule Oli.Scenarios.Directives.UpdateHandler do
         {:ok, updated_state}
     end
   end
+
+  # The scenario's current author applies the update.
+  defp scenario_context(state),
+    do: Oli.Auditing.Context.for_actor(state.current_author, source: :scenario)
 end

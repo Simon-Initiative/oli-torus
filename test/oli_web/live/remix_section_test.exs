@@ -414,6 +414,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "remix section remove and save (including last course material)", %{
       conn: conn,
+      admin: admin,
       section: section
     } do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
@@ -430,6 +431,14 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert render(view) =~ "<p>There&#39;s nothing here.</p>"
 
       assert view |> element("#save") |> render_click() =~ "Your work has been saved."
+
+      # Every removed entry is recorded as the admin
+      assert [_ | _] = events = audit_events(:section_remix_saved, section_id: section.id)
+
+      for event <- events do
+        assert {event.actor_type, event.author_id, event.source} == {:author, admin.id, :ui}
+        refute Map.has_key?(event.changes["position"], "after")
+      end
     end
   end
 
@@ -579,6 +588,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "saving redirects instructor correctly", %{
       conn: conn,
+      instructor: instructor,
       map: %{
         section_1: section
       }
@@ -591,6 +601,14 @@ defmodule OliWeb.RemixSectionLiveTest do
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
       assert view |> element("#save") |> render_click() =~ "Your work has been saved."
+
+      # The reordered entries are recorded as the instructor, who is a user
+      assert [_ | _] = events = audit_events(:section_remix_saved, section_id: section.id)
+
+      for event <- events do
+        assert {event.actor_type, event.user_id, event.source} == {:user, instructor.id, :ui}
+        assert Map.has_key?(event.changes, "position")
+      end
     end
 
     test "cancel button works correctly", %{
@@ -643,6 +661,9 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       ## Elixir Page should be gone (hierarchy reset to previous state)
       refute view |> render() =~ "Elixir Page"
+
+      # Nothing was saved
+      assert audit_events(:section_remix_saved, section_id: map.section_1.id) == []
     end
 
     test "breadcrumbs render correctly", %{
@@ -2226,6 +2247,7 @@ defmodule OliWeb.RemixSectionLiveTest do
     {:ok,
      conn: conn,
      map: map,
+     instructor: instructor,
      author: map.author,
      institution: map.institution,
      project: map.project,

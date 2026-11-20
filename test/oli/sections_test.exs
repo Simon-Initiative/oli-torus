@@ -6,6 +6,7 @@ defmodule Oli.SectionsTest do
   import Oli.Utils.Seeder.Utils
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
   alias Lti_1p3.Roles.ContextRoles
@@ -1239,7 +1240,11 @@ defmodule Oli.SectionsTest do
         Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # apply the new publication update to the section
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        latest_publication.id
+      )
 
       assert Repo.reload(section).section_resource_migration_version ==
                Oli.Delivery.Sections.SectionResourceMigration.current_version()
@@ -1346,7 +1351,11 @@ defmodule Oli.SectionsTest do
       {:ok, page_removed_publication} =
         Oli.TestHelpers.publish_project_fixture(project, "remove page from curriculum", author.id)
 
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, page_removed_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        page_removed_publication.id
+      )
 
       after_removal_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
       assert Enum.map(after_removal_hierarchy.children, & &1.resource_id) == [page1.id, page3.id]
@@ -1389,7 +1398,8 @@ defmodule Oli.SectionsTest do
       {:ok, page_reintroduced_publication} =
         Oli.TestHelpers.publish_project_fixture(project, "restore page to curriculum", author.id)
 
-      Oli.Delivery.Sections.Updates.apply_publication_update(
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
         section,
         page_reintroduced_publication.id
       )
@@ -1433,7 +1443,7 @@ defmodule Oli.SectionsTest do
       {:ok, remix_state} = Remix.init(section, author)
       page1_uuid = Enum.find(remix_state.active.children, &(&1.resource_id == page1.id)).uuid
       {:ok, remix_state} = Remix.remove(remix_state, page1_uuid)
-      {:ok, _section} = Remix.save(remix_state, author)
+      {:ok, _section} = SectionsAudited.save_remix(audit_context(), remix_state, author)
 
       remixed_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
       assert Enum.map(remixed_hierarchy.children, & &1.resource_id) == [page2.id]
@@ -1454,7 +1464,11 @@ defmodule Oli.SectionsTest do
       {:ok, latest_publication} =
         Oli.TestHelpers.publish_project_fixture(project, "add unrelated page", author.id)
 
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        latest_publication.id
+      )
 
       assert Repo.reload(section).section_resource_migration_version ==
                Oli.Delivery.Sections.SectionResourceMigration.current_version()
@@ -1586,7 +1600,11 @@ defmodule Oli.SectionsTest do
       assert latest_publication.minor == 1
 
       # apply the new publication update to the section
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        latest_publication.id
+      )
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -1771,7 +1789,11 @@ defmodule Oli.SectionsTest do
         Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # apply the new publication update to the product
-      Oli.Delivery.Sections.Updates.apply_publication_update(product, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        product,
+        latest_publication.id
+      )
 
       # reload latest hierarchy
       product_hierarchy = DeliveryResolver.full_hierarchy(product.slug)
@@ -1798,7 +1820,11 @@ defmodule Oli.SectionsTest do
       assert product_section_resources |> Enum.count() == 3
 
       # apply the new publication update to the section
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        latest_publication.id
+      )
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -2030,7 +2056,11 @@ defmodule Oli.SectionsTest do
         Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # apply the new publication update to the section
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        latest_publication.id
+      )
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -2256,7 +2286,11 @@ defmodule Oli.SectionsTest do
         Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # apply the new publication update to the section
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        latest_publication.id
+      )
 
       # reload latest hierarchy
       section_hierarchy = DeliveryResolver.full_hierarchy(section.slug)

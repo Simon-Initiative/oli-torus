@@ -2051,7 +2051,8 @@ defmodule Oli.PublishingTest do
       section1: section1,
       section2: section2
     } do
-      Publishing.push_publication_update_to_sections(project, pub, pub2)
+      context = audit_context()
+      Publishing.push_publication_update_to_sections(context, project, pub, pub2)
 
       result_jobs =
         Ecto.Query.from(j in Oban.Job,
@@ -2062,28 +2063,17 @@ defmodule Oli.PublishingTest do
 
       assert Enum.count(result_jobs) == 5
 
-      assert Enum.map(result_jobs, fn %{args: args} -> args end) == [
-               %{
-                 "section_slug" => product1.slug,
-                 "publication_id" => pub2.id
-               },
-               %{
-                 "section_slug" => product2.slug,
-                 "publication_id" => pub2.id
-               },
-               %{
-                 "section_slug" => product3.slug,
-                 "publication_id" => pub2.id
-               },
-               %{
-                 "section_slug" => section1.slug,
-                 "publication_id" => pub2.id
-               },
-               %{
-                 "section_slug" => section2.slug,
-                 "publication_id" => pub2.id
-               }
-             ]
+      # Each job carries the publishing author's context
+      audit_context = Oli.Auditing.Context.to_job_args(context)
+
+      assert Enum.map(result_jobs, fn %{args: args} -> args end) ==
+               Enum.map([product1, product2, product3, section1, section2], fn section ->
+                 %{
+                   "section_slug" => section.slug,
+                   "publication_id" => pub2.id,
+                   "audit_context" => audit_context
+                 }
+               end)
     end
   end
 
