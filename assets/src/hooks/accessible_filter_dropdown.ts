@@ -2,7 +2,7 @@ import type { Hook } from 'phoenix_live_view/assets/js/types/view_hook';
 
 type AccessibleFilterDropdownState = {
   onTriggerClick?: () => void;
-  onPanelKeydown?: (event: KeyboardEvent) => void;
+  onPanelKeydown?: EventListener;
   onTabChange?: () => void;
   onPageLoadingStart?: () => void;
   onTabClick?: (event: MouseEvent) => void;
@@ -41,26 +41,27 @@ export const AccessibleFilterDropdown: Hook<AccessibleFilterDropdownState> = {
         if (trigger.getAttribute('aria-expanded') === 'true') focusableElements()[0]?.focus();
       });
     };
-    this.onPanelKeydown = (event: KeyboardEvent) => {
+    this.onPanelKeydown = (event: Event) => {
+      const keyboardEvent = event as KeyboardEvent;
       const elements = focusableElements();
       const currentIndex = elements.indexOf(document.activeElement as HTMLElement);
-      switch (event.key) {
+      switch (keyboardEvent.key) {
         case 'ArrowDown':
         case 'ArrowRight':
           if (currentIndex >= 0) {
-            event.preventDefault();
+            keyboardEvent.preventDefault();
             elements[(currentIndex + 1) % elements.length]?.focus();
           }
           break;
         case 'ArrowUp':
         case 'ArrowLeft':
           if (currentIndex >= 0) {
-            event.preventDefault();
+            keyboardEvent.preventDefault();
             elements[(currentIndex - 1 + elements.length) % elements.length]?.focus();
           }
           break;
         case 'Escape':
-          event.preventDefault();
+          keyboardEvent.preventDefault();
           closePanel();
           syncExpanded();
           trigger.focus();
@@ -72,8 +73,9 @@ export const AccessibleFilterDropdown: Hook<AccessibleFilterDropdownState> = {
     this.onTabChange = closePanel;
     this.onPageLoadingStart = closePanel;
     this.onTabClick = (event: MouseEvent) => {
-      const target = event.target as Element | null;
-      if (target?.closest('[data-insights-tab]')) closePanel();
+      if (event.target instanceof Element && event.target.closest('[data-insights-tab]')) {
+        closePanel();
+      }
     };
 
     trigger.addEventListener('click', this.onTriggerClick);
