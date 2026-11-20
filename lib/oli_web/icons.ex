@@ -667,6 +667,7 @@ defmodule OliWeb.Icons do
   attr :stroke_width, :string, default: "1.5"
   attr :view_box, :string, default: nil
   attr :path, :string, default: nil
+  attr :rest, :global
 
   def chevron_down(assigns) do
     ~H"""
@@ -677,6 +678,7 @@ defmodule OliWeb.Icons do
       xmlns="http://www.w3.org/2000/svg"
       class={@class}
       fill={if @variant == "stroke", do: "none", else: "currentColor"}
+      {@rest}
     >
       <path
         :if={@variant == "stroke"}

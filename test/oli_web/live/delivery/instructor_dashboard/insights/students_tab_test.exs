@@ -77,6 +77,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
                "button[xphx-mouseover='[[\"show\",{\"display\":\"flex\",\"to\":\"#student_progress_tooltip\"}]]']"
              )
 
+      # Named info button, outside the sort button
+      assert has_element?(
+               view,
+               "th[phx-value-sort_by='student_completion'] button#student_progress_tooltip_trigger[aria-label='About Student Progress']"
+             )
+
+      refute has_element?(view, "th button[phx-click] #student_progress_tooltip_trigger")
+
       # Renders correct column title
       assert has_element?(
                view,
@@ -239,10 +247,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
+      for column <- [
+            "Student Name",
+            "Email",
+            "Last Interacted",
+            "Student Progress",
+            "Student Proficiency"
+          ] do
+        assert has_element?(view, "th[aria-sort] button[aria-label='Sort by #{column}']")
+      end
+
       ## Sort by overall proficiency ascending
       view
-      |> element("th[phx-value-sort_by='overall_proficiency']")
+      |> element("th button[phx-value-sort_by='overall_proficiency']")
       |> render_click()
+
+      assert has_element?(
+               view,
+               "th[aria-sort='ascending'] button[phx-value-sort_by='overall_proficiency']"
+             )
 
       asc_proficiencies =
         view
@@ -262,7 +285,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ## Sort by overall proficiency descending
       view
-      |> element("th[phx-value-sort_by='overall_proficiency']")
+      |> element("th button[phx-value-sort_by='overall_proficiency']")
       |> render_click()
 
       desc_proficiencies =
@@ -780,7 +803,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       # sorting by payment status in asc order
       view
-      |> element(".instructor_dashboard_table th[phx-value-sort_by='payment_status']")
+      |> element(".instructor_dashboard_table th button[phx-value-sort_by='payment_status']")
       |> render_click()
 
       [payment_status_1, payment_status_2, payment_status_3, payment_status_4, payment_status_5] =
@@ -799,7 +822,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       # sorting by payment status in desc order
       view
-      |> element(".instructor_dashboard_table th[phx-value-sort_by='payment_status']")
+      |> element(".instructor_dashboard_table th button[phx-value-sort_by='payment_status']")
       |> render_click()
 
       # asserts the order of the payment status is descending

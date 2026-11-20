@@ -83,10 +83,13 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         },
         %ColumnSpec{
           name: :student_proficiency_obj,
-          label:
-            HTMLComponents.render_label(%{
+          label: "Student Proficiency",
+          th_class: "whitespace-nowrap",
+          header_info:
+            HTMLComponents.info_tooltip(%{
               title: "Student Proficiency",
-              info_tooltip: student_proficiency_tooltip_content(%{})
+              info_tooltip: student_proficiency_tooltip_content(%{}),
+              label: "About Student Proficiency"
             }),
           render_fn: &custom_render/3
         }
@@ -158,8 +161,10 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     [
       %ColumnSpec{
         name: :confidence,
-        label:
-          HTMLComponents.render_label(%{
+        label: "Confidence",
+        th_class: "whitespace-nowrap",
+        header_info:
+          HTMLComponents.info_tooltip(%{
             title: "Confidence",
             info_tooltip: confidence_tooltip_content(%{})
           }),
@@ -354,14 +359,16 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       Map.merge(assigns, %{
         id: row_id,
         component_target: component_target,
-        is_expanded: is_expanded
+        is_expanded: is_expanded,
+        objective_name: Map.get(objective, :subobjective) || objective.objective
       })
 
     ~H"""
     <.button
       id={"button_#{@id}"}
       class="flex !p-0"
-      aria-expanded={@is_expanded}
+      aria-label={"#{if @is_expanded, do: "Collapse", else: "Expand"} #{@objective_name}"}
+      aria-expanded={to_string(@is_expanded)}
       aria-controls={"details-#{@id}"}
       phx-click={
         JS.toggle_class("bg-Table-table-select", to: ~s(tr[data-row-id="#{@id}"]))

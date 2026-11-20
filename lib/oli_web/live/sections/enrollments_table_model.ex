@@ -60,7 +60,8 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         %ColumnSpec{
           name: :progress,
           th_class: "flex items-center gap-1 !border-b-0",
-          label: HTMLComponents.student_progress_label(%{title: "Student Progress"}),
+          label: "Student Progress",
+          header_info: HTMLComponents.student_progress_info(%{}),
           render_fn: &render_progress_column/3
         },
         %ColumnSpec{
@@ -86,7 +87,8 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           [
             %ColumnSpec{
               name: :certificate_status,
-              label: render_certificate_status_label(certificate_pending_approval_count),
+              label: "Certificate Status",
+              header_info: render_pending_approval_badge(certificate_pending_approval_count),
               render_fn: &render_certificate_status_column/3,
               th_class: "flex items-center gap-2 border-b-0"
             }
@@ -283,20 +285,19 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     """
   end
 
-  defp render_certificate_status_label(pending_approvals)
-       when pending_approvals in [nil, 0],
-       do: "Certificate Status"
+  defp render_pending_approval_badge(pending_approvals) when pending_approvals in [nil, 0],
+    do: nil
 
-  defp render_certificate_status_label(pending_approvals) do
+  defp render_pending_approval_badge(pending_approvals) do
     assigns = %{pending_approvals: pending_approvals}
 
     ~H"""
-    <div class="flex items-center gap-2">
+    <div class="flex mr-1">
       <.live_component
         id="certificate_pending_approval_count_badge"
         module={PendingApprovalComponent}
         pending_approvals={@pending_approvals}
-      /> Certificate Status
+      />
     </div>
     """
   end

@@ -36,8 +36,10 @@ defmodule OliWeb.Components.Delivery.Pages.PagesTableModel do
         [
           %ColumnSpec{
             name: :avg_score,
-            label:
-              HTMLComponents.render_label(%{
+            label: "Avg Score",
+            th_class: "whitespace-nowrap",
+            header_info:
+              HTMLComponents.info_tooltip(%{
                 title: "Avg Score",
                 info_tooltip: "Average score across all student attempts on this page."
               }),
@@ -46,8 +48,10 @@ defmodule OliWeb.Components.Delivery.Pages.PagesTableModel do
           },
           %ColumnSpec{
             name: :total_attempts,
-            label:
-              HTMLComponents.render_label(%{
+            label: "Total Attempts",
+            th_class: "whitespace-nowrap",
+            header_info:
+              HTMLComponents.info_tooltip(%{
                 title: "Total Attempts",
                 info_tooltip:
                   "Total number of attempts made by all students. Some students may have multiple attempts based on your course settings."
@@ -57,8 +61,10 @@ defmodule OliWeb.Components.Delivery.Pages.PagesTableModel do
           },
           %ColumnSpec{
             name: :students_completion,
-            label:
-              HTMLComponents.render_label(%{
+            label: "Student Progress",
+            th_class: "whitespace-nowrap",
+            header_info:
+              HTMLComponents.info_tooltip(%{
                 title: "Student Progress",
                 info_tooltip: "Average progress on this page across all students."
               }),
