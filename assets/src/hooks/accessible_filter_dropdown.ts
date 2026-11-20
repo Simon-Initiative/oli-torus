@@ -6,6 +6,8 @@ type AccessibleFilterDropdownState = {
   onTabChange?: () => void;
   onPageLoadingStart?: () => void;
   onTabClick?: (event: MouseEvent) => void;
+  closePanel?: () => void;
+  activeTabHref?: string | null;
   observer?: MutationObserver;
 };
 
@@ -34,6 +36,9 @@ export const AccessibleFilterDropdown: Hook<AccessibleFilterDropdownState> = {
       document.getElementById(`${triggerId}-up-icon`)?.classList.add('hidden');
       document.getElementById(`${triggerId}-down-icon`)?.classList.remove('hidden');
     };
+    const activeTabHref = () =>
+      document.querySelector('[data-insights-tab].active')?.getAttribute('href') || null;
+    this.closePanel = closePanel;
 
     this.onTriggerClick = () => {
       requestAnimationFrame(() => {
@@ -86,7 +91,19 @@ export const AccessibleFilterDropdown: Hook<AccessibleFilterDropdownState> = {
     window.addEventListener('phx:page-loading-start', this.onPageLoadingStart);
     this.observer = new MutationObserver(syncExpanded);
     this.observer.observe(panel, { attributes: true, attributeFilter: ['class', 'style'] });
+    this.activeTabHref = activeTabHref();
     syncExpanded();
+  },
+
+  updated() {
+    const currentTabHref =
+      document.querySelector('[data-insights-tab].active')?.getAttribute('href') || null;
+
+    if (this.activeTabHref !== undefined && currentTabHref !== this.activeTabHref) {
+      this.closePanel?.();
+    }
+
+    this.activeTabHref = currentTabHref;
   },
 
   destroyed() {
@@ -101,6 +118,7 @@ export const AccessibleFilterDropdown: Hook<AccessibleFilterDropdownState> = {
     if (this.onPageLoadingStart)
       window.removeEventListener('phx:page-loading-start', this.onPageLoadingStart);
     if (this.onTabClick) document.removeEventListener('click', this.onTabClick, true);
+    this.closePanel = undefined;
     this.observer?.disconnect();
   },
 };
