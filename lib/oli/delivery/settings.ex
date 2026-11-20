@@ -5,7 +5,6 @@ defmodule Oli.Delivery.Settings do
   alias Oli.Resources.Revision
   alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Settings.StudentException
-  alias Oli.Delivery.Settings.SettingsChanges
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
@@ -420,13 +419,4 @@ defmodule Oli.Delivery.Settings do
     do: {:allowed}
 
   def check_password(_, _), do: {:invalid_password}
-
-  @doc """
-  Fetch all settings changes.
-  """
-  @spec fetch_all_settings_changes() :: [SettingsChanges.t()]
-  def fetch_all_settings_changes(),
-    do:
-      SettingsChanges
-      |> Repo.all()
 end

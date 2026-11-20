@@ -252,6 +252,51 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       refute html =~ "schema_version"
     end
 
+    test "renders converted assessment settings history, with passwords redacted", %{
+      conn: conn
+    } do
+      Repo.insert_all(LogEvent, [
+        %{
+          inserted_at: DateTime.utc_now(),
+          schema_version: 1,
+          event_type: :assessment_setting_changed,
+          actor_type: :author,
+          author_id: 1,
+          entity_type: :resource,
+          entity_id: "4512",
+          section_id: 301,
+          resource_id: 4512,
+          legacy_source: :settings_changes,
+          legacy_id: 3,
+          changes: %{
+            "password" => %{"operation" => "set", "redacted" => true, "changed" => true}
+          }
+        },
+        %{
+          inserted_at: DateTime.utc_now(),
+          schema_version: 1,
+          event_type: :assessment_setting_changed,
+          actor_type: :unknown,
+          section_id: 301,
+          resource_id: 4512,
+          legacy_source: :settings_changes,
+          legacy_id: 4,
+          changes: %{"max_attempts" => %{"operation" => "set", "before" => "1", "after" => "3"}},
+          details: %{"legacy_user_id" => 55, "legacy_user_type" => nil}
+        }
+      ])
+
+      {:ok, view, html} = live(conn, ~p"/admin/audit_log")
+
+      assert html =~ "assessment_setting_changed"
+
+      html =
+        render_change(view, "change_event_type", %{"event_type" => "assessment_setting_changed"})
+
+      assert html =~ "assessment_setting_changed"
+      refute html =~ "schema_version"
+    end
+
     test "renders a migrated role change without an affected author as plain text", %{
       conn: conn
     } do

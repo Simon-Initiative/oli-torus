@@ -1,6 +1,6 @@
 # Audit Log Partitioned Storage
 
-This runbook covers the partitioned `audit_log_events` table: the one-time migration from the flat 2025 table, rollback and roll-forward, partition maintenance, removing old partitions, and the append-only override.
+This runbook covers the partitioned `audit_log_events` table: the one-time migration from the flat 2025 table, rollback and roll-forward, the conversion of the `settings_changes` assessment history, partition maintenance, removing old partitions, and the append-only override.
 
 Design: `docs/exec-plans/current/features/audit-log-expansion/design/pr-01-event-contracts-partitioned-storage.md`. Rehearsal and benchmark evidence: `docs/exec-plans/current/features/audit-log-expansion/evidence/pr-01-storage.md`.
 
@@ -81,6 +81,47 @@ While rolled back:
 - Events of new types are only in the archive; the old UI cannot show them.
 
 Roll-forward is a normal deployment of the new version. The migration restores the archive first, copies only the legacy rows written after the rollback, reconciles, and drops the archive. If a legacy row was deleted or edited during the rollback window, reconciliation fails and nothing changes; restore that row before retrying.
+
+## Assessment Settings History Conversion
+
+Migration `20261119193918_convert_settings_changes_to_audit_events` converts each `settings_changes` row into one version 1 `assessment_setting_changed` event (`legacy_source = 'settings_changes'`, `legacy_id` = the original ID) and drops `settings_changes`. Password changes keep only the redaction marker; their values are not copied. It runs in one transaction and takes `SHARE` on `settings_changes` (writes to it wait; the application no longer writes it) and only row locks on `audit_log_events`, so the Audit Log stays readable. Design: `docs/exec-plans/current/features/audit-log-expansion/design/pr-05-delivery-and-configuration.md` (section 4.4).
+
+Rehearsal (`MIX_ENV=test mix run --no-start test/support/settings_changes_conversion_rehearsal.exs`, 439,180 synthetic rows, PostgreSQL 14): `up` 17.5s, `down` 11.6s, roll-forward 16.5s, all below the 60s threshold; about 600 MB of WAL for `up`; the longest concurrent read of `audit_log_events` waited under 0.2s. The converted rows take about 313 MB with indexes, against 60 MB for `settings_changes`.
+
+### Preflight
+
+Run read-only, against production, before the deployment that contains the migration. Record the answers in the release ticket.
+
+```sql
+-- Volume, date range, and size of the history.
+SELECT count(*), min(inserted_at), max(inserted_at) FROM settings_changes;
+SELECT pg_size_pretty(pg_total_relation_size('settings_changes'));
+
+-- Must be true: the half-year of the oldest history row needs an audit partition (an insert
+-- outside every partition fails the migration, which then changes nothing).
+SELECT to_regclass(format('audit_log_events_y%sh%s',
+         extract(year FROM min(inserted_at) AT TIME ZONE 'UTC'),
+         CASE WHEN extract(month FROM min(inserted_at) AT TIME ZONE 'UTC') < 7 THEN 1 ELSE 2 END))
+       IS NOT NULL
+FROM settings_changes;
+
+-- Rows recorded with an unknown actor (user type other than author or instructor).
+SELECT user_type, count(*) FROM settings_changes GROUP BY 1;
+
+-- Password changes, recorded only as redaction markers.
+SELECT count(*) FROM settings_changes WHERE key = 'password';
+```
+
+- Confirm with operations and the assessment owners that nothing outside the repository (reports, BI exports, scheduled queries) reads `settings_changes`. This is a release gate: the table is dropped.
+- `rolconfig` (see the main Preflight) should not set a `statement_timeout` shorter than the rehearsed duration with margin.
+
+### Deployment
+
+Part of the normal `bin/migrate` run. If reconciliation fails (a history row without exactly one converted row), the migration raises, nothing changes, and `settings_changes` stays. Smoke check: in `/admin/audit_log`, filter by "Assessment setting changed (history)".
+
+### Rollback
+
+`bin/oli eval 'Oli.Release.rollback(Oli.Repo, 20261119193918)'` recreates `settings_changes` with the original IDs, values, and times, resets its ID sequence, and deletes the converted events. Password values come back as `[redacted]`; they are not recoverable. Roll-forward is a normal deployment and converts the rows again with new central IDs.
 
 ## Partition Maintenance
 
