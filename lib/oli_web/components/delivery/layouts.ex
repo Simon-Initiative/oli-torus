@@ -502,9 +502,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
         |> JS.dispatch("click", to: "button[data-role='update-sidebar-state-on-react']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
+      aria-label={if @sidebar_expanded, do: "Minimize sidebar", else: "Expand sidebar"}
       class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px]"
     >
-      <div class={if !@sidebar_expanded, do: "rotate-180"}>
+      <div class={if !@sidebar_expanded, do: "rotate-180"} aria-hidden="true">
         <Icons.left_chevron />
       </div>
     </button>
@@ -707,6 +708,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for_workspace(:course_author, @sidebar_expanded)}
         is_active={@active_workspace == :course_author}
         sidebar_expanded={@sidebar_expanded}
+        aria_label={if !@sidebar_expanded, do: "Course Author"}
         on_active_bg="bg-[#F4CFFF] hover:!bg-[#F4CFFF] dark:bg-[#7E2899] dark:hover:!bg-[#7E2899]"
       >
         <:icon>
@@ -720,6 +722,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for_workspace(:instructor, @sidebar_expanded)}
         is_active={@active_workspace == :instructor}
         sidebar_expanded={@sidebar_expanded}
+        aria_label={if !@sidebar_expanded, do: "Instructor"}
         on_active_bg="bg-[#A8EED8] hover:!bg-[#A8EED8] dark:bg-[#086F4E] dark:hover:!bg-[#086F4E]"
       >
         <:icon>
@@ -733,6 +736,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for_workspace(:student, @sidebar_expanded)}
         is_active={@active_workspace == :student}
         sidebar_expanded={@sidebar_expanded}
+        aria_label={if !@sidebar_expanded, do: "Student"}
         on_active_bg="bg-[#AAC3F0]/75 hover:!bg-[#AAC3F0]/75 dark:bg-[#2957A9] dark:hover:!bg-[#2957A9]"
       >
         <:icon>
