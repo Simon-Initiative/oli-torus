@@ -1,4 +1,5 @@
 import LiveReact from 'phoenix_live_react';
+import { AccessibleFilterDropdown } from './accessible_filter_dropdown';
 import { ActivityDetailHooks } from './activity_detail_hooks';
 import { AdaptiveDialogueSync } from './adaptive_dialogue_sync';
 import { AdaptiveIframeResize } from './adaptive_iframe_resize';
@@ -109,6 +110,7 @@ export const Hooks = {
   ActivityDetailHooks,
   AdaptivePreviewPanel,
   AdaptiveDialogueSync,
+  AccessibleFilterDropdown,
   AnnotationBubbles,
   BrowserTimezoneForm,
   DebouncedTextInputListener,

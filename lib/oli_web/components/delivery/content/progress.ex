@@ -18,7 +18,7 @@ defmodule OliWeb.Delivery.Content.PercentageSelector do
     assigns = assign(assigns, :selector, assigns.selector || :is_equal_to)
 
     ~H"""
-    <div class="relative !z-50">
+    <div id={"#{@id}-filter-dropdown"} phx-hook="AccessibleFilterDropdown" class="relative !z-50">
       <div
         phx-click={
           JS.toggle(to: "##{@id}_form", display: "flex")
@@ -28,9 +28,14 @@ defmodule OliWeb.Delivery.Content.PercentageSelector do
         class="w-full h-9"
       >
         <button
+          id={"#{@id}-filter-trigger"}
+          data-filter-trigger
+          aria-label={@label}
+          aria-expanded="false"
+          aria-controls={"#{@id}_form"}
           class={[
-            "h-full flex-shrink-0 rounded z-10 inline-flex items-center py-2.5 px-2 text-[#353740] text-base font-semibold leading-none",
-            "outline outline-1",
+            "progress-filter-trigger h-full flex-shrink-0 rounded z-10 inline-flex items-center py-2.5 px-2 text-[#353740] text-base font-semibold leading-none",
+            "outline outline-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white focus-visible:ring-offset-[#006CD9] dark:focus-visible:ring-[#EEEBF5] dark:focus-visible:ring-offset-[#4CA6FF]",
             if @percentage not in ["", nil] do
               "outline-[#006CD9] text-[#006CD9] dark:outline-[#4CA6FF] dark:text-[#4CA6FF]"
             else
@@ -49,6 +54,7 @@ defmodule OliWeb.Delivery.Content.PercentageSelector do
         </button>
       </div>
       <.form
+        data-filter-panel
         for={%{}}
         phx-click-away={
           JS.hide(to: "##{@id}_form")
@@ -102,6 +108,7 @@ defmodule OliWeb.Delivery.Content.PercentageSelector do
                 JS.hide(to: "##{@id}_form")
                 |> JS.hide(to: "##{@id}-up-icon")
                 |> JS.show(to: "##{@id}-down-icon")
+                |> JS.focus(to: "##{@id}-filter-trigger")
               }
               class="text-center text-[#006CD9] text-xs font-semibold leading-none dark:text-white"
             >
@@ -112,6 +119,7 @@ defmodule OliWeb.Delivery.Content.PercentageSelector do
                 JS.hide(to: "##{@id}_form")
                 |> JS.hide(to: "##{@id}-up-icon")
                 |> JS.show(to: "##{@id}-down-icon")
+                |> JS.focus(to: "##{@id}-filter-trigger")
               }
               class="px-4 py-2 bg-[#0080FF] rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
             >
