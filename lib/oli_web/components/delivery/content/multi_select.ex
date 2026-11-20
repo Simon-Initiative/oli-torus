@@ -96,6 +96,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
                 JS.hide(to: "##{@id}-options-container")
                 |> JS.hide(to: "##{@id}-up-icon")
                 |> JS.show(to: "##{@id}-down-icon")
+                |> JS.focus(to: "##{@id}-selected-options-container")
               }
             >
               Cancel
@@ -107,6 +108,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
                 |> JS.hide(to: "##{@id}-options-container")
                 |> JS.hide(to: "##{@id}-up-icon")
                 |> JS.show(to: "##{@id}-down-icon")
+                |> JS.focus(to: "##{@id}-selected-options-container")
               }
               phx-target={@target}
               phx-value={@selected_ids}

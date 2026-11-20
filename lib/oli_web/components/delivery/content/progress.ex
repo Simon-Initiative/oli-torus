@@ -28,6 +28,7 @@ defmodule OliWeb.Delivery.Content.PercentageSelector do
         class="w-full h-9"
       >
         <button
+          id={"#{@id}-filter-trigger"}
           data-filter-trigger
           aria-label={@label}
           aria-expanded="false"
@@ -107,6 +108,7 @@ defmodule OliWeb.Delivery.Content.PercentageSelector do
                 JS.hide(to: "##{@id}_form")
                 |> JS.hide(to: "##{@id}-up-icon")
                 |> JS.show(to: "##{@id}-down-icon")
+                |> JS.focus(to: "##{@id}-filter-trigger")
               }
               class="text-center text-[#006CD9] text-xs font-semibold leading-none dark:text-white"
             >
@@ -117,6 +119,7 @@ defmodule OliWeb.Delivery.Content.PercentageSelector do
                 JS.hide(to: "##{@id}_form")
                 |> JS.hide(to: "##{@id}-up-icon")
                 |> JS.show(to: "##{@id}-down-icon")
+                |> JS.focus(to: "##{@id}-filter-trigger")
               }
               class="px-4 py-2 bg-[#0080FF] rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
             >

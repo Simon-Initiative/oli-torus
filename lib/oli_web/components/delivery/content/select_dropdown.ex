@@ -131,6 +131,7 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
       JS.hide(to: "##{id}-options-container")
       |> JS.hide(to: "##{id}-up-icon")
       |> JS.show(to: "##{id}-down-icon")
+      |> JS.focus(to: "##{id}-selected-options-container")
 
     if push_on_select, do: JS.push(close_js, phx_change), else: close_js
   end
