@@ -186,6 +186,43 @@ export const isEmptyContent = (content: (AllModelElements | Text)[]): boolean =>
   );
 };
 
+// Element types whose rendered output provides an accessible name on its own
+const SELF_NAMED_ELEMENT_TYPES = new Set<unknown>(['formula', 'formula_inline']);
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isNonBlankString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim() !== '';
+
+// Webpages (iframes) render their title as the aria-label and ignore alt, so only the title names
+// them. Code blocks render their `code` string as visible text.
+const isNameableNode = ({
+  text,
+  type,
+  alt,
+  title,
+  code,
+  caption,
+  children,
+}: Record<string, unknown>): boolean =>
+  isNonBlankString(text) ||
+  (type === 'iframe' ? isNonBlankString(title) : isNonBlankString(alt)) ||
+  (type === 'code' && isNonBlankString(code)) ||
+  isNonBlankString(caption) ||
+  SELF_NAMED_ELEMENT_TYPES.has(type) ||
+  hasNameableContent(caption) ||
+  hasNameableContent(children);
+
+/**
+ * hasNameableContent([nodes]) Returns true if the content renders something that can serve as
+ * the accessible name of a control (text, code, media alt text, webpage titles, captions or
+ * formulas). Content made only of media without alt text (e.g. an audio clip) has nothing to
+ * reference, so it needs a fallback name.
+ */
+export const hasNameableContent = (nodes: unknown): boolean =>
+  Array.isArray(nodes) && nodes.some((node) => isObject(node) && isNameableNode(node));
+
 export interface PointMarkerContext {
   renderPointMarkers: boolean;
   isAnnotationLevel: boolean;
