@@ -79,7 +79,7 @@ const addActivity = (
       const resourceContent: ActivityReference = {
         type: 'activity-reference',
         id: guid(),
-        activitySlug: result.revisionSlug,
+        activity_id: result.resourceId,
         children: [],
       };
 

@@ -94,7 +94,7 @@ describe('Learning Objectives page-load reconciliation', () => {
     const activity: ActivityReference = {
       type: 'activity-reference',
       id: 'activity-ref',
-      activitySlug: 'activity-slug',
+      activity_id: 42,
       children: [],
     };
     const text = createDefaultStructuredContent();

@@ -202,7 +202,7 @@ case Oli.TorusDoc.PageConverter.from_yaml(page_with_mcq_yaml) do
     IO.puts("\\nActivity References Found:")
 
     Enum.each(activity_refs, fn ref ->
-      IO.puts("  - Slug: #{ref["activitySlug"]}")
+      IO.puts("  - Resource ID: #{ref["activity_id"]}")
 
       if Map.has_key?(ref, "_inline_activity") do
         IO.puts("    Type: Inline")

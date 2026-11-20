@@ -42,6 +42,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
   contain any number of key-value pairs, but the keys must match
   the schema of `%Revision{}` struct.
 
+  Activity references in content must include a numeric `activity_id` resource
+  ID from the project's working publication. These IDs are validated and stored
+  directly; revision slugs are not accepted as reference identities.
+
   Not acquiring the lock here is considered a failure, as it is
   not an expected condition that a client would encounter. The client
   should have first acquired the lock via `acquire_lock`.
@@ -69,19 +73,19 @@ defmodule Oli.Authoring.Editing.PageEditor do
            {:ok, publication} <-
              Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-           {:ok, converted_update} <- convert_to_activity_ids(update),
+           :ok <- validate_activity_references(project_slug, update),
            {:ok, normalized_update} <-
-             normalize_learning_objectives_recommendations(project_slug, converted_update) do
+             normalize_learning_objectives_recommendations(project_slug, update) do
         Repo.transaction(fn ->
           case Locks.update(project.slug, publication.id, resource.id, author.id) do
             # If we acquired or updated the lock, we can proceed
             lock_result when lock_result in [{:acquired}, {:updated}] ->
               latest_revision = get_latest_revision(publication, resource)
 
-              case validate_feature_gated_content(latest_revision, converted_update, project) do
+              case validate_feature_gated_content(latest_revision, update, project) do
                 :ok ->
                   latest_revision
-                  |> resurrect_or_delete_activity_references(converted_update, project.slug)
+                  |> resurrect_or_delete_activity_references(update, project.slug)
                   |> maybe_create_new_revision(
                     publication,
                     project,
@@ -311,6 +315,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
   @doc """
   Creates the context necessary to power a client side resource editor
   for a specific resource / revision.
+
+  Page content retains its persisted `activity_id` resource references. Revision
+  slugs remain available separately in activity metadata.
   """
   def create_context(project_slug, revision_slug, author) do
     editor_map = Activities.create_registered_activity_map(project_slug)
@@ -369,7 +376,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
              nil -> !revision.graded
              value -> value
            end,
-         content: convert_to_activity_slugs(revision.content, publication.id),
+         content: revision.content,
          activities: activities,
          activityContexts:
            ActivityEditor.create_contexts(
@@ -669,50 +676,50 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
   end
 
-  # Reverse references found in a resource update for activities. They will
-  # come from the client as activity revision slugs, we store them internally
-  # as activity ids.
-  defp convert_to_activity_ids(%{"content" => content} = update) do
-    found_activities =
+  # Validate resource identity without rewriting references. Deleted activities remain
+  # valid here so removing an activity and then undoing can resurrect it.
+  defp validate_activity_references(project_slug, %{"content" => content}) do
+    activity_ids =
       Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
         type == "activity-reference"
       end)
-      |> Enum.map(fn c -> Map.get(c, "activitySlug") end)
+      |> Enum.map(&Map.get(&1, "activity_id"))
+      |> Enum.uniq()
 
-    slug_to_id =
-      case found_activities do
-        [] ->
-          %{}
+    case Enum.all?(activity_ids, &(is_integer(&1) and &1 > 0)) do
+      true ->
+        resolved_ids =
+          case activity_ids do
+            [] ->
+              []
 
-        activity_slugs ->
-          Oli.Resources.map_resource_ids_from_slugs(activity_slugs)
-          |> Enum.reduce(%{}, fn e, m ->
-            Map.put(m, Map.get(e, :slug), Map.get(e, :resource_id))
-          end)
-      end
-
-    if Enum.all?(found_activities, fn slug -> Map.has_key?(slug_to_id, slug) end) do
-      content =
-        Oli.Resources.PageContent.map(content, fn c ->
-          if Map.get(c, "type") == "activity-reference" do
-            slug = Map.get(c, "activitySlug")
-            Map.delete(c, "activitySlug") |> Map.put("activity_id", Map.get(slug_to_id, slug))
-          else
-            c
+            ids ->
+              Repo.all(
+                from mapping in Oli.Publishing.PublishedResource,
+                  join: revision in Revision,
+                  on:
+                    revision.id == mapping.revision_id and
+                      revision.resource_id == mapping.resource_id,
+                  where:
+                    mapping.publication_id in subquery(
+                      AuthoringResolver.project_working_publication(project_slug)
+                    ) and mapping.resource_id in ^ids and
+                      revision.resource_type_id == ^ResourceType.id_for_activity(),
+                  select: mapping.resource_id
+              )
           end
-        end)
 
-      {:ok, Map.put(update, "content", content)}
-    else
-      {:error, :not_found}
+        case MapSet.equal?(MapSet.new(activity_ids), MapSet.new(resolved_ids)) do
+          true -> :ok
+          false -> {:error, :not_found}
+        end
+
+      false ->
+        {:error, :not_found}
     end
   end
 
-  # This version of this function handles the case where there is no content
-  # present in the update
-  defp convert_to_activity_ids(update) do
-    {:ok, update}
-  end
+  defp validate_activity_references(_project_slug, _update), do: :ok
 
   defp normalize_learning_objectives_recommendations(
          project_slug,
@@ -837,36 +844,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
             rev.resource_scope == :project,
         select: mapping.resource_id
     )
-  end
-
-  # For the activity ids found in content, convert them to activity revision slugs
-  defp convert_to_activity_slugs(content, publication_id) do
-    found_activities =
-      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
-        type == "activity-reference"
-      end)
-      |> Enum.map(fn %{"activity_id" => id} -> id end)
-
-    id_to_slug =
-      case found_activities do
-        [] ->
-          %{}
-
-        activities ->
-          Publishing.get_published_activity_revisions(publication_id, activities)
-          |> Enum.reduce(%{}, fn e, m ->
-            Map.put(m, Map.get(e, :resource_id), Map.get(e, :slug))
-          end)
-      end
-
-    Oli.Resources.PageContent.map(content, fn c ->
-      if Map.get(c, "type") == "activity-reference" do
-        id = Map.get(c, "activity_id")
-        Map.delete(c, "activity_id") |> Map.put("activitySlug", Map.get(id_to_slug, id))
-      else
-        c
-      end
-    end)
   end
 
   # Take a list of maps containing the title, resource_id, and children (as a list of resource_ids)

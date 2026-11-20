@@ -29,7 +29,7 @@ export const ActivityEditor = ({
   onRegisterNewTag,
   onDuplicate,
 }: ActivityEditorProps) => {
-  const activity = activities.get(contentItem.activitySlug);
+  const activity = activities.get(String(contentItem.activity_id));
 
   if (activity !== undefined) {
     return (
@@ -64,8 +64,10 @@ export const ActivityEditor = ({
           optionalContentTypes={resourceContext.optionalContentTypes}
           canRemove={canRemove}
           onRemove={() => onRemove(contentItem.id)}
-          onEdit={(update: EditorUpdate) => onEditActivity(activity.activitySlug, update)}
-          onPostUndoable={(undoable: Undoable) => onPostUndoable(activity.activitySlug, undoable)}
+          onEdit={(update: EditorUpdate) => onEditActivity(String(activity.activityId), update)}
+          onPostUndoable={(undoable: Undoable) =>
+            onPostUndoable(String(activity.activityId), undoable)
+          }
           onRegisterNewObjective={onRegisterNewObjective}
           onRegisterNewTag={onRegisterNewTag}
           onDuplicate={() => onDuplicate(activity)}

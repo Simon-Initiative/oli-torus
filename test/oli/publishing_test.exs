@@ -801,22 +801,22 @@ defmodule Oli.PublishingTest do
             %{
               "type" => "activity-reference",
               "id" => "1",
-              "activitySlug" => activity1.slug
+              "activity_id" => activity1.resource_id
             },
             %{
               "type" => "activity-reference",
               "id" => "2",
-              "activitySlug" => activity2.slug
+              "activity_id" => activity2.resource_id
             },
             %{
               "type" => "activity-reference",
               "id" => "3",
-              "activitySlug" => activity3.slug
+              "activity_id" => activity3.resource_id
             },
             %{
               "type" => "activity-reference",
               "id" => "4",
-              "activitySlug" => activity4.slug
+              "activity_id" => activity4.resource_id
             }
           ]
         }
@@ -920,22 +920,22 @@ defmodule Oli.PublishingTest do
             %{
               "type" => "activity-reference",
               "id" => "1",
-              "activitySlug" => activity1.slug
+              "activity_id" => activity1.resource_id
             },
             %{
               "type" => "activity-reference",
               "id" => "2",
-              "activitySlug" => activity2.slug
+              "activity_id" => activity2.resource_id
             },
             %{
               "type" => "activity-reference",
               "id" => "3",
-              "activitySlug" => activity3.slug
+              "activity_id" => activity3.resource_id
             },
             %{
               "type" => "activity-reference",
               "id" => "4",
-              "activitySlug" => activity4.slug
+              "activity_id" => activity4.resource_id
             }
           ]
         }

@@ -582,7 +582,7 @@ defmodule Oli.ActivityEditingTest do
             %{
               "type" => "activity-reference",
               "id" => "1",
-              "activitySlug" => slug
+              "activity_id" => Oli.Resources.get_resource_from_slug(slug).id
             }
           ]
         }
@@ -617,7 +617,7 @@ defmodule Oli.ActivityEditingTest do
             %{
               "type" => "activity-reference",
               "id" => "1",
-              "activitySlug" => slug
+              "activity_id" => Oli.Resources.get_resource_from_slug(slug).id
             }
           ]
         }
@@ -651,7 +651,7 @@ defmodule Oli.ActivityEditingTest do
             %{
               "type" => "activity-reference",
               "id" => "1",
-              "activitySlug" => slug
+              "activity_id" => Oli.Resources.get_resource_from_slug(slug).id
             }
           ]
         }
@@ -662,7 +662,7 @@ defmodule Oli.ActivityEditingTest do
       assert {:ok, updated_revision} =
                PageEditor.edit(project.slug, revision.slug, author.email, update)
 
-      # Verify that the slug was translated to the correct activity id
+      # Verify that the resource ID is preserved.
       activity_ref = hd(Map.get(updated_revision.content, "model"))
       assert activity_id == Map.get(activity_ref, "activity_id")
       refute Map.has_key?(activity_ref, "activitySlug")
@@ -685,8 +685,10 @@ defmodule Oli.ActivityEditingTest do
 
       activity_ref = hd(Map.get(content, "model"))
 
-      # verifies that the content entry has an activitySlug that references an activity map entry
-      activity_slug = Map.get(activity_ref, "activitySlug")
+      # The content retains resource identity; revision slugs remain activity metadata.
+      assert activity_ref["activity_id"] == activity_id
+      refute Map.has_key?(activity_ref, "activitySlug")
+      activity_slug = slug
       assert Map.has_key?(activities, activity_slug)
 
       # and that activity map entry has a type slug that references an editor map entry
@@ -713,7 +715,7 @@ defmodule Oli.ActivityEditingTest do
             %{
               "type" => "activity-reference",
               "id" => "1",
-              "activitySlug" => slug
+              "activity_id" => Oli.Resources.get_resource_from_slug(slug).id
             }
           ]
         }
@@ -754,7 +756,7 @@ defmodule Oli.ActivityEditingTest do
             %{
               "type" => "activity-reference",
               "id" => "1",
-              "activitySlug" => slug_1
+              "activity_id" => Oli.Resources.get_resource_from_slug(slug_1).id
             }
           ]
         }
@@ -814,7 +816,7 @@ defmodule Oli.ActivityEditingTest do
             %{
               "type" => "activity-reference",
               "id" => 1,
-              "activitySlug" => "missing",
+              "activity_id" => -1,
               "purpose" => "none"
             }
           ]

@@ -9,7 +9,7 @@ export const getFriendlyName = (
   editorMap: ActivityEditorMap,
   activities: Immutable.Map<string, ActivityEditContext>,
 ) => {
-  const activity = activities.get(item.activitySlug);
+  const activity = activities.get(String(item.activity_id));
   return editorMap[(activity as any).typeSlug].friendlyName;
 };
 
@@ -18,8 +18,8 @@ export const getDragPayload = (
   activities: Immutable.Map<string, ActivityEditContext>,
   projectSlug: string,
 ): DragPayload => {
-  if (activities.has((contentItem as ActivityReference).activitySlug)) {
-    const activity = activities.get((contentItem as ActivityReference).activitySlug);
+  if (activities.has(String((contentItem as ActivityReference).activity_id))) {
+    const activity = activities.get(String((contentItem as ActivityReference).activity_id));
     return {
       type: 'ActivityPayload',
       id: contentItem.id,
