@@ -73,10 +73,11 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
     with {:ok, attrs_list} <- normalize_bulk_create_attrs(activities),
          {:ok, created} <-
            ActivityBank.create_bulk(built_project.project.slug, author, attrs_list) do
+      attrs_by_index = List.to_tuple(attrs_list)
+
       updated_state =
-        attrs_list
-        |> Enum.zip(created)
-        |> Enum.reduce(state, fn {attrs, %{activity: revision}}, acc ->
+        Enum.reduce(created, state, fn %{activity: revision, input_index: index}, acc ->
+          attrs = elem(attrs_by_index, index)
           put_activity(acc, project_name, revision, attrs.title, attrs.virtual_id)
         end)
 

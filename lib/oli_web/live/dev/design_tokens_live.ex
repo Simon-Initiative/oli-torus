@@ -195,7 +195,7 @@ defmodule OliWeb.Dev.DesignTokensLive do
                                 {example.label}
                               </span>
                             </div>
-                            <div class="flex h-16 items-start">
+                            <div class="flex min-h-16 items-start">
                               {apply(primitive.module, :preview, [example.assigns])}
                             </div>
                             <div class="relative w-full">

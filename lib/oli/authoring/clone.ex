@@ -2,6 +2,7 @@ defmodule Oli.Authoring.Clone do
   import Ecto.Query, warn: false
   import Oli.Authoring.Editing.Utils
   alias Oli.Authoring.Editing.Blueprint
+  alias Oli.Accounts
   alias Oli.Publishing
   alias Oli.Publishing.{AuthoringResolver}
   alias Oli.Authoring.{Collaborators, Locks}
@@ -57,6 +58,8 @@ defmodule Oli.Authoring.Clone do
            _ <- clone_all_project_resources(base_project.id, cloned_project.id),
            _ <- clone_all_media_items(base_project.id, cloned_project.id),
            _ <- clone_all_project_activity_registrations(base_project.id, cloned_project.id),
+           _ <-
+             clone_all_lti_external_tool_project_grants(base_project, cloned_project.id, author),
            Blueprint.get_blueprint_by_base_project(base_project)
            |> Enum.map(fn blueprint -> %{blueprint | base_project_id: cloned_project.id} end)
            |> clone_blueprints({base_project.id, cloned_publication.id}) do
@@ -102,13 +105,36 @@ defmodule Oli.Authoring.Clone do
 
   def clone_all_project_activity_registrations(base_project_id, cloned_project_id) do
     query = """
-      INSERT INTO activity_registration_projects(activity_registration_id, project_id, inserted_at, updated_at)
-      SELECT activity_registration_id, $1, now(), now()
+      INSERT INTO activity_registration_projects(activity_registration_id, project_id, status, inserted_at, updated_at)
+      SELECT activity_registration_id, $1, status, now(), now()
       FROM activity_registration_projects as p
       WHERE p.project_id = $2;
     """
 
     Repo.query!(query, [cloned_project_id, base_project_id])
+  end
+
+  @doc """
+  Gives the cloned project every LTI external tool grant the base project has, whether or not the
+  base project has added that tool, when the author can access the base project (a collaborator or
+  an admin). A copy made by any other author, through duplication by non-collaborators, gets no
+  grants.
+  """
+  def clone_all_lti_external_tool_project_grants(base_project, cloned_project_id, author) do
+    case Accounts.can_access?(author, base_project) do
+      true ->
+        query = """
+          INSERT INTO lti_external_tool_project_grants(deployment_id, project_id, inserted_at, updated_at)
+          SELECT deployment_id, $1, now(), now()
+          FROM lti_external_tool_project_grants as g
+          WHERE g.project_id = $2;
+        """
+
+        Repo.query!(query, [cloned_project_id, base_project.id])
+
+      false ->
+        nil
+    end
   end
 
   @doc """

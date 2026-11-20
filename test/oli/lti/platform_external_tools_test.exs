@@ -217,6 +217,215 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
     end
   end
 
+  describe "deployment availability" do
+    test "a newly registered tool is Private" do
+      institution = insert(:institution)
+
+      {:ok, {_pi, _ar, deployment}} =
+        PlatformExternalTools.register_lti_external_tool_activity(%{
+          "name" => "New Private Tool",
+          "description" => "A test tool",
+          "target_link_uri" => "https://example.com/launch",
+          "client_id" => "new-private-tool",
+          "login_url" => "https://example.com/login",
+          "keyset_url" => "https://example.com/keyset",
+          "redirect_uris" => "https://example.com/redirect",
+          "institution_id" => institution.id
+        })
+
+      stored =
+        Oli.Repo.get!(
+          Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment,
+          deployment.deployment_id
+        )
+
+      assert stored.availability == :private
+    end
+
+    test "a deployment row inserted without availability is stored as private" do
+      registration = insert(:activity_registration)
+      platform_instance = insert(:platform_instance)
+
+      %{rows: [[availability]]} =
+        Oli.Repo.query!(
+          """
+          INSERT INTO lti_external_tool_activity_deployments
+            (activity_registration_id, platform_instance_id, inserted_at, updated_at)
+          VALUES ($1, $2, now(), now())
+          RETURNING availability
+          """,
+          [registration.id, platform_instance.id]
+        )
+
+      assert availability == "private"
+    end
+  end
+
+  describe "availability and project grants" do
+    test "availability and the enabled status change independently of each other" do
+      deployment =
+        tool_deployment(status: :disabled, availability: :public)
+
+      assert {:ok, _} = PlatformExternalTools.set_availability(deployment, :private)
+      assert %{availability: :private, status: :disabled} = reload(deployment)
+
+      assert {:ok, _} =
+               PlatformExternalTools.update_lti_external_tool_activity_deployment(
+                 reload(deployment),
+                 %{status: :enabled, availability: :public}
+               )
+
+      assert %{availability: :private, status: :enabled} = reload(deployment)
+
+      assert {:error, %Ecto.Changeset{}} =
+               PlatformExternalTools.set_availability(reload(deployment), :global)
+
+      assert %{availability: :private} = reload(deployment)
+    end
+
+    test "a grant neither adds nor enables the tool in the project" do
+      registration = insert(:activity_registration, globally_available: false)
+
+      deployment =
+        insert(:lti_external_tool_activity_deployment,
+          activity_registration: registration,
+          availability: :private
+        )
+
+      not_added = insert(:project)
+      added_disabled = insert(:project)
+
+      insert(:activity_registration_project,
+        activity_registration_id: registration.id,
+        project_id: added_disabled.id,
+        status: :disabled
+      )
+
+      assert {:ok, _} = PlatformExternalTools.grant_project(deployment, not_added.id)
+      assert {:ok, _} = PlatformExternalTools.grant_project(deployment, added_disabled.id)
+
+      assert granted_ids(deployment) == MapSet.new([not_added.id, added_disabled.id])
+      refute association(deployment, not_added)
+      assert association(deployment, added_disabled).status == :disabled
+    end
+
+    test "only an active project can be granted, once" do
+      deployment = tool_deployment(availability: :private)
+      deleted = insert(:project, status: :deleted)
+      active = insert(:project)
+
+      assert {:error, :project_not_active} =
+               PlatformExternalTools.grant_project(deployment, deleted.id)
+
+      assert {:error, :project_not_active} = PlatformExternalTools.grant_project(deployment, -1)
+
+      assert {:ok, _} = PlatformExternalTools.grant_project(deployment, active.id)
+      assert {:ok, _} = PlatformExternalTools.grant_project(deployment, active.id)
+
+      assert granted_ids(deployment) == MapSet.new([active.id])
+    end
+
+    test "revoking a grant removes that grant only and keeps the tool in the project" do
+      deployment = tool_deployment(availability: :private)
+      other_deployment = tool_deployment(availability: :private)
+      revoked = insert(:project)
+      kept = insert(:project)
+
+      {:ok, _} = PlatformExternalTools.grant_project(deployment, revoked.id)
+      {:ok, _} = PlatformExternalTools.grant_project(deployment, kept.id)
+      {:ok, _} = PlatformExternalTools.grant_project(other_deployment, revoked.id)
+      add_enabled(deployment, revoked)
+
+      assert :ok = PlatformExternalTools.revoke_project(deployment, revoked.id)
+
+      assert granted_ids(deployment) == MapSet.new([kept.id])
+      assert granted_ids(other_deployment) == MapSet.new([revoked.id])
+      assert association(deployment, revoked).status == :enabled
+      assert reload(deployment).status == :enabled
+    end
+
+    test "a tool switched to Public and back to Private keeps its grants and its projects" do
+      deployment = tool_deployment(availability: :private)
+      granted = insert(:project)
+      ungranted = insert(:project)
+      {:ok, _} = PlatformExternalTools.grant_project(deployment, granted.id)
+      add_enabled(deployment, granted)
+
+      {:ok, deployment} = PlatformExternalTools.set_availability(deployment, :public)
+      assert %{availability: :public, status: :enabled} = reload(deployment)
+      assert granted_ids(deployment) == MapSet.new([granted.id])
+      add_enabled(deployment, ungranted)
+
+      {:ok, deployment} = PlatformExternalTools.set_availability(deployment, :private)
+      assert %{availability: :private, status: :enabled} = reload(deployment)
+      assert granted_ids(deployment) == MapSet.new([granted.id])
+      assert association(deployment, granted).status == :enabled
+      assert association(deployment, ungranted).status == :enabled
+    end
+
+    test "lists the deployment's granted projects by title" do
+      deployment = tool_deployment(availability: :private)
+      other_deployment = tool_deployment(availability: :private)
+      zoology = insert(:project, title: "Zoology")
+      astronomy = insert(:project, title: "Astronomy")
+      botany = insert(:project, title: "Botany")
+
+      {:ok, _} = PlatformExternalTools.grant_project(deployment, zoology.id)
+      {:ok, _} = PlatformExternalTools.grant_project(deployment, astronomy.id)
+      {:ok, _} = PlatformExternalTools.grant_project(other_deployment, botany.id)
+
+      assert Enum.map(PlatformExternalTools.list_granted_projects(deployment), & &1.id) ==
+               [astronomy.id, zoology.id]
+    end
+
+    test "search treats percent, underscore and backslash literally in titles and slugs" do
+      deployment = tool_deployment(availability: :private)
+
+      for field <- [:title, :slug],
+          {literal, decoy} <- [{"rate%", "rateX"}, {"unit_7", "unitX7"}, {"path\\", "path%"}] do
+        prefix = "literal#{field}#{String.length(literal)}"
+        query = prefix <> literal
+
+        for n <- 1..12 do
+          insert(:project, Map.put(%{title: "A decoy #{n}"}, field, "A#{n} #{prefix}#{decoy}"))
+        end
+
+        target = insert(:project, Map.put(%{title: "Z target"}, field, "Z #{query}"))
+
+        assert Enum.map(
+                 PlatformExternalTools.search_projects_to_grant(
+                   deployment,
+                   "  #{String.upcase(query)}  ",
+                   11
+                 ),
+                 & &1.id
+               ) == [target.id],
+               "expected only the literal #{inspect(literal)} target in #{field}"
+      end
+    end
+
+    test "searches active projects not yet granted by title or slug, up to the limit" do
+      deployment = tool_deployment(availability: :private)
+      other_deployment = tool_deployment(availability: :private)
+
+      insert(:project, title: "Photon Basics", slug: "basics_1")
+      insert(:project, title: "Optics", slug: "photon_optics")
+      granted_elsewhere = insert(:project, title: "Photon Lab", slug: "lab_1")
+      granted = insert(:project, title: "Photon Granted", slug: "granted_1")
+      insert(:project, title: "Photon Deleted", slug: "deleted_1", status: :deleted)
+      insert(:project, title: "Electrons", slug: "electrons_1")
+
+      {:ok, _} = PlatformExternalTools.grant_project(deployment, granted.id)
+      {:ok, _} = PlatformExternalTools.grant_project(other_deployment, granted_elsewhere.id)
+
+      assert titles(PlatformExternalTools.search_projects_to_grant(deployment, "PHOTON", 10)) ==
+               ["Optics", "Photon Basics", "Photon Lab"]
+
+      assert titles(PlatformExternalTools.search_projects_to_grant(deployment, "photon", 2)) ==
+               ["Optics", "Photon Basics"]
+    end
+  end
+
   describe "update_lti_external_tool_activity/2" do
     setup do
       institution = insert(:institution)
@@ -1043,4 +1252,44 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       assert count == 1
     end
   end
+
+  defp tool_deployment(attrs) do
+    insert(
+      :lti_external_tool_activity_deployment,
+      Keyword.merge(
+        [activity_registration: build(:activity_registration, globally_available: false)],
+        attrs
+      )
+    )
+  end
+
+  defp reload(deployment) do
+    Repo.get!(
+      Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment,
+      deployment.deployment_id
+    )
+  end
+
+  defp granted_ids(deployment) do
+    deployment
+    |> PlatformExternalTools.list_granted_projects()
+    |> MapSet.new(& &1.id)
+  end
+
+  defp add_enabled(deployment, project) do
+    insert(:activity_registration_project,
+      activity_registration_id: deployment.activity_registration_id,
+      project_id: project.id,
+      status: :enabled
+    )
+  end
+
+  defp association(%{activity_registration_id: registration_id}, project) do
+    Repo.get_by(Oli.Activities.ActivityRegistrationProject,
+      activity_registration_id: registration_id,
+      project_id: project.id
+    )
+  end
+
+  defp titles(projects), do: Enum.map(projects, & &1.title)
 end

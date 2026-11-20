@@ -1141,7 +1141,7 @@ defmodule OliWeb.LtiControllerTest do
       state = "some-state"
       lti_message_hint = "some-lti-message-hint"
 
-      {:ok, {_, activity_registration, _}} =
+      {:ok, {_, activity_registration, deployment}} =
         PlatformExternalTools.register_lti_external_tool_activity(%{
           "name" => "some-platform",
           "description" => "some-description",
@@ -1152,6 +1152,8 @@ defmodule OliWeb.LtiControllerTest do
           "redirect_uris" => "some-valid-url"
         })
 
+      {:ok, _grant} = PlatformExternalTools.grant_project(deployment, project.id)
+
       {:ok, {activity, _}} =
         ActivityEditor.create(
           project.slug,
@@ -1160,6 +1162,8 @@ defmodule OliWeb.LtiControllerTest do
           %{"openInNewTab" => true, "authoring" => %{"parts" => []}},
           []
         )
+
+      :ok = PlatformExternalTools.revoke_project(deployment, project.id)
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(author.id, %{
@@ -1205,7 +1209,7 @@ defmodule OliWeb.LtiControllerTest do
       state = "some-state"
       lti_message_hint = "some-lti-message-hint"
 
-      {:ok, {_, activity_registration, _}} =
+      {:ok, {_, activity_registration, deployment}} =
         PlatformExternalTools.register_lti_external_tool_activity(%{
           "name" => "some-platform",
           "description" => "some-description",
@@ -1216,6 +1220,8 @@ defmodule OliWeb.LtiControllerTest do
           "redirect_uris" => "some-valid-url"
         })
 
+      {:ok, _grant} = PlatformExternalTools.grant_project(deployment, project.id)
+
       {:ok, {activity, _}} =
         ActivityEditor.create(
           project.slug,
@@ -1224,6 +1230,8 @@ defmodule OliWeb.LtiControllerTest do
           %{"openInNewTab" => true, "authoring" => %{"parts" => []}},
           []
         )
+
+      :ok = PlatformExternalTools.revoke_project(deployment, project.id)
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(author.id, %{
@@ -1973,12 +1981,13 @@ defmodule OliWeb.LtiControllerTest do
   end
 
   def setup_project(%{conn: conn}) do
-    {:ok, {_platform_instance, activity_registration, _deployment}} =
+    {:ok, {_platform_instance, activity_registration, deployment}} =
       create_lti_external_tool_activity()
 
     seeds = Oli.Seeder.base_project_with_resource2()
 
     project = Map.get(seeds, :project)
+    {:ok, _grant} = PlatformExternalTools.grant_project(deployment, project.id)
     revision = Map.get(seeds, :revision1)
     author = Map.get(seeds, :author)
 
@@ -1994,6 +2003,9 @@ defmodule OliWeb.LtiControllerTest do
 
     {:ok, {%{slug: slug2, resource_id: activity_id2}, _}} =
       ActivityEditor.create(project.slug, activity_registration.slug, author, content, [])
+
+    # Existing activities must still launch after the Private tool grant is removed.
+    :ok = PlatformExternalTools.revoke_project(deployment, project.id)
 
     seeds = Map.put(seeds, :activity_id, activity_id) |> Map.put(:activity_id2, activity_id2)
 
