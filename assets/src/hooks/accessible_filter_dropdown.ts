@@ -1,0 +1,104 @@
+import type { Hook } from 'phoenix_live_view/assets/js/types/view_hook';
+
+type AccessibleFilterDropdownState = {
+  onTriggerClick?: () => void;
+  onPanelKeydown?: (event: KeyboardEvent) => void;
+  onTabChange?: () => void;
+  onPageLoadingStart?: () => void;
+  onTabClick?: (event: MouseEvent) => void;
+  observer?: MutationObserver;
+};
+
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+export const AccessibleFilterDropdown: Hook<AccessibleFilterDropdownState> = {
+  mounted() {
+    const trigger = this.el.querySelector('[data-filter-trigger]') as HTMLElement | null;
+    const panel = this.el.querySelector('[data-filter-panel]') as HTMLElement | null;
+    if (!trigger || !panel) return;
+
+    const syncExpanded = () => {
+      trigger.setAttribute('aria-expanded', panel.classList.contains('hidden') ? 'false' : 'true');
+    };
+    const focusableElements = () =>
+      Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+        (element) => element.offsetParent !== null,
+      );
+    const closePanel = () => {
+      panel.style.removeProperty('display');
+      panel.classList.add('hidden');
+
+      const panelId = panel.getAttribute('id') || '';
+      const triggerId = panelId.replace(/(_form|-options-container)$/, '');
+      document.getElementById(`${triggerId}-up-icon`)?.classList.add('hidden');
+      document.getElementById(`${triggerId}-down-icon`)?.classList.remove('hidden');
+    };
+
+    this.onTriggerClick = () => {
+      requestAnimationFrame(() => {
+        syncExpanded();
+        if (trigger.getAttribute('aria-expanded') === 'true') focusableElements()[0]?.focus();
+      });
+    };
+    this.onPanelKeydown = (event: KeyboardEvent) => {
+      const elements = focusableElements();
+      const currentIndex = elements.indexOf(document.activeElement as HTMLElement);
+      switch (event.key) {
+        case 'ArrowDown':
+        case 'ArrowRight':
+          if (currentIndex >= 0) {
+            event.preventDefault();
+            elements[(currentIndex + 1) % elements.length]?.focus();
+          }
+          break;
+        case 'ArrowUp':
+        case 'ArrowLeft':
+          if (currentIndex >= 0) {
+            event.preventDefault();
+            elements[(currentIndex - 1 + elements.length) % elements.length]?.focus();
+          }
+          break;
+        case 'Escape':
+          event.preventDefault();
+          closePanel();
+          syncExpanded();
+          trigger.focus();
+          break;
+        default:
+          break;
+      }
+    };
+    this.onTabChange = closePanel;
+    this.onPageLoadingStart = closePanel;
+    this.onTabClick = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (target?.closest('[data-insights-tab]')) closePanel();
+    };
+
+    trigger.addEventListener('click', this.onTriggerClick);
+    panel.addEventListener('keydown', this.onPanelKeydown);
+    document.addEventListener('click', this.onTabClick, true);
+    document.addEventListener('phx:close-filter-dropdowns', this.onTabChange);
+    window.addEventListener('phx:close-filter-dropdowns', this.onTabChange);
+    window.addEventListener('phx:page-loading-start', this.onPageLoadingStart);
+    this.observer = new MutationObserver(syncExpanded);
+    this.observer.observe(panel, { attributes: true, attributeFilter: ['class', 'style'] });
+    syncExpanded();
+  },
+
+  destroyed() {
+    const trigger = this.el.querySelector('[data-filter-trigger]');
+    const panel = this.el.querySelector('[data-filter-panel]');
+    if (trigger && this.onTriggerClick) trigger.removeEventListener('click', this.onTriggerClick);
+    if (panel && this.onPanelKeydown) panel.removeEventListener('keydown', this.onPanelKeydown);
+    if (this.onTabChange)
+      document.removeEventListener('phx:close-filter-dropdowns', this.onTabChange);
+    if (this.onTabChange)
+      window.removeEventListener('phx:close-filter-dropdowns', this.onTabChange);
+    if (this.onPageLoadingStart)
+      window.removeEventListener('phx:page-loading-start', this.onPageLoadingStart);
+    if (this.onTabClick) document.removeEventListener('click', this.onTabClick, true);
+    this.observer?.disconnect();
+  },
+};

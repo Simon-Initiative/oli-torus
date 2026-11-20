@@ -8,6 +8,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Header
   alias OliWeb.Common.SessionContext
+  alias Phoenix.LiveView.JS
 
   attr(:ctx, SessionContext)
   attr(:is_admin, :boolean, required: true)
@@ -73,6 +74,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
         >
           <.link
             patch={path}
+            data-insights-tab
+            phx-click={JS.dispatch("phx:close-filter-dropdowns", to: "body")}
             class={"
                   block
                   border-x-0 border-t-0 border-b-2

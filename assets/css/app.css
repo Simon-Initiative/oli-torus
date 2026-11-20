@@ -882,6 +882,12 @@ https://tailwindcss.com/docs/utility-first
 .progress-options {
   @apply flex;
 
+  input[type='radio']:focus + label {
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 0 0 3px #006cd9;
+  }
+
   input[type='radio'] {
     @apply opacity-0 fixed w-0;
   }
@@ -890,6 +896,11 @@ https://tailwindcss.com/docs/utility-first
     background-color: rgba(59, 118, 211, 0.07); /* Background color with opacity */
     border-color: #3b76d3; /* Border color */
     color: #3b76d3; /* Text color */
+  }
+
+  input[type='radio']:focus + label {
+    outline: 2px solid #006cd9;
+    outline-offset: 2px;
   }
 
   label {

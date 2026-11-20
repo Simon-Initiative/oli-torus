@@ -26,6 +26,7 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
   # When true, the trigger renders at a reduced height (h-7) to fit alongside
   # plain text rows in dense displays (e.g. debug panes). Default keeps h-9.
   attr :compact, :boolean, default: false
+  attr :label, :string, default: nil
 
   def render(assigns) do
     effective_value =
@@ -47,8 +48,18 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
       )
 
     ~H"""
-    <div class={"flex flex-col relative rounded #{@border_class} #{@height_class}"}>
-      <div
+    <div
+      id={"#{@id}-filter-dropdown"}
+      phx-hook="AccessibleFilterDropdown"
+      class={"flex flex-col relative rounded #{@border_class} #{@height_class}"}
+    >
+      <button
+        type="button"
+        data-filter-trigger
+        disabled={@disabled}
+        aria-label={@label || selected_option_label(@effective_value, @options)}
+        aria-expanded="false"
+        aria-controls={"#{@id}-options-container"}
         phx-click={
           if(!@disabled,
             do:
@@ -76,10 +87,11 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
           </span>
         </div>
         <.toggle_chevron id={@id} map_values={%{@effective_value => ""}} />
-      </div>
+      </button>
 
       <div class="relative">
         <div
+          data-filter-panel
           class="py-2 px-2 hidden z-50 absolute dark:bg-gray-800 bg-white w-48 border overflow-y-auto top-1 rounded"
           id={"#{@id}-options-container"}
           phx-click-away={

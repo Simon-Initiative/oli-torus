@@ -594,6 +594,7 @@ defmodule OliWeb.Components.Delivery.Students do
               target={@myself}
               selected_value={@params[:filter_by]}
               options={@dropdown_options}
+              label="Enrolled"
             />
 
             <button
