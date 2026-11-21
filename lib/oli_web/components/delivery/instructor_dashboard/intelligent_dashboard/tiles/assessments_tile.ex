@@ -111,7 +111,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                     phx-click="assessment_row_toggled"
                     phx-value-assessment_id={row.assessment_id}
                     class="flex min-h-[112px] w-full items-start justify-between gap-5 rounded-xl px-[15px] py-[15px] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-Fill-Buttons-fill-primary"
-                    aria-expanded={expanded?(@expanded_assessment_id, row.assessment_id)}
+                    aria-expanded={to_string(expanded?(@expanded_assessment_id, row.assessment_id))}
                     aria-controls={"assessment-details-#{row.assessment_id}"}
                     aria-label={
                       disclosure_label(
@@ -160,11 +160,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                   </button>
 
                   <div
-                    :if={expanded?(@expanded_assessment_id, row.assessment_id)}
                     id={"assessment-details-#{row.assessment_id}"}
-                    class="px-4 pb-8 pt-[2px]"
+                    class={[
+                      "px-4 pb-8 pt-[2px]",
+                      !expanded?(@expanded_assessment_id, row.assessment_id) && "hidden"
+                    ]}
                   >
-                    <div class="flex flex-col items-start gap-4">
+                    <div
+                      :if={expanded?(@expanded_assessment_id, row.assessment_id)}
+                      class="flex flex-col items-start gap-4"
+                    >
                       <.completion_status_badge completion={row.completion} />
 
                       <button

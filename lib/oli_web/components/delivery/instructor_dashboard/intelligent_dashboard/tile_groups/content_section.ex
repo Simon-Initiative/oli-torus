@@ -113,23 +113,25 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           />
         </div>
 
-        <button
+        <%!-- Pointer-only resize handles: the hook only listens to pointer events, so they are
+             non-interactive elements hidden from assistive technology. --%>
+        <div
           :if={@show_resize_handle}
-          type="button"
           class="absolute z-20 w-3 -translate-x-1/2 -translate-y-1/2 cursor-col-resize bg-transparent"
-          aria-label="Resize Challenging Objectives tile"
+          aria-hidden="true"
           data-dashboard-section-resize-handle
           data-pane-index="0"
-        />
+        >
+        </div>
 
-        <button
+        <div
           :if={@show_resize_handle}
-          type="button"
           class="absolute z-20 w-3 -translate-x-1/2 -translate-y-1/2 cursor-col-resize bg-transparent"
-          aria-label="Resize Assessments tile"
+          aria-hidden="true"
           data-dashboard-section-resize-handle
           data-pane-index="1"
-        />
+        >
+        </div>
       </div>
     </DashboardSectionChrome.section>
     """

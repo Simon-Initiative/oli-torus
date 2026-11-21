@@ -23,7 +23,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
     assigns = assign_new(assigns, :browser_timezone, fn -> nil end)
 
     ~H"""
-    <div id="learning-dashboard" class="container mx-auto mb-10" phx-hook="Scroller">
+    <%!-- The instructor header is sticky, so focused controls keep a top scroll margin that
+         stops keyboard focus scrolling from parking them behind it. Listbox options are
+         excluded because they scroll inside their own dropdown container. --%>
+    <div
+      id="learning-dashboard"
+      class="container mx-auto mb-10 [&_:focus:not([role=option])]:scroll-mt-20"
+      phx-hook="Scroller"
+    >
       <div class="-mt-10 mb-4 space-y-1.5">
         <div class="flex justify-end">
           <form

@@ -97,13 +97,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DashboardSectionChrome 
       >
       </div>
 
+      <%!-- The content container stays in the DOM so the toggle's aria-controls always resolves;
+           the slot only renders while expanded to avoid mounting collapsed tiles. --%>
       <div
-        :if={@expanded}
         id={"#{@id}-content"}
-        class="px-5 pb-5 pt-4"
+        class={["px-5 pb-5 pt-4", !@expanded && "hidden"]}
         data-section-content
       >
-        {render_slot(@inner_block)}
+        {if @expanded, do: render_slot(@inner_block)}
       </div>
     </section>
     """
