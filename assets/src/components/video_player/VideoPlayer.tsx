@@ -13,6 +13,7 @@ import {
 } from 'video-react';
 import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
 import * as XAPI from 'data/persistence/xapi';
+import { track } from '../../analytics/track';
 import * as ContentModel from '../../data/content/model/elements/types';
 import { useCommandTarget } from '../editing/elements/command_button/useCommandTarget';
 import { ClosedCaptionButton } from './ClosedCaptionButton';
@@ -67,6 +68,7 @@ export const VideoPlayer: React.FC<{
   const [segments, setSegments] = useState([] as XAPI.PlayedSegment[]);
   const segmentsRef = useRef(segments);
   const seekFromRef = useRef(seekFrom);
+  const startedRef = useRef(false);
 
   const sizeAttributes = isValidSize(video)
     ? { width: video.width, height: video.height, fluid: false }
@@ -178,6 +180,7 @@ export const VideoPlayer: React.FC<{
             content_element_id: video.id,
           } as XAPI.VideoCompletedEvent,
         );
+        track({ name: 'video_completed', params: { video_source: 'hosted' } });
       } else if (state.paused && !prev.paused) {
         const lastSegment = segmentsRef.current[segmentsRef.current.length - 1];
         let segmentsStr = '';
@@ -212,6 +215,11 @@ export const VideoPlayer: React.FC<{
       } else if (!state.paused && prev.paused) {
         const segment = { start: state.currentTime, end: null };
         setSegments([...segmentsRef.current, segment]);
+
+        if (!startedRef.current) {
+          startedRef.current = true;
+          track({ name: 'video_started', params: { video_source: 'hosted' } });
+        }
 
         // Emit played event
         XAPI.emit_delivery(

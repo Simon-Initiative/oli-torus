@@ -5,6 +5,7 @@ import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
 import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
 import { isDarkMode } from 'utils/browser';
+import { track } from '../../analytics/track';
 import { AdaptiveDialogueBridge } from './components/AdaptiveDialogueBridge';
 import PreviewTools from './components/PreviewTools';
 import { DeadlineTimer } from './layouts/deck/DeadlineTimer';
@@ -320,6 +321,8 @@ const Delivery: React.FC<DeliveryProps> = ({
   useEffect(() => {
     setInitialPageState();
     handleUserThemePreferende();
+    // The adaptive app is the single page_entered emitter for adaptive lessons.
+    if (!previewMode && !reviewMode) track({ name: 'page_entered' });
   }, []);
 
   useEffect(() => {

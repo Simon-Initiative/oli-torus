@@ -30,6 +30,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion
   alias OliWeb.Icons
+  alias OliWeb.Analytics
 
   require Logger
   import OliWeb.ViewHelpers, only: [is_section_instructor_or_admin?: 2]
@@ -355,7 +356,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("finalize_attempt", _params, socket) do
-    finalize_attempt(socket)
+    finalize_attempt(socket, :submitted)
   end
 
   def handle_event("update_point_markers", %{"point_markers" => point_markers}, socket) do
@@ -374,7 +375,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       active_sidebar_panel == :outline
     )
 
-    {:noreply, assign(socket, active_sidebar_panel: active_sidebar_panel)}
+    {:noreply,
+     socket
+     |> assign(active_sidebar_panel: active_sidebar_panel)
+     |> track_panel_opened(active_sidebar_panel, :outline, "outline_opened")}
   end
 
   def handle_event("toggle_notes_sidebar", _params, socket) do
@@ -385,6 +389,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply,
      socket
      |> assign(active_sidebar_panel: active_sidebar_panel)
+     |> track_panel_opened(active_sidebar_panel, :notes, "notes_opened")
      |> push_event("request_point_markers", %{})
      |> then(fn socket ->
        case active_sidebar_panel do
@@ -912,13 +917,38 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_params(_params, _url, socket) do
+    socket = maybe_track_page_entered(socket)
+
     if Map.has_key?(socket.assigns, :attempt_expired_auto_submit) and
          socket.assigns.attempt_expired_auto_submit do
-      finalize_attempt(socket)
+      finalize_attempt(socket, :expired)
     else
       {:noreply, socket}
     end
   end
+
+  # Tracked from handle_params so the analytics context push for this page precedes it.
+  # Adaptive lessons are reported by the adaptive delivery app instead.
+  defp maybe_track_page_entered(%{assigns: %{view: view} = assigns} = socket)
+       when view in [:practice_page, :graded_page] do
+    case connected?(socket) and not Map.get(assigns, :analytics_page_entered?, false) and
+           not Map.get(assigns, :show_blocking_gates?, false) do
+      true ->
+        socket
+        |> assign(analytics_page_entered?: true)
+        |> Analytics.track("page_entered")
+
+      false ->
+        socket
+    end
+  end
+
+  defp maybe_track_page_entered(socket), do: socket
+
+  defp track_panel_opened(socket, panel, panel, feature_name),
+    do: Analytics.track(socket, "feature_used", %{feature_name: feature_name})
+
+  defp track_panel_opened(socket, _active_panel, _panel, _feature_name), do: socket
 
   def render(%{show_blocking_gates?: true} = assigns) do
     ~H"""
@@ -1746,6 +1776,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
   end
 
+  # Only learner submissions count as page completions, not finalization of expired attempts.
   defp finalize_attempt(
          %{
            assigns: %{
@@ -1755,7 +1786,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
              revision_slug: revision_slug,
              attempt_guid: attempt_guid
            }
-         } = socket
+         } = socket,
+         trigger
        ) do
     case PageLifecycle.finalize(section.slug, attempt_guid, datashop_session_id) do
       {:ok,
@@ -1769,6 +1801,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
         if section.grade_passback_enabled,
           do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
+
+        socket =
+          case trigger do
+            :submitted -> Analytics.track(socket, "page_completed")
+            :expired -> socket
+          end
 
         redirect_after_finalization(socket, effective_settings)
 
