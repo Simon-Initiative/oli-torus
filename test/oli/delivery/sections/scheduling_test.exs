@@ -60,7 +60,8 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       assert page_two.scheduling_type == :read_by
 
       assert {:ok, 2} =
-               Scheduling.update(
+               Oli.Delivery.Sections.Audited.update_schedule(
+                 audit_context(),
                  section,
                  [
                    %{
@@ -151,7 +152,8 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       # Simulate a malicious client-side attempt to bulk edit section resource
       # schedule of srs from not this section
       assert {:ok, 0} =
-               Scheduling.update(
+               Oli.Delivery.Sections.Audited.update_schedule(
+                 audit_context(),
                  section2,
                  [
                    %{

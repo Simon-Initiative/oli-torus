@@ -13,7 +13,6 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Repo
-  alias Oli.Delivery.Gating
 
   defp isolated_live_view_course_content(conn, section_slug, user_id, preview_mode \\ false) do
     live_isolated(conn, CourseContentLive,
@@ -611,7 +610,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
   end
 
   defp create_hard_scheduled_date_for_student(section_id, resource_id, student_id, end_date) do
-    Gating.create_gating_condition(%{
+    create_gating_condition_fixture(%{
       type: :schedule,
       resource_id: resource_id,
       section_id: section_id,

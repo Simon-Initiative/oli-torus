@@ -49,6 +49,15 @@ defmodule OliWeb.SchedulingControllerTest do
       assert length(resources) == 3
 
       Enum.each(resources, fn sr -> assert sr["end_date"] == "2024-01-02" end)
+
+      # One event per scheduled resource, as the instructor through the API
+      events = audit_events(:curriculum_schedule_changed, section_id: map.section.id)
+      assert length(events) == 3
+
+      for event <- events do
+        assert {event.actor_type, event.user_id, event.source} == {:user, user.id, :api}
+        assert event.changes["end_date"]["after"] =~ "2024-01-02"
+      end
     end
 
     test "can access and clear scheduled resources", %{
@@ -113,6 +122,14 @@ defmodule OliWeb.SchedulingControllerTest do
       assert sr2["end_date"] == nil
       assert sr3["start_date"] == nil
       assert sr3["end_date"] == nil
+
+      # Three events set the dates and three clear them, all as the instructor
+      events = audit_events(:curriculum_schedule_changed, section_id: map.section.id, actor: user)
+      assert length(events) == 6
+
+      cleared = Enum.filter(events, &(&1.changes["end_date"]["after"] == nil))
+      assert length(cleared) == 3
+      assert Enum.all?(cleared, &(&1.source == :api))
     end
 
     test "updating the agenda records the change", %{conn: conn, map: map} do

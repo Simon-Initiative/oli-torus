@@ -29,4 +29,34 @@ defmodule Oli.Utils.SeederAuditTest do
 
     assert_audited(:project_published, [project_id: project.id] ++ @setup_actor)
   end
+
+  test "schedule gates from both seeders record gating_changed under the setup system actor" do
+    map = Seeder.base_project_with_resource4()
+
+    gate =
+      Seeder.create_schedule_gating_condition(
+        ~U[2099-01-01 00:00:00Z],
+        ~U[2099-01-02 00:00:00Z],
+        map.page1.id,
+        map.section_1
+      )
+
+    created = assert_audited(:gating_changed, [section_id: map.section_1.id] ++ @setup_actor)
+    assert created.entity_id == to_string(gate.id)
+
+    %{gate: seeded} =
+      Oli.Utils.Seeder.Section.create_schedule_gating_condition(
+        %{section: map.section_1, page: %{resource_id: map.page2.id}},
+        Oli.Utils.Seeder.Utils.ref(:section),
+        Oli.Utils.Seeder.Utils.ref(:page),
+        ~U[2099-01-01 00:00:00Z],
+        ~U[2099-01-02 00:00:00Z],
+        gating_condition_tag: :gate
+      )
+
+    assert [_seeded, second] =
+             audit_events(:gating_changed, [section_id: map.section_1.id] ++ @setup_actor)
+
+    assert second.entity_id == to_string(seeded.id)
+  end
 end

@@ -351,7 +351,8 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
        ],
        [
          {:gating_changed, "Gating changed",
-          "A gating condition was created, changed, or removed, for all students or one.", []},
+          "A gating condition was created, changed, or removed, for all students or one.",
+          actor_kinds: [:user, :author, :system]},
          {:prerequisite_changed, "Prerequisite changed",
           "A prerequisite between resources was created, changed, or removed.", []},
          {:curriculum_schedule_changed, "Schedule changed",

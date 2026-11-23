@@ -272,7 +272,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
     test "duplicates top-level gates but not student exceptions",
          %{product: product, page1: page1} do
       {:ok, gate} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           section_id: product.id,
           resource_id: page1.id,
@@ -286,7 +286,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       user = insert(:user)
 
       {:ok, _exception} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           section_id: product.id,
           resource_id: page1.id,

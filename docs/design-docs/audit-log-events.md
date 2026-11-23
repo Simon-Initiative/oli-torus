@@ -2922,7 +2922,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `gating_condition`, `section_resource` |
 | Required columns | `section_id` |
 | At least one of | none |

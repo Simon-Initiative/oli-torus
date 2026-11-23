@@ -19,7 +19,7 @@ defmodule Oli.Delivery.GatingTest do
       user_a: user
     } do
       assert {:ok, gate} =
-               Gating.create_gating_condition_with_index(%{
+               create_gate(%{
                  section_id: section.id,
                  resource_id: page.id,
                  type: :schedule,
@@ -38,7 +38,7 @@ defmodule Oli.Delivery.GatingTest do
       user_a: user
     } do
       {:ok, gate} =
-        Gating.create_gating_condition_with_index(%{
+        create_gate(%{
           section_id: section.id,
           resource_id: page.id,
           type: :schedule,
@@ -50,7 +50,7 @@ defmodule Oli.Delivery.GatingTest do
       queries =
         capture_gate_queries(fn ->
           assert {:ok, updated} =
-                   Gating.update_gating_condition_with_index(gate, %{
+                   update_gate(gate, %{
                      data: %{start_datetime: ~U[2000-01-01 00:00:00Z]}
                    })
 
@@ -69,7 +69,7 @@ defmodule Oli.Delivery.GatingTest do
       user_a: user
     } do
       {:ok, parent} =
-        Gating.create_gating_condition_with_index(%{
+        create_gate(%{
           section_id: section.id,
           resource_id: page.id,
           type: :schedule,
@@ -81,7 +81,7 @@ defmodule Oli.Delivery.GatingTest do
       queries =
         capture_gate_queries(fn ->
           assert {:ok, exception} =
-                   Gating.create_gating_condition_with_index(%{
+                   create_gate(%{
                      section_id: section.id,
                      resource_id: page.id,
                      parent_id: parent.id,
@@ -93,11 +93,11 @@ defmodule Oli.Delivery.GatingTest do
           assert Gating.blocked_by(section, user, page.id) == []
 
           assert {:ok, exception} =
-                   Gating.update_gating_condition_with_index(exception, %{
+                   update_gate(exception, %{
                      data: %{start_datetime: ~U[1999-01-01 00:00:00Z]}
                    })
 
-          assert {:ok, _, 1} = Gating.delete_gating_condition_with_index(exception)
+          assert {:ok, _} = delete_gate(exception)
         end)
 
       refute_index_rebuild(queries)
@@ -115,20 +115,20 @@ defmodule Oli.Delivery.GatingTest do
       page2: page2
     } do
       {:ok, gate} =
-        Gating.create_gating_condition_with_index(%{
+        create_gate(%{
           section_id: section.id,
           resource_id: page1.id,
           type: :schedule,
           data: %{}
         })
 
-      {:ok, _} = Gating.update_gating_condition_with_index(gate, %{resource_id: page2.id})
+      {:ok, _} = update_gate(gate, %{resource_id: page2.id})
       section = Sections.get_section!(section.id)
 
       queries =
         capture_gate_queries(fn ->
           assert {:ok, updated} =
-                   Gating.update_gating_condition_with_index(gate, %{
+                   update_gate(gate, %{
                      data: %{start_datetime: ~U[2099-01-01 00:00:00Z]}
                    })
 
@@ -144,7 +144,7 @@ defmodule Oli.Delivery.GatingTest do
       # An explicitly submitted target must also be applied against current
       # state, even when it matches the caller's older struct.
       assert {:ok, updated} =
-               Gating.update_gating_condition_with_index(gate, %{resource_id: page1.id})
+               update_gate(gate, %{resource_id: page1.id})
 
       assert updated.resource_id == page1.id
       assert Sections.get_section!(section.id).resource_gating_index["#{page1.id}"] == [page1.id]
@@ -158,7 +158,7 @@ defmodule Oli.Delivery.GatingTest do
       user_a: user
     } do
       {:ok, parent} =
-        Gating.create_gating_condition_with_index(%{
+        create_gate(%{
           section_id: section.id,
           resource_id: page1.id,
           type: :schedule,
@@ -166,7 +166,7 @@ defmodule Oli.Delivery.GatingTest do
         })
 
       {:ok, gate} =
-        Gating.create_gating_condition_with_index(%{
+        create_gate(%{
           section_id: section.id,
           resource_id: page2.id,
           type: :schedule,
@@ -174,7 +174,7 @@ defmodule Oli.Delivery.GatingTest do
         })
 
       assert {:ok, exception} =
-               Gating.update_gating_condition_with_index(gate, %{
+               update_gate(gate, %{
                  parent_id: parent.id,
                  user_id: user.id
                })
@@ -182,7 +182,7 @@ defmodule Oli.Delivery.GatingTest do
       refute Map.has_key?(Sections.get_section!(section.id).resource_gating_index, "#{page2.id}")
 
       assert {:ok, _} =
-               Gating.update_gating_condition_with_index(exception, %{
+               update_gate(exception, %{
                  parent_id: nil,
                  user_id: nil
                })
@@ -191,7 +191,7 @@ defmodule Oli.Delivery.GatingTest do
 
       # Deleting through an older exception struct must still remove the now
       # top-level gate from the index.
-      assert {:ok, _, 1} = Gating.delete_gating_condition_with_index(exception)
+      assert {:ok, _} = delete_gate(exception)
       refute Map.has_key?(Sections.get_section!(section.id).resource_gating_index, "#{page2.id}")
     end
 
@@ -211,7 +211,7 @@ defmodule Oli.Delivery.GatingTest do
       {:ok, _} = Gating.update_resource_gating_index(section)
 
       assert {:ok, updated_gate} =
-               Gating.update_gating_condition_with_index(gate, %{resource_id: page2.id})
+               update_gate(gate, %{resource_id: page2.id})
 
       updated = Sections.get_section!(section.id)
 
@@ -227,13 +227,13 @@ defmodule Oli.Delivery.GatingTest do
       gate = gating_condition_fixture(%{section_id: section.id, resource_id: page.id})
       {:ok, _} = Gating.update_resource_gating_index(section)
 
-      assert {:ok, deleted, 1} = Gating.delete_gating_condition_with_index(gate)
+      assert {:ok, deleted} = delete_gate(gate)
       assert deleted.id == gate.id
       assert Sections.get_section!(section.id).resource_gating_index == %{}
       assert Gating.list_gating_conditions(section.id) == []
 
       assert {:error, :gating_condition_not_found} =
-               Gating.delete_gating_condition_with_index(gate)
+               delete_gate(gate)
     end
 
     test "a failed index write rolls the gate creation back", %{
@@ -245,7 +245,7 @@ defmodule Oli.Delivery.GatingTest do
       |> Repo.update_all(set: [requires_payment: true, amount: nil])
 
       assert {:error, %Ecto.Changeset{}} =
-               Gating.create_gating_condition_with_index(%{
+               create_gate(%{
                  section_id: section.id,
                  resource_id: page.id,
                  type: :schedule,
@@ -268,7 +268,7 @@ defmodule Oli.Delivery.GatingTest do
       |> Repo.update_all(set: [requires_payment: true, amount: nil])
 
       assert {:error, %Ecto.Changeset{}} =
-               Gating.update_gating_condition_with_index(gate, %{resource_id: page2.id})
+               update_gate(gate, %{resource_id: page2.id})
 
       assert Gating.get_gating_condition!(gate.id).resource_id == page1.id
 
@@ -284,7 +284,7 @@ defmodule Oli.Delivery.GatingTest do
       {:ok, section} = Gating.update_resource_gating_index(section)
 
       assert {:error, %Ecto.Changeset{}} =
-               Gating.update_gating_condition_with_index(gate, %{type: nil})
+               update_gate(gate, %{type: nil})
 
       assert Gating.get_gating_condition!(gate.id) == gate
 
@@ -300,11 +300,36 @@ defmodule Oli.Delivery.GatingTest do
       gate = gating_condition_fixture(%{section_id: section.id, resource_id: page.id})
 
       assert {:error, changeset} =
-               Gating.update_gating_condition_with_index(gate, %{section_id: other.id})
+               update_gate(gate, %{section_id: other.id})
 
       assert errors_on(changeset).section_id == ["cannot move a gate to another section"]
       assert Gating.get_gating_condition!(gate.id).section_id == section.id
     end
+  end
+
+  defp create_gate(attrs) do
+    Oli.Delivery.Gating.Audited.create_gate(
+      audit_context(),
+      Sections.get_section!(attrs.section_id),
+      attrs
+    )
+  end
+
+  defp update_gate(gate, attrs) do
+    Oli.Delivery.Gating.Audited.update_gate(
+      audit_context(),
+      Sections.get_section!(gate.section_id),
+      gate,
+      attrs
+    )
+  end
+
+  defp delete_gate(gate) do
+    Oli.Delivery.Gating.Audited.delete_gate(
+      audit_context(),
+      Sections.get_section!(gate.section_id),
+      gate
+    )
   end
 
   defp capture_gate_queries(fun) do
@@ -485,7 +510,7 @@ defmodule Oli.Delivery.GatingTest do
       assert Gating.get_gating_condition!(gating_condition.id) == gating_condition
     end
 
-    test "create_gating_condition/1 with valid data creates a gating_condition", %{
+    test "gating_condition_fixture/1 creates a gating_condition", %{
       page1: page1,
       section_1: section
     } do
@@ -495,11 +520,12 @@ defmodule Oli.Delivery.GatingTest do
       assert gating_condition.data == %GatingConditionData{}
     end
 
-    test "create_gating_condition/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Gating.create_gating_condition(@invalid_attrs)
+    test "create_gate/3 with invalid data returns error changeset", %{section_1: section} do
+      assert {:error, %Ecto.Changeset{}} =
+               create_gate(Map.put(@invalid_attrs, :section_id, section.id))
     end
 
-    test "update_gating_condition/2 with valid data updates the gating_condition", %{
+    test "update_gate/2 with valid data updates the gating_condition", %{
       page1: page1,
       section_1: section
     } do
@@ -507,12 +533,12 @@ defmodule Oli.Delivery.GatingTest do
         gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
 
       assert {:ok, %GatingCondition{} = gating_condition} =
-               Gating.update_gating_condition(gating_condition, @update_attrs)
+               update_gate(gating_condition, @update_attrs)
 
       assert gating_condition.data == %GatingConditionData{}
     end
 
-    test "update_gating_condition/2 with invalid data returns error changeset", %{
+    test "update_gate/2 with invalid data returns error changeset", %{
       page1: page1,
       section_1: section
     } do
@@ -520,26 +546,26 @@ defmodule Oli.Delivery.GatingTest do
         gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
 
       assert {:error, %Ecto.Changeset{}} =
-               Gating.update_gating_condition(gating_condition, @invalid_attrs)
+               update_gate(gating_condition, @invalid_attrs)
 
       assert gating_condition == Gating.get_gating_condition!(gating_condition.id)
     end
 
-    test "delete_gating_condition/1 deletes the gating_condition", %{
+    test "delete_gate/1 deletes the gating_condition", %{
       page1: page1,
       section_1: section
     } do
       gating_condition =
         gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
 
-      assert {:ok, %GatingCondition{}, 1} = Gating.delete_gating_condition(gating_condition)
+      assert {:ok, %GatingCondition{}} = delete_gate(gating_condition)
 
       assert_raise Ecto.NoResultsError, fn ->
         Gating.get_gating_condition!(gating_condition.id)
       end
     end
 
-    test "delete_gating_condition/1 deletes the gating_condition and the exception", %{
+    test "delete_gate/1 deletes the gating_condition and the exception", %{
       page1: page1,
       section_1: section,
       user_a: user
@@ -547,14 +573,16 @@ defmodule Oli.Delivery.GatingTest do
       gating_condition =
         gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
 
-      gating_condition_fixture(%{
-        section_id: section.id,
-        resource_id: page1.id,
-        parent_id: gating_condition.id,
-        user_id: user.id
-      })
+      exception =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page1.id,
+          parent_id: gating_condition.id,
+          user_id: user.id
+        })
 
-      assert {:ok, %GatingCondition{}, 2} = Gating.delete_gating_condition(gating_condition)
+      assert {:ok, %GatingCondition{}} = delete_gate(gating_condition)
+      refute Repo.get(GatingCondition, exception.id)
 
       assert_raise Ecto.NoResultsError, fn ->
         Gating.get_gating_condition!(gating_condition.id)
@@ -660,7 +688,7 @@ defmodule Oli.Delivery.GatingTest do
       refute Gating.blocked_by(section, user_a, nested_page2.id) == []
 
       # change unit to have ended yesterday, check that nested resource is now gated properly
-      Gating.update_gating_condition(unit_gating_condition, %{
+      put_gating_condition_fields(unit_gating_condition, %{
         data: %{end_datetime: yesterday()}
       })
 

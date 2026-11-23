@@ -7,6 +7,7 @@ defmodule ECL.Constellation do
       Oli.Activities.Audited,
       Oli.Authoring.Audited,
       Oli.Delivery.Sections.Audited,
+      Oli.Delivery.Gating.Audited,
       Oli.Delivery.Settings.Audited,
       Oli.Experiments.Audited,
       Oli.GenAI.Audited,

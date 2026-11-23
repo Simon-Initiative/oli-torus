@@ -19,7 +19,9 @@ defmodule OliWeb.Sections.GatingAndScheduling.New do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {user_type, _user, section} ->
+      {user_type, actor, section} ->
+        socket = assign(socket, actor: actor)
+
         {parent_gate_id, title} =
           case Map.get(params, "parent_gate_id") do
             nil -> {nil, "Create Gating Condition"}

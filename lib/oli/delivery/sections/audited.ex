@@ -30,7 +30,15 @@ defmodule Oli.Delivery.Sections.Audited do
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts.Author
   alias Oli.Delivery.Remix.State, as: RemixState
-  alias Oli.Delivery.Sections.Audited.{Discussions, Lifecycle, PublicationUpdates, Remix}
+
+  alias Oli.Delivery.Sections.Audited.{
+    Discussions,
+    Lifecycle,
+    PublicationUpdates,
+    Remix,
+    Schedule
+  }
+
   alias Oli.Delivery.Sections.Audited.SectionSettings
   alias Oli.Publishing.Publications.Publication
   alias Oli.Resources.Collaboration.CollabSpaceConfig
@@ -341,4 +349,38 @@ defmodule Oli.Delivery.Sections.Audited do
 
   def enqueue_publication_update(_context, _section, _publication_id),
     do: {:error, :invalid_request}
+
+  @doc """
+  Writes the schedule `updates` of section resources of `section` in one statement, under the
+  section lock, and records one `curriculum_schedule_changed` per section resource whose
+  scheduling type, dates, manual scheduling, or removal from the schedule changed.
+
+  Each update has "id", "scheduling_type", "start_date", "end_date", "manually_scheduled", and
+  "removed_from_schedule" (atom or string keys); dates without a time are read in `timezone`
+  at the section's preferred scheduling time. Section resources of other sections are not
+  written. Section caches are cleared after the commit, also for an empty update, which
+  records nothing.
+
+  Returns `{:ok, count}` with the number of rows written, or `{:error,
+  :missing_update_parameters}` when an update lacks an attribute.
+  """
+  @spec update_schedule(Context.t(), Section.t(), [map()], String.t()) ::
+          {:ok, non_neg_integer()} | {:error, command_error()}
+  def update_schedule(%Context{} = context, %Section{} = section, updates, timezone)
+      when is_list(updates),
+      do: Schedule.update(context, section, updates, timezone)
+
+  def update_schedule(_context, _section, _updates, _timezone), do: {:error, :invalid_request}
+
+  @doc """
+  Clears the start and end dates (and the removal from the schedule) of every section resource
+  of `section` that has a date, under the section lock, and records one
+  `curriculum_schedule_changed` per cleared section resource. Returns `{:ok, count}`.
+  """
+  @spec clear_schedule(Context.t(), Section.t()) ::
+          {:ok, non_neg_integer()} | {:error, command_error()}
+  def clear_schedule(%Context{} = context, %Section{} = section),
+    do: Schedule.clear(context, section)
+
+  def clear_schedule(_context, _section), do: {:error, :invalid_request}
 end

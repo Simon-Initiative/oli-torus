@@ -3,7 +3,6 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ScheduleTest do
   alias Oli.Delivery.Gating.ConditionTypes.ConditionContext
 
   describe "schedule condition type" do
-    alias Oli.Delivery.Gating
     alias Oli.Delivery.Gating.ConditionTypes.Schedule
 
     setup do
@@ -23,7 +22,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ScheduleTest do
       context = ConditionContext.init(user, section)
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           data: %{
             start_datetime: yesterday,
@@ -48,7 +47,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ScheduleTest do
       context = ConditionContext.init(user, section)
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           data: %{
             start_datetime: tomorrow,
@@ -64,7 +63,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ScheduleTest do
       two_days_before_now = today |> DateTime.add(-(2 * 24 * 60), :second)
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           data: %{
             start_datetime: two_days_before_now,
@@ -89,7 +88,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ScheduleTest do
       context = ConditionContext.init(user, section)
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           data: %{
             start_datetime: two_days_before_now,
@@ -115,7 +114,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ScheduleTest do
 
       # both values nil returns true
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           data: %{},
           resource_id: resource.id,
@@ -126,7 +125,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ScheduleTest do
 
       # end_datetime nil and after start_datetime returns true
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           data: %{
             start_datetime: yesterday
@@ -139,7 +138,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ScheduleTest do
 
       # end_datetime nil and before start_datetime returns false
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           data: %{
             start_datetime: tomorrow
@@ -152,7 +151,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ScheduleTest do
 
       # start_datetime nil and before end_datetime returns true
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           data: %{
             end_datetime: tomorrow
@@ -165,7 +164,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ScheduleTest do
 
       # start_datetime nil and after end_datetime returns false
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           data: %{
             end_datetime: yesterday

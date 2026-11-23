@@ -875,7 +875,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
          %{source: source, page1: page1, page2: page2} do
       {:ok, gate} = create_schedule_gate(source, page1)
       {:ok, source} = set_gating_index(source, page1)
-      {:ok, _} = Gating.update_gating_condition(gate, %{resource_id: page2.id})
+      {:ok, _} = put_gating_condition_fields(gate, %{resource_id: page2.id})
 
       {:ok, copied} = copy(source, [:content, :schedule])
       {:ok, source} = set_gating_index(source, page2)
@@ -892,7 +892,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       root = Repo.get!(SectionResource, source.root_section_resource_id)
 
       {:ok, _} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           section_id: source.id,
           resource_id: root.resource_id,
@@ -927,7 +927,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       user = insert(:user)
 
       {:ok, _exception} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           section_id: source.id,
           resource_id: page1.id,
@@ -964,7 +964,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
       page2: page2
     } do
       {:ok, _gate} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :finished,
           section_id: source.id,
           resource_id: page2.id,
@@ -1181,7 +1181,7 @@ defmodule Oli.Delivery.Sections.SectionCopyTest do
   end
 
   defp create_schedule_gate(section, page) do
-    Gating.create_gating_condition(%{
+    create_gating_condition_fixture(%{
       type: :schedule,
       section_id: section.id,
       resource_id: page.id,

@@ -305,13 +305,38 @@ defmodule Oli.TestHelpers do
     %{objective: objective, objective_revision: revision}
   end
 
+  @doc """
+  Inserts a gating condition for test setup (a schedule gate by default), without the section
+  lock, the gating index, or an audit event. Product code writes conditions through
+  `Oli.Delivery.Gating.Audited`.
+  """
   def gating_condition_fixture(attrs \\ %{}) do
     {:ok, gating_condition} =
       attrs
       |> Enum.into(%{type: :schedule, data: %{}})
-      |> Oli.Delivery.Gating.create_gating_condition()
+      |> create_gating_condition_fixture()
 
     gating_condition
+  end
+
+  @doc """
+  Inserts a gating condition from `attrs` for test setup, without the section lock, the gating
+  index, or an audit event. Returns `{:ok, gating_condition}` or `{:error, changeset}`.
+  """
+  def create_gating_condition_fixture(attrs) do
+    %Oli.Delivery.Gating.GatingCondition{}
+    |> Oli.Delivery.Gating.GatingCondition.changeset(attrs)
+    |> Oli.Repo.insert()
+  end
+
+  @doc """
+  Writes `attrs` to a gating condition for test setup, without the section lock, the gating
+  index, or an audit event.
+  """
+  def put_gating_condition_fields(gating_condition, attrs) do
+    gating_condition
+    |> Oli.Delivery.Gating.GatingCondition.changeset(attrs)
+    |> Oli.Repo.update()
   end
 
   def url_from_conn(conn) do

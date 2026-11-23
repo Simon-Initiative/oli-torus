@@ -195,6 +195,27 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
       assert html =~ "Edit Gating Condition"
     end
+
+    test "a gate of another section cannot be edited or deleted from this section", %{
+      conn: conn,
+      section_1: section,
+      section_2: other_section,
+      page1: page1
+    } do
+      gate = gating_condition_fixture(%{section_id: other_section.id, resource_id: page1.id})
+
+      {:ok, view, _html} = live(conn, gating_condition_edit_route(section.slug, gate.id))
+
+      render_hook(view, "schedule_start_date_changed", %{value: "2022-01-12T13:48"})
+      view |> element("button[phx-click='update_gate']") |> render_click()
+      assert render(view) =~ "Gating condition couldn&#39;t be updated."
+
+      render_hook(view, "delete-gating-condition", %{"id" => to_string(gate.id)})
+      assert render(view) =~ "Gating condition couldn&#39;t be deleted."
+
+      assert Gating.get_gating_condition!(gate.id) == gate
+      assert audit_events(:gating_changed, section_id: other_section.id) == []
+    end
   end
 
   describe "gating and scheduling edit live test" do
@@ -286,6 +307,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
     test "deletes the gating condition and redirects to the index page", %{
       conn: conn,
+      admin: admin,
       section_1: section,
       gating_condition: gating_condition
     } do
@@ -310,6 +332,16 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
         )
 
       assert flash["info"] == "Gating condition successfully deleted."
+
+      removed =
+        assert_audited(:gating_changed,
+          section_id: section.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert removed.entity_id == to_string(gating_condition.id)
+      refute Map.has_key?(removed.changes["type"], "after")
 
       assert_raise Ecto.NoResultsError,
                    ~r/^expected at least one result but got none in query/,
@@ -342,6 +374,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
     test "updates the gating condition when dates are consistent", %{
       conn: conn,
+      admin: admin,
       section_1: section,
       gating_condition: gating_condition
     } do
@@ -365,6 +398,10 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
         )
 
       assert flash["info"] == "Gating condition successfully updated."
+
+      updated = assert_audited(:gating_changed, section_id: section.id, actor: admin, source: :ui)
+      assert updated.entity_id == to_string(gating_condition.id)
+      assert Map.keys(updated.changes) == ["end_datetime", "start_datetime"]
     end
 
     test "shifts input datestring to utc when local timezone is not set",
@@ -543,6 +580,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
     test "creates the gating condition when dates are consistent", %{
       conn: conn,
+      admin: admin,
       section_1: section
     } do
       {:ok, view, _html} =
@@ -560,6 +598,9 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
         )
 
       assert flash["info"] == "Gating condition successfully created."
+
+      created = assert_audited(:gating_changed, section_id: section.id, actor: admin, source: :ui)
+      assert created.changes["type"] == %{"operation" => "set", "after" => "schedule"}
     end
 
     test "shifts input datestring to utc when local timezone is not set",
@@ -765,21 +806,21 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       DateTime.add(yesterday(), -(60 * 60 * 24), :second),
       yesterday(),
       map.page1.id,
-      map.section_1.id
+      map.section_1
     )
 
     Seeder.create_schedule_gating_condition(
       DateTime.add(yesterday(), -(60 * 60 * 24), :second),
       yesterday(),
       map.nested_page1.id,
-      map.section_1.id
+      map.section_1
     )
 
     Seeder.create_schedule_gating_condition(
       DateTime.add(yesterday(), -(60 * 60 * 24), :second),
       yesterday(),
       map.nested_page2.id,
-      map.section_1.id
+      map.section_1
     )
 
     conn =
@@ -799,7 +840,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       DateTime.add(yesterday(), -(60 * 60 * 24), :second),
       yesterday(),
       map.page1.id,
-      map.section_1.id
+      map.section_1
     )
 
     conn =

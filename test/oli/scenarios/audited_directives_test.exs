@@ -99,7 +99,8 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
         section: standalone
         to: root
 
-    # Hiding a page is a curriculum change, saved as a remix
+    # Hiding a page is a curriculum change, saved as a remix; its scheduling type is a schedule
+    # update
     - manipulate:
         to: from_project
         ops:
@@ -107,6 +108,15 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
               target: "Page"
               set:
                 hidden: true
+                scheduling_type: "@atom(due_by)"
+
+    # A schedule gate on the section
+    - gate:
+        name: page_gate
+        section: from_project
+        target: "Page"
+        type: "schedule"
+        start: "2099-01-11T12:00:00Z"
 
     # A second publication of the section's project, applied to it
     - publish:
@@ -240,6 +250,19 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
       assert_audited(:section_remix_saved, [section_id: section_id.("from_project")] ++ scenario)
 
     assert hidden.changes["hidden"] == %{"operation" => "set", "before" => false, "after" => true}
+
+    scheduled =
+      assert_audited(
+        :curriculum_schedule_changed,
+        [section_id: section_id.("from_project")] ++ scenario
+      )
+
+    assert scheduled.changes["scheduling_type"]["after"] == "due_by"
+
+    gate =
+      assert_audited(:gating_changed, [section_id: section_id.("from_project")] ++ scenario)
+
+    assert gate.changes["type"] == %{"operation" => "set", "after" => "schedule"}
   end
 
   test "assessment settings and student exception directives record their events" do

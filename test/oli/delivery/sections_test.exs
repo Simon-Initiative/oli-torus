@@ -1566,7 +1566,8 @@ defmodule Oli.Delivery.SectionsTest do
           |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.resource_id, sr) end)
 
         assert {:ok, 3} =
-                 Sections.Scheduling.update(
+                 Sections.Audited.update_schedule(
+                   audit_context(),
                    section,
                    [
                      %{
@@ -1939,7 +1940,8 @@ defmodule Oli.Delivery.SectionsTest do
 
       # update assignments to have same scheduled date and different start_date
       assert {:ok, 3} =
-               Sections.Scheduling.update(
+               Sections.Audited.update_schedule(
+                 audit_context(),
                  section,
                  [
                    %{
@@ -2060,7 +2062,8 @@ defmodule Oli.Delivery.SectionsTest do
 
       # update assignments to have differents scheduled date (end_date)
       assert {:ok, 4} =
-               Sections.Scheduling.update(
+               Sections.Audited.update_schedule(
+                 audit_context(),
                  section,
                  [
                    %{
@@ -2131,7 +2134,8 @@ defmodule Oli.Delivery.SectionsTest do
 
       # update assignments to have differents scheduled date, and set numbering_level and numbering_index
       assert {:ok, 4} =
-               Sections.Scheduling.update(
+               Sections.Audited.update_schedule(
+                 audit_context(),
                  section,
                  [
                    %{

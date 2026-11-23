@@ -20,7 +20,9 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {user_type, _user, section} ->
+      {user_type, actor, section} ->
+        socket = assign(socket, actor: actor)
+
         id = String.to_integer(gating_condition_id)
 
         {parent_gate_id, title} =

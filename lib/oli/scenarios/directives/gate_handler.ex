@@ -3,7 +3,8 @@ defmodule Oli.Scenarios.Directives.GateHandler do
   Handles gate directives for creating gating conditions and student-specific exceptions.
   """
 
-  alias Oli.Delivery.Gating
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Gating.Audited, as: GatingAudited
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, GateDirective}
@@ -24,13 +25,21 @@ defmodule Oli.Scenarios.Directives.GateHandler do
              student,
              parent_gate
            ),
-         {:ok, gate} <- Gating.create_gating_condition(attrs),
-         {:ok, updated_section} <- refresh_section(section),
+         {:ok, gate} <-
+           GatingAudited.create_gate(
+             Context.for_actor(state.current_author, source: :scenario),
+             section,
+             attrs
+           ),
+         updated_section = Sections.get_section!(section.id),
          {:ok, updated_state} <- update_state(state, directive, gate, updated_section) do
       {:ok, updated_state}
     else
-      {:error, reason} ->
+      {:error, reason} when is_binary(reason) ->
         {:error, "Failed to create gate: #{reason}"}
+
+      {:error, reason} ->
+        {:error, "Failed to create gate: #{inspect(reason)}"}
     end
   end
 
@@ -106,12 +115,6 @@ defmodule Oli.Scenarios.Directives.GateHandler do
         |> put_if_present(:end_datetime, directive.end)
         |> put_if_present(:minimum_percentage, directive.minimum_percentage)
     }
-  end
-
-  defp refresh_section(section) do
-    with {:ok, _updated} <- Gating.update_resource_gating_index(section) do
-      {:ok, Sections.get_section!(section.id)}
-    end
   end
 
   defp update_state(state, directive, gate, updated_section) do

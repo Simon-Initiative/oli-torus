@@ -1,17 +1,14 @@
 defmodule Oli.Delivery.Sections.Scheduling do
   @moduledoc """
-  Provides the read and write operations for managing the "soft-schedule" for a course section.
+  Provides the read operations for the "soft-schedule" of a course section. The schedule is
+  written by `Oli.Delivery.Sections.Audited.update_schedule/4` and `clear_schedule/2`.
   """
 
   import Ecto.Query, warn: false
 
-  alias Ecto.Multi
-
   alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Sections.SectionCache
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
-  alias Oli.Repo
 
   @doc """
   For a given course section, return a list of all soft schedulable
@@ -21,123 +18,51 @@ defmodule Oli.Delivery.Sections.Scheduling do
     SectionResourceDepot.retrieve_schedule(section_id, filter_resource_type)
   end
 
-  @doc """
-  Persist scheduling updates to a list of section resources, for a given
-  course section. The section must be specified here so that internally this
-  function can guarantee that only those section resources that pertain to this
-  course section can be edited.  The shape of the maps that are the elements
-  within the updates list must at least contain attributes for "id", "scheduling_type",
-  "start_date", "end_date", "manually_scheduled" and "removed_from_schedule". Other attributes will be ignored.
+  @doc false
+  # Validates and prepares the schedule `updates` of `Oli.Delivery.Sections.Audited.update_schedule/4`:
+  # each update must have "id", "scheduling_type", "start_date", "end_date",
+  # "manually_scheduled", and "removed_from_schedule" (atom or string keys; other attributes
+  # are ignored). Dates are read in `timezone`, at `preferred_scheduling_time` when they have
+  # no time. Returns `{:ok, sql, params, ids}` for one `UPDATE` of the section resources
+  # (`$1` is the section ID), `{:ok, :empty}`, or `{:error, :missing_update_parameters}`.
+  def update_statement(updates, timezone, preferred_scheduling_time) do
+    case is_valid_update?(updates) do
+      false ->
+        {:error, :missing_update_parameters}
 
-  Returns a {:ok, num_rows} tuple, with num_rows indicating the number of rows
-  updated - or a {:error, error} tuple.
-  """
-  def update(
-        %Section{
-          id: section_id,
-          preferred_scheduling_time: preferred_scheduling_time,
-          slug: section_slug
-        },
-        updates,
-        timezone
-      ) do
-    if is_valid_update?(updates) do
-      case build_values_params(updates, timezone, preferred_scheduling_time) do
-        {[], []} ->
-          # we need to update the section cache to reflect the schedule changes
-          SectionCache.clear(section_slug)
+      true ->
+        case build_values_params(updates, timezone, preferred_scheduling_time) do
+          {[], []} ->
+            {:ok, :empty}
 
-          Oli.Delivery.DepotCoordinator.clear(
-            Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-            section_id
-          )
+          {values, params} ->
+            sql = """
+              UPDATE section_resources
+              SET
+                scheduling_type = batch_values.scheduling_type,
+                start_date = batch_values.start_date,
+                end_date = batch_values.end_date,
+                manually_scheduled = batch_values.manually_scheduled,
+                removed_from_schedule = batch_values.removed_from_schedule,
+                updated_at = NOW()
+              FROM (
+                  VALUES #{Enum.join(values, ",")}
+              ) AS batch_values (id, scheduling_type, start_date, end_date, manually_scheduled, removed_from_schedule)
+              WHERE section_resources.id = batch_values.id and section_resources.section_id = $1
+            """
 
-          {:ok, 0}
-
-        {values, params} ->
-          values = Enum.join(values, ",")
-
-          sql = """
-            UPDATE section_resources
-            SET
-              scheduling_type = batch_values.scheduling_type,
-              start_date = batch_values.start_date,
-              end_date = batch_values.end_date,
-              manually_scheduled = batch_values.manually_scheduled,
-              removed_from_schedule = batch_values.removed_from_schedule,
-              updated_at = NOW()
-            FROM (
-                VALUES #{values}
-            ) AS batch_values (id, scheduling_type, start_date, end_date, manually_scheduled, removed_from_schedule)
-            WHERE section_resources.id = batch_values.id and section_resources.section_id = $1
-          """
-
-          case Ecto.Adapters.SQL.query(Repo, sql, [section_id | params]) do
-            {:ok, %{num_rows: num_rows}} ->
-              # we need to update the section cache to reflect the schedule changes
-              SectionCache.clear(section_slug)
-
-              Oli.Delivery.DepotCoordinator.clear(
-                Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-                section_id
-              )
-
-              {:ok, num_rows}
-
-            e ->
-              e
-          end
-      end
-    else
-      {:error, :missing_update_parameters}
+            {:ok, sql, params, Enum.map(updates, &to_id(val(&1, :id)))}
+        end
     end
   end
 
+  defp to_id(id) when is_integer(id), do: id
+  defp to_id(id) when is_binary(id), do: String.to_integer(id)
+
   @doc """
-  Clear the scheduling for all section resources for a given course section.
+  The section resources of the section with `section_id` that have a start or end date.
+  `Oli.Delivery.Sections.Audited.clear_schedule/2` clears them.
   """
-  def clear(%Section{id: section_id, slug: section_slug}) do
-    res =
-      Multi.new()
-      |> Multi.run(:section_resources_count, fn repo, changes ->
-        count =
-          get_section_resources_with_schedule(changes, section_id)
-          |> repo.aggregate(:count, :id)
-
-        {:ok, count}
-      end)
-      |> Multi.update_all(
-        :updated_resources,
-        &get_section_resources_with_schedule(&1, section_id),
-        set: [start_date: nil, end_date: nil, removed_from_schedule: false]
-      )
-      |> Repo.transaction()
-
-    case res do
-      {:error, _} ->
-        {:error, :failed_to_clear_scheduling}
-
-      {:ok,
-       %{
-         section_resources_count: resources_to_update_count,
-         updated_resources: {updated_count, _}
-       }}
-      when resources_to_update_count == updated_count ->
-        # we need to update the section cache to reflect the schedule changes
-        SectionCache.clear(section_slug)
-
-        Oli.Delivery.DepotCoordinator.get().clear(
-          Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-          section_id
-        )
-
-        {:ok, updated_count}
-
-      {:ok, _} ->
-        {:error, :uncomplete_clear_scheduling}
-    end
-  end
-
   def get_section_resources_with_schedule(_changes, section_id) do
     from(
       sr in SectionResource,

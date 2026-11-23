@@ -171,15 +171,15 @@ defmodule OliWeb.Api.SchedulingController do
     ctx = SessionContext.init(conn)
 
     if can_access_section?(conn, section) do
-      case Scheduling.update(section, updates, ctx.local_tz) do
+      case SectionsAudited.update_schedule(audit_context(conn), section, updates, ctx.local_tz) do
         {:ok, count} ->
           json(conn, %{"result" => "success", "count" => count})
 
         {:error, :missing_update_parameters} ->
           error(conn, 400, "Missing update parameters")
 
-        e ->
-          error(conn, 500, e)
+        {:error, _reason} ->
+          error(conn, 500, "Failed to update the schedule")
       end
     else
       error(conn, 401, "Unauthorized")
@@ -190,17 +190,12 @@ defmodule OliWeb.Api.SchedulingController do
     section = conn.assigns.section
 
     if can_access_section?(conn, section) do
-      case Scheduling.clear(section) do
+      case SectionsAudited.clear_schedule(audit_context(conn), section) do
         {:ok, _} ->
-          Oli.Delivery.DepotCoordinator.clear(
-            Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-            section.id
-          )
-
           json(conn, %{"result" => "success"})
 
-        {:error, error} ->
-          json(conn, %{"result" => "error", "error" => error})
+        {:error, _reason} ->
+          json(conn, %{"result" => "error", "error" => "failed_to_clear_scheduling"})
       end
     else
       error(conn, 401, "Unauthorized")
@@ -212,10 +207,8 @@ defmodule OliWeb.Api.SchedulingController do
 
     case can_access_section?(conn, section) do
       true ->
-        actor = conn.assigns[:current_user] || conn.assigns[:current_author]
-
         case SectionsAudited.update_section_settings(
-               Context.for_actor(actor, source: :api),
+               audit_context(conn),
                section,
                %{agenda: agenda},
                [:agenda]
@@ -231,6 +224,13 @@ defmodule OliWeb.Api.SchedulingController do
         error(conn, 401, "Unauthorized")
     end
   end
+
+  # The signed-in user, or the author when no user is signed in
+  defp audit_context(conn),
+    do:
+      Context.for_actor(conn.assigns[:current_user] || conn.assigns[:current_author],
+        source: :api
+      )
 
   # Restrict access to enrolled instructors, LMS admins, or system
   # (authoring) admins

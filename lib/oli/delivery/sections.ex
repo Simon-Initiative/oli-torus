@@ -1593,15 +1593,16 @@ defmodule Oli.Delivery.Sections do
   @protected_section_resource_fields [
     :collab_space_config
     | Map.keys(Oli.Auditing.EventCatalog.Fields.assessment_settings()) ++
-        Map.keys(Oli.Auditing.EventCatalog.Fields.remix())
+        Map.keys(Oli.Auditing.EventCatalog.Fields.remix()) ++
+        Map.keys(Oli.Auditing.EventCatalog.Fields.gating())
   ]
 
   @doc """
   Updates a section resource's display or creation fields.
 
   Fields recorded in the Audit Log are written only by their audited commands: the discussion
-  configuration and the curriculum fields a remix saves (visibility, numbering) by
-  `Oli.Delivery.Sections.Audited`, the assessment settings (dates, attempts, late policy,
+  configuration, the curriculum fields a remix saves (visibility, numbering), and the schedule
+  by `Oli.Delivery.Sections.Audited`, the assessment settings (dates, attempts, late policy,
   scoring, feedback, password, secure delivery) by `Oli.Delivery.Settings.Audited`. Passing one
   returns `{:error, :protected}` and writes nothing.
 

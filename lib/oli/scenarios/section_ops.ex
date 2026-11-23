@@ -15,6 +15,10 @@ defmodule Oli.Scenarios.SectionOps do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
 
+  # Written by `Oli.Delivery.Sections.Audited.update_schedule/4`; the dates are assessment
+  # settings
+  @schedule_keys [:scheduling_type, :manually_scheduled, :removed_from_schedule]
+
   @doc """
   Applies `ops` to `section` in order. Settings changes (`change`) are recorded in the Audit Log
   under `context`.
@@ -98,6 +102,16 @@ defmodule Oli.Scenarios.SectionOps do
           [{:hidden, hidden}] -> set_hidden!(section, section_resource, hidden, context)
         end
 
+      # Scheduling fields are a schedule update
+      {schedule_params, other_params} =
+        Enum.split_with(other_params, fn {key, _value} -> key in @schedule_keys end)
+
+      section =
+        case schedule_params do
+          [] -> section
+          params -> update_schedule!(section, section_resource, Map.new(params), context)
+        end
+
       case other_params do
         [] ->
           section
@@ -118,6 +132,34 @@ defmodule Oli.Scenarios.SectionOps do
       raise "Section resource '#{target}' not found in section"
     end
   end
+
+  defp update_schedule!(section, section_resource, params, context) do
+    # The schedule update writes every scheduling field; the others keep their values. Dates
+    # are written as stored, in UTC.
+    current = Repo.get!(SectionResource, section_resource.id)
+
+    update =
+      %{
+        id: current.id,
+        scheduling_type: current.scheduling_type,
+        start_date: current.start_date,
+        end_date: current.end_date,
+        manually_scheduled: current.manually_scheduled || false,
+        removed_from_schedule: current.removed_from_schedule
+      }
+      |> Map.merge(params)
+      |> Map.update!(:scheduling_type, &to_string/1)
+      |> Map.update!(:start_date, &schedule_date/1)
+      |> Map.update!(:end_date, &schedule_date/1)
+
+    case SectionsAudited.update_schedule(context, section, [update], "Etc/UTC") do
+      {:ok, _count} -> section
+      {:error, reason} -> raise "Failed to update the schedule: #{inspect(reason)}"
+    end
+  end
+
+  defp schedule_date(nil), do: nil
+  defp schedule_date(%DateTime{} = date), do: Calendar.strftime(date, "%Y-%m-%d %H:%M:%S")
 
   defp set_hidden!(section, %SectionResource{hidden: hidden}, hidden, _context), do: section
 

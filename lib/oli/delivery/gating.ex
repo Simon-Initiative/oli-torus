@@ -1,6 +1,7 @@
 defmodule Oli.Delivery.Gating do
   @moduledoc """
-  The Delivery.Gating context.
+  The Delivery.Gating context: reads and evaluation of gating conditions, and the gating index.
+  Gating conditions are written by `Oli.Delivery.Gating.Audited`.
   """
 
   import Ecto.Query, warn: false
@@ -13,7 +14,6 @@ defmodule Oli.Delivery.Gating do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
-  alias Oli.Delivery.Sections.SectionResourceMigration
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Accounts.User
@@ -246,185 +246,6 @@ defmodule Oli.Delivery.Gating do
 
   """
   def get_gating_condition!(id), do: Repo.get!(GatingCondition, id)
-
-  @doc """
-  Creates a gating_condition.
-
-  ## Examples
-
-      iex> create_gating_condition(%{field: value})
-      {:ok, %GatingCondition{}}
-
-      iex> create_gating_condition(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_gating_condition(attrs \\ %{}) do
-    %GatingCondition{}
-    |> GatingCondition.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Creates a gate and its enforcement index atomically under the section lifecycle
-  lock. Student exceptions do not change the shared index and skip its rebuild.
-  Request-facing callers must authorize the destination section first.
-  """
-  @spec create_gating_condition_with_index(map()) ::
-          {:ok, %GatingCondition{}} | {:error, term()}
-  def create_gating_condition_with_index(attrs) do
-    %GatingCondition{}
-    |> GatingCondition.changeset(attrs)
-    |> persist_gate_with_index(:insert)
-  end
-
-  @doc """
-  Updates a gate and its enforcement index atomically under the section lifecycle
-  lock. Moving a gate to another section is not supported. Callers must authorize
-  the section before invoking this persistence operation. The index is rebuilt
-  only when the gate's top-level resource membership changes, not for changes to
-  its condition, dates, or student exception configuration.
-  """
-  @spec update_gating_condition_with_index(%GatingCondition{}, map()) ::
-          {:ok, %GatingCondition{}} | {:error, term()}
-  def update_gating_condition_with_index(%GatingCondition{} = gate, attrs) do
-    gate
-    |> GatingCondition.changeset(attrs)
-    |> Ecto.Changeset.validate_change(:section_id, fn :section_id, section_id ->
-      case section_id == gate.section_id do
-        true -> []
-        false -> [section_id: "cannot move a gate to another section"]
-      end
-    end)
-    |> persist_gate_with_index(:update, attrs)
-  end
-
-  @doc """
-  Deletes a gate (and any child exceptions) and refreshes its index atomically
-  under the section lifecycle lock. Deleting a student exception leaves the
-  shared index unchanged. Callers must authorize the section first.
-  """
-  @spec delete_gating_condition_with_index(%GatingCondition{}) ::
-          {:ok, %GatingCondition{}, non_neg_integer()} | {:error, term()}
-  def delete_gating_condition_with_index(%GatingCondition{} = gate) do
-    with_gating_index(gate.section_id, gate.id, :delete, &delete_gating_condition/1)
-  end
-
-  defp persist_gate_with_index(changeset, operation, attrs \\ %{})
-
-  defp persist_gate_with_index(%Ecto.Changeset{valid?: false} = changeset, _operation, _attrs),
-    do: {:error, changeset}
-
-  defp persist_gate_with_index(changeset, operation, attrs) do
-    section_id = Ecto.Changeset.get_field(changeset, :section_id)
-
-    with_gating_index(section_id, changeset.data.id, operation, fn current_gate ->
-      case operation do
-        :insert -> Repo.insert(changeset)
-        :update -> current_gate |> GatingCondition.changeset(attrs) |> Repo.update()
-      end
-    end)
-  end
-
-  defp with_gating_index(section_id, gate_id, operation, mutation) do
-    Repo.transaction(fn ->
-      section = SectionResourceMigration.lock_section!(section_id)
-
-      # Read membership under the lock, rather than relying on a caller's stale
-      # gate struct. Apply only the requested changes to that current row.
-      before_gate =
-        case gate_id do
-          nil ->
-            nil
-
-          id ->
-            case Repo.get_by(GatingCondition, id: id, section_id: section_id) do
-              nil -> Repo.rollback(:gating_condition_not_found)
-              gate -> gate
-            end
-        end
-
-      case mutation.(before_gate) do
-        result when elem(result, 0) == :ok ->
-          after_gate =
-            case operation do
-              :delete -> nil
-              _ -> elem(result, 1)
-            end
-
-          case indexed_resource(before_gate) == indexed_resource(after_gate) do
-            true ->
-              result
-
-            false ->
-              case rebuild_resource_gating_index(section) do
-                {:ok, _section} -> result
-                {:error, reason} -> Repo.rollback(reason)
-              end
-          end
-
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
-    end)
-    |> case do
-      {:ok, result} -> result
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp indexed_resource(%GatingCondition{parent_id: nil, resource_id: resource_id}),
-    do: resource_id
-
-  defp indexed_resource(_gate), do: nil
-
-  @doc """
-  Updates a gating_condition.
-
-  ## Examples
-
-      iex> update_gating_condition(gating_condition, %{field: new_value})
-      {:ok, %GatingCondition{}}
-
-      iex> update_gating_condition(gating_condition, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_gating_condition(%GatingCondition{} = gating_condition, attrs) do
-    gating_condition
-    |> GatingCondition.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a gating_condition, including any student-specific exceptions.
-
-  ## Examples
-
-      iex> delete_gating_condition(gating_condition)
-      {:ok, %GatingCondition{}, 1}
-
-      iex> delete_gating_condition(gating_condition_with_exceptions)
-      {:ok, %GatingCondition{}, 5}
-
-      iex> delete_gating_condition(gating_condition)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_gating_condition(%GatingCondition{id: id, parent_id: nil} = gating_condition) do
-    case from(gc in GatingCondition, where: gc.id == ^id or gc.parent_id == ^id)
-         |> Repo.delete_all() do
-      {0, _} -> {:error, "Could not delete gating condition"}
-      {count, _} -> {:ok, gating_condition, count}
-    end
-  end
-
-  def delete_gating_condition(%GatingCondition{} = gating_condition) do
-    case Repo.delete(gating_condition) do
-      {:ok, gc} -> {:ok, gc, 1}
-      e -> e
-    end
-  end
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking gating_condition changes.
