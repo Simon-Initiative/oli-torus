@@ -411,7 +411,7 @@ defmodule OliWeb.Router do
 
     live_session :redirect_if_author_is_authenticated,
       on_mount: [
-        OliWeb.LiveSessionPlugs.SecureAssessment,
+        {OliWeb.LiveSessionPlugs.SecureAssessment, :author},
         {OliWeb.AuthorAuth, :redirect_if_author_is_authenticated}
       ] do
       live "/authors/register", AuthorRegistrationLive, :new
@@ -430,7 +430,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
-        OliWeb.LiveSessionPlugs.SecureAssessment,
+        {OliWeb.LiveSessionPlugs.SecureAssessment, :author},
         {OliWeb.AuthorAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSidebar,
@@ -448,7 +448,7 @@ defmodule OliWeb.Router do
 
     live_session :current_author,
       on_mount: [
-        OliWeb.LiveSessionPlugs.SecureAssessment,
+        {OliWeb.LiveSessionPlugs.SecureAssessment, :author},
         {OliWeb.AuthorAuth, :mount_current_author}
       ] do
       live "/authors/confirm/:token", AuthorConfirmationLive, :edit
@@ -576,7 +576,7 @@ defmodule OliWeb.Router do
 
     live_session :product_settings,
       on_mount: [
-        OliWeb.LiveSessionPlugs.SecureAssessment,
+        {OliWeb.LiveSessionPlugs.SecureAssessment, :author},
         {OliWeb.AuthorAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx
       ] do
@@ -1117,7 +1117,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
-        OliWeb.LiveSessionPlugs.SecureAssessment,
+        {OliWeb.LiveSessionPlugs.SecureAssessment, :author},
         {OliWeb.AuthorAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.AssignActiveMenu,
@@ -1139,7 +1139,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
-        OliWeb.LiveSessionPlugs.SecureAssessment,
+        {OliWeb.LiveSessionPlugs.SecureAssessment, :author},
         {OliWeb.AuthorAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.AssignActiveMenu,
@@ -1157,7 +1157,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
-        OliWeb.LiveSessionPlugs.SecureAssessment,
+        {OliWeb.LiveSessionPlugs.SecureAssessment, :author},
         {OliWeb.AuthorAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.AssignActiveMenu,

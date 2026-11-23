@@ -205,15 +205,17 @@ defmodule OliWeb.UserAuth do
 
   @doc """
   Authenticates the user by looking into the session
-  and remember me token.
+  and remember me token. A rejected learner credential is removed before
+  the session is passed to LiveView, preserving any independent author login.
   """
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
 
-    context =
+    {context, conn} =
       case Accounts.get_user_session(user_token) do
-        {:ok, context} -> context
-        _ -> nil
+        {:ok, context} -> {context, conn}
+        {:error, :unauthenticated} when is_nil(user_token) -> {nil, conn}
+        {:error, :unauthenticated} -> {nil, discard_user_credential(conn)}
       end
 
     # TODO: PERFORMANCE this is making an extra query to the database to preload the user's roles.
@@ -223,13 +225,22 @@ defmodule OliWeb.UserAuth do
     |> assign(:current_user, Accounts.preload_platform_roles(context && context.user))
   end
 
+  defp discard_user_credential(conn) do
+    conn
+    |> delete_session(:user_token)
+    |> delete_session(:current_user_id)
+    |> delete_session(:user_live_socket_id)
+    |> delete_session(:live_socket_id)
+    |> delete_resp_cookie(@remember_me_cookie)
+  end
+
   defp ensure_user_token(conn) do
     if token = get_session(conn, :user_token) do
       # Add basic token format validation
       if valid_token_format?(token) do
         {token, conn}
       else
-        {nil, delete_session(conn, :user_token)}
+        {nil, discard_user_credential(conn)}
       end
     else
       conn = fetch_cookies(conn, signed: [@remember_me_cookie])
@@ -238,7 +249,7 @@ defmodule OliWeb.UserAuth do
         if valid_token_format?(token) do
           {token, put_token_in_session(conn, token)}
         else
-          {nil, delete_resp_cookie(conn, @remember_me_cookie)}
+          {nil, discard_user_credential(conn)}
         end
       else
         {nil, conn}

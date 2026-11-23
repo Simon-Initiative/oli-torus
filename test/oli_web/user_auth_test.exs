@@ -134,6 +134,30 @@ defmodule OliWeb.UserAuthTest do
                "users_sessions:#{Base.url_encode64(user_token)}"
     end
 
+    test "discards a revoked remember-me credential and its learner identity", %{
+      conn: conn,
+      user: user
+    } do
+      remembered =
+        conn |> fetch_cookies() |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
+
+      %{value: cookie} = remembered.resp_cookies[@remember_me_cookie]
+      Accounts.delete_user_session_token(get_session(remembered, :user_token))
+
+      conn =
+        conn
+        |> put_req_cookie(@remember_me_cookie, cookie)
+        |> put_session(:current_user_id, user.id)
+        |> UserAuth.fetch_current_user([])
+
+      refute conn.assigns.current_user
+      refute conn.assigns.user_session
+      refute get_session(conn, :user_token)
+      refute get_session(conn, :user_live_socket_id)
+      refute get_session(conn, :current_user_id)
+      assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
+    end
+
     test "does not authenticate if data is missing", %{conn: conn, user: user} do
       _ = Accounts.generate_user_session_token(user)
       conn = UserAuth.fetch_current_user(conn, [])

@@ -1,5 +1,8 @@
 defmodule OliWeb.LiveSessionPlugs.SecureAssessment do
-  @moduledoc "Current-credential authorization before LiveView mount and every connected callback."
+  @moduledoc """
+  Confines issued assessment credentials at mount across LiveViews. Delivery views
+  also check current page policy and learner authentication on connected callbacks.
+  """
   import Phoenix.Component, only: [assign: 3]
   alias Oli.Accounts
   alias OliWeb.Plugs.SecureAssessment, as: Boundary
@@ -13,41 +16,51 @@ defmodule OliWeb.LiveSessionPlugs.SecureAssessment do
   @events ["begin_attempt", "finalize_attempt", "select_question", "survey_scripts_loaded"]
 
   @doc false
-  def on_mount(:default, _, _, %{assigns: %{secure_boundary_installed: true}} = socket),
+  def on_mount(_, _, _, %{assigns: %{secure_boundary_installed: true}} = socket),
     do: {:cont, socket}
 
-  def on_mount(:default, params, session, socket) do
+  def on_mount(realm, params, session, socket) when realm in [:default, :author] do
     route_params =
       case socket.view do
         OliWeb.Dialogue.WindowLive -> Map.take(session, ["section_slug", "resource_id"])
         _ -> params
       end
 
-    result =
-      case session["secure_session_id"] do
-        nil -> Accounts.get_user_session(session["user_token"])
-        id -> Accounts.get_user_session_by_id(id)
-      end
+    case session do
+      %{"secure_session_id" => id} when not is_nil(id) ->
+        case Accounts.get_user_session_by_id(id) do
+          {:ok, context} -> mount(socket, route_params, context)
+          {:error, _} -> deny(socket)
+        end
 
-    context =
-      case result do
-        {:ok, context} -> context
-        _ -> nil
-      end
+      %{"user_token" => token} when not is_nil(token) ->
+        case Accounts.get_user_session(token) do
+          {:ok, context} ->
+            mount(socket, route_params, context)
 
+          {:error, :unauthenticated} ->
+            # A token can expire between the HTTP render and the socket mount.
+            # Return through HTTP to discard the stale identity before mounting.
+            login = if realm == :author, do: "/authors/log_in", else: "/users/log_in"
+            {:halt, Phoenix.LiveView.redirect(socket, to: login)}
+        end
+
+      _ ->
+        mount(socket, route_params, nil)
+    end
+  end
+
+  defp mount(socket, params, context) do
     socket =
       socket
       |> assign(:user_session, context)
-      |> assign(:secure_route_params, route_params)
+      |> assign(:secure_route_params, params)
       |> assign(:secure_boundary_installed, true)
 
-    authorized =
-      case {context, session["user_token"] || session["secure_session_id"]} do
-        {nil, credential} when not is_nil(credential) -> {:error, :unauthenticated}
-        _ -> authorize(socket, route_params)
-      end
+    case check_target(context, socket.view, params) do
+      :ok when socket.view not in @views ->
+        {:cont, socket}
 
-    case authorized do
       :ok ->
         socket =
           socket
@@ -55,56 +68,55 @@ defmodule OliWeb.LiveSessionPlugs.SecureAssessment do
           |> Phoenix.LiveView.attach_hook(:secure_assessment_info, :handle_info, &info/2)
           |> Phoenix.LiveView.attach_hook(:secure_assessment_async, :handle_async, &async/3)
 
-        socket =
-          case params do
-            :not_mounted_at_router ->
-              socket
+        case params == :not_mounted_at_router or socket.view == OliWeb.Dialogue.WindowLive do
+          true ->
+            {:cont, socket}
 
-            _ ->
-              Phoenix.LiveView.attach_hook(
-                socket,
-                :secure_assessment_params,
-                :handle_params,
-                &params/3
-              )
-          end
+          false ->
+            {:cont,
+             Phoenix.LiveView.attach_hook(
+               socket,
+               :secure_assessment_params,
+               :handle_params,
+               &params/3
+             )}
+        end
 
-        {:cont, socket}
-
-      _ ->
+      {:error, _} ->
         deny(socket)
     end
   end
 
-  @doc "Revalidates a server-held session reference and current target policy, including components."
+  defp check_target(session, view, params) when view in @views,
+    do: Boundary.check_if_supported(session, view, :show, params)
+
+  defp check_target(%{scope: %{}}, _view, _params), do: {:error, :secure_resource_mismatch}
+  defp check_target(_session, _view, _params), do: :ok
+
+  @doc "Checks current target policy and verifies the mounted learner identity before delivery callbacks."
   def authorize(socket, params) do
-    case socket.assigns[:user_session] do
-      nil when socket.view in @views ->
-        Boundary.check(nil, socket.view, :show, params)
+    session = socket.assigns[:user_session]
 
-      nil ->
-        :ok
-
-      %{scope: nil} when socket.view not in @views ->
-        :ok
-
-      %{token_id: id} ->
-        with {:ok, session} <- Accounts.get_user_session_by_id(id) do
-          case socket.view in @views do
-            true -> Boundary.check(session, socket.view, :show, params)
-            false when is_nil(session.scope) -> :ok
-            false -> {:error, :secure_resource_mismatch}
+    with :ok <- check_target(session, socket.view, params) do
+      case session do
+        %{token_id: id, scope: scope} when socket.view in @views ->
+          case Accounts.get_user_session_by_id(id) do
+            {:ok, %{scope: ^scope}} -> :ok
+            {:error, :unauthenticated} when is_nil(scope) -> {:error, :learner_login_required}
+            _ -> {:error, :unauthenticated}
           end
-        end
+
+        _ ->
+          :ok
+      end
     end
   end
 
   defp event(name, _payload, socket) do
     scoped? = match?(%{scope: %{}}, socket.assigns[:user_session])
 
-    case (not scoped? or name in @events) and
-           authorize(socket, socket.assigns.secure_route_params) == :ok do
-      true -> {:cont, socket}
+    case not scoped? or name in @events do
+      true -> continue_if_authorized(socket)
       false -> deny(socket)
     end
   end
@@ -127,8 +139,8 @@ defmodule OliWeb.LiveSessionPlugs.SecureAssessment do
           not scoped?
       end
 
-    case permitted? and authorize(socket, socket.assigns.secure_route_params) == :ok do
-      true -> {:cont, socket}
+    case permitted? do
+      true -> continue_if_authorized(socket)
       false -> deny(socket)
     end
   end
@@ -148,16 +160,21 @@ defmodule OliWeb.LiveSessionPlugs.SecureAssessment do
   end
 
   defp params(params, _uri, socket) do
-    case authorize(socket, params) do
-      :ok -> {:cont, assign(socket, :secure_route_params, params)}
-      _ -> deny(socket)
-    end
+    socket |> assign(:secure_route_params, params) |> continue_if_authorized()
   end
 
-  defp async(_name, _result, socket) do
+  defp async(_name, _result, socket), do: continue_if_authorized(socket)
+
+  defp continue_if_authorized(socket) do
     case authorize(socket, socket.assigns.secure_route_params) do
-      :ok -> {:cont, socket}
-      _ -> deny(socket)
+      :ok ->
+        {:cont, socket}
+
+      {:error, :learner_login_required} ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: "/users/log_in")}
+
+      _ ->
+        deny(socket)
     end
   end
 
