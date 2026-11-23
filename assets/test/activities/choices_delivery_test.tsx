@@ -5,6 +5,7 @@ import { ChoicesDelivery } from 'components/activities/common/choices/delivery/C
 import { makeChoice } from 'components/activities/types';
 import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { Radio } from 'components/misc/icons/radio/Radio';
+import { Model } from 'data/content/model/elements/factories';
 import { defaultWriterContext } from 'data/content/writers/context';
 
 describe('ChoicesDelivery', () => {
@@ -55,6 +56,184 @@ describe('ChoicesDelivery', () => {
       expect(labelId).not.toBeNull();
       expect(container.querySelectorAll(`[id="${labelId}"]`)).toHaveLength(1);
     });
+  });
+
+  it('keeps interactive choice content outside of the radio control', () => {
+    const choice = makeChoice('Read more', 'choice-a');
+    const link = Model.link('https://example.com');
+    const onSelect = jest.fn();
+    choice.content = [Model.p([{ ...link, children: [{ text: 'Read more' }] }])];
+
+    const { container } = render(
+      <ChoicesDelivery
+        choices={[choice]}
+        selected={[]}
+        context={defaultWriterContext({ projectSlug: 'project' })}
+        onSelect={onSelect}
+        isEvaluated={false}
+        unselectedIcon={<Radio.Unchecked />}
+        selectedIcon={<Radio.Checked />}
+      />,
+    );
+
+    const radio = screen.getByRole('radio', { name: 'Read more' });
+
+    expect(radio.querySelector('a, button, input, video, audio, iframe')).toBeNull();
+    expect(container.querySelector('a')).toHaveAttribute('href', 'https://example.com');
+
+    fireEvent.click(screen.getByRole('link', { name: 'Read more' }));
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('supports keyboard navigation and selection for radio choices', () => {
+    const onSelect = jest.fn();
+
+    render(
+      <ChoicesDelivery
+        choices={[makeChoice('Paris', 'choice-a'), makeChoice('London', 'choice-b')]}
+        selected={[]}
+        context={defaultWriterContext({ projectSlug: 'project' })}
+        onSelect={onSelect}
+        isEvaluated={false}
+        unselectedIcon={<Radio.Unchecked />}
+        selectedIcon={<Radio.Checked />}
+      />,
+    );
+
+    const radios = screen.getAllByRole('radio');
+    fireEvent.click(screen.getByText('London'));
+
+    expect(radios[1]).toHaveFocus();
+    expect(onSelect).toHaveBeenCalledWith('choice-b');
+
+    onSelect.mockClear();
+    fireEvent.keyDown(radios[0], { key: 'ArrowDown' });
+
+    expect(radios[1]).toHaveFocus();
+
+    fireEvent.keyDown(radios[1], { key: ' ' });
+    expect(onSelect).toHaveBeenCalledWith('choice-b');
+  });
+
+  it('falls back to an ordinal name for choices without nameable content', () => {
+    const audioChoice = makeChoice('', 'choice-b');
+    audioChoice.content = [Model.audio('https://example.com/clip.mp3')];
+
+    render(
+      <ChoicesDelivery
+        choices={[makeChoice('Paris', 'choice-a'), audioChoice]}
+        selected={[]}
+        context={defaultWriterContext({ projectSlug: 'project' })}
+        onSelect={jest.fn()}
+        isEvaluated={false}
+        unselectedIcon={<Radio.Unchecked />}
+        selectedIcon={<Radio.Checked />}
+      />,
+    );
+
+    const audioRadio = screen.getByRole('radio', { name: 'Choice 2' });
+
+    expect(audioRadio).not.toHaveAttribute('aria-labelledby');
+    expect(screen.getByRole('radio', { name: 'Paris' })).not.toHaveAttribute('aria-label');
+  });
+
+  it('keeps naming media choices by their alt text instead of the fallback', () => {
+    const imageChoice = makeChoice('', 'choice-a');
+    imageChoice.content = [Model.image('https://example.com/eiffel.png', 'Eiffel Tower')];
+
+    render(
+      <ChoicesDelivery
+        choices={[imageChoice]}
+        selected={[]}
+        context={defaultWriterContext({ projectSlug: 'project' })}
+        onSelect={jest.fn()}
+        isEvaluated={false}
+        unselectedIcon={<Radio.Unchecked />}
+        selectedIcon={<Radio.Checked />}
+      />,
+    );
+
+    const radio = screen.getByRole('radio');
+
+    expect(radio).toHaveAttribute('aria-labelledby');
+    expect(radio).not.toHaveAttribute('aria-label');
+  });
+
+  it('names webpage choices by their title and falls back when the title is missing', () => {
+    const titledChoice = makeChoice('', 'choice-a');
+    titledChoice.content = [
+      { ...Model.webpage('https://example.com/sim'), title: 'Solar system simulation' },
+    ];
+    // Webpages do not render their alt text, so it cannot name the choice
+    const untitledChoice = makeChoice('', 'choice-b');
+    untitledChoice.content = [{ ...Model.webpage('https://example.com/other'), alt: 'Unused alt' }];
+
+    render(
+      <ChoicesDelivery
+        choices={[titledChoice, untitledChoice]}
+        selected={[]}
+        context={defaultWriterContext({ projectSlug: 'project' })}
+        onSelect={jest.fn()}
+        isEvaluated={false}
+        unselectedIcon={<Radio.Unchecked />}
+        selectedIcon={<Radio.Checked />}
+      />,
+    );
+
+    const titledRadio = screen.getByRole('radio', { name: 'Solar system simulation' });
+
+    expect(titledRadio).toHaveAttribute('aria-labelledby');
+    expect(titledRadio).not.toHaveAttribute('aria-label');
+    expect(screen.getByRole('radio', { name: 'Choice 2' })).not.toHaveAttribute('aria-labelledby');
+  });
+
+  it('names code block choices by their code', () => {
+    const codeChoice = makeChoice('', 'choice-a');
+    codeChoice.content = [Model.code('print("hello")')];
+
+    render(
+      <ChoicesDelivery
+        choices={[codeChoice]}
+        selected={[]}
+        context={defaultWriterContext({ projectSlug: 'project' })}
+        onSelect={jest.fn()}
+        isEvaluated={false}
+        unselectedIcon={<Radio.Unchecked />}
+        selectedIcon={<Radio.Checked />}
+      />,
+    );
+
+    const radio = screen.getByRole('radio', { name: 'print("hello")' });
+
+    expect(radio).toHaveAttribute('aria-labelledby');
+    expect(radio).not.toHaveAttribute('aria-label');
+  });
+
+  it('keeps the whole row as the checkbox control', () => {
+    const onSelect = jest.fn();
+
+    render(
+      <ChoicesDelivery
+        choices={[makeChoice('Paris', 'choice-a')]}
+        selected={[]}
+        context={defaultWriterContext({ projectSlug: 'project' })}
+        onSelect={onSelect}
+        isEvaluated={false}
+        unselectedIcon={<Checkbox.Unchecked />}
+        selectedIcon={<Checkbox.Checked />}
+        multiSelect
+      />,
+    );
+
+    const checkbox = screen.getByRole('checkbox', { name: 'Paris' });
+
+    expect(checkbox).toContainElement(screen.getByText('Paris'));
+    expect(checkbox).toHaveAttribute('tabindex', '0');
+
+    fireEvent.click(screen.getByText('Paris'));
+
+    expect(checkbox).not.toHaveFocus();
+    expect(onSelect).toHaveBeenCalledWith('choice-a');
   });
 
   it('keeps disabled radio icons inert', () => {
