@@ -291,15 +291,18 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
          :ok <- authorize_question(event, params, socket) do
       handle_authorized_event(event, params, socket)
     else
-      _ -> {:noreply, Phoenix.LiveView.redirect(socket, to: "/secure-assessment/restricted")}
+      {:error, :learner_login_required} ->
+        {:noreply, Phoenix.LiveView.redirect(socket, to: "/users/log_in")}
+
+      _ ->
+        {:noreply, Phoenix.LiveView.redirect(socket, to: "/secure-assessment/restricted")}
     end
   end
 
   defp authorize_question("submit_selected_question", %{"attempt_guid" => guid}, socket) do
-    with %{token_id: id} <- socket.assigns[:user_session],
-         {:ok, session} <- Oli.Accounts.get_user_session_by_id(id),
+    with %{token_id: _} = session <- socket.assigns[:user_session],
          true <- Enum.any?(socket.assigns.questions, &(&1.state["attemptGuid"] == guid)) do
-      OliWeb.Plugs.SecureAssessment.check(
+      OliWeb.Plugs.SecureAssessment.check_if_supported(
         session,
         OliWeb.Api.AttemptController,
         :submit_activity,

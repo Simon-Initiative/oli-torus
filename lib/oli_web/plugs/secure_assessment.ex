@@ -125,6 +125,14 @@ defmodule OliWeb.Plugs.SecureAssessment do
     end
   end
 
+  @doc "Checks current delivery policy when supported, always enforcing an issued credential's scope."
+  def check_if_supported(session, controller, action, params) do
+    case match?(%{scope: %{}}, session) or Policy.supported?() do
+      true -> check(session, controller, action, params)
+      false -> :ok
+    end
+  end
+
   @doc "Checks server-selected route actions without invoking their delivery side effects."
   def check(session, controller, action, params) do
     scope = session && session.scope

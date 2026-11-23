@@ -14,7 +14,7 @@ defmodule Oli.Delivery.SecureAssessments do
   alias Oli.Delivery.Sections.{Section, SectionResource}
   alias Oli.Delivery.SecureAssessments.{Admission, Scope, Target}
   alias Oli.Repo
-  alias Oli.Resources.Revision
+  alias Oli.Resources.{ResourceType, Revision}
 
   @operations [
     :prologue,
@@ -56,7 +56,7 @@ defmodule Oli.Delivery.SecureAssessments do
        })
        when is_integer(section_id) and section_id > 0 and is_integer(resource_id) and
               resource_id > 0 do
-    page_type = Oli.Resources.ResourceType.id_for_page()
+    page_type = ResourceType.id_for_page()
 
     resource =
       Repo.one(
@@ -110,6 +110,17 @@ defmodule Oli.Delivery.SecureAssessments do
     end)
   end
 
+  # Publishing can change the grade status of a page after secure delivery was configured.
+  defmacrop secure_graded_page(resource) do
+    quote do
+      coalesce(
+        unquote(resource).secure_delivery and unquote(resource).graded and
+          unquote(resource).resource_type_id == ^ResourceType.id_for_page(),
+        false
+      )
+    end
+  end
+
   @doc "Resolves a section page without constructing delivery context or recording a visit."
   def resolve_page(section_slug, revision_slug)
       when is_binary(section_slug) and is_binary(revision_slug) do
@@ -125,7 +136,7 @@ defmodule Oli.Delivery.SecureAssessments do
         select: %Target{
           section_id: s.id,
           resource_id: sr.resource_id,
-          secure_delivery: sr.secure_delivery,
+          secure_delivery: secure_graded_page(sr),
           revision_id: sr.revision_id
         }
 
@@ -155,7 +166,7 @@ defmodule Oli.Delivery.SecureAssessments do
         as: :page,
         join: s in Section,
         on: s.id == sr.section_id,
-        where: s.slug == ^section_slug and sr.secure_delivery,
+        where: s.slug == ^section_slug and secure_graded_page(sr),
         where:
           fragment("? && ?::bigint[]", sr.related_activities, ^resource_ids) or
             sr.resource_id in ^resource_ids or exists(subquery(attempt_membership))
@@ -212,7 +223,7 @@ defmodule Oli.Delivery.SecureAssessments do
         select: %Target{
           section_id: access.section_id,
           resource_id: access.resource_id,
-          secure_delivery: sr.secure_delivery,
+          secure_delivery: secure_graded_page(sr),
           user_id: access.user_id,
           revision_id: ra.revision_id,
           resource_attempt_guid: ra.attempt_guid,
@@ -255,7 +266,7 @@ defmodule Oli.Delivery.SecureAssessments do
       when kind in [:resource, :activity, :part] and is_list(guids) do
     kind
     |> attempt_query(Enum.uniq(guids))
-    |> where([section_resource: sr], sr.secure_delivery)
+    |> where([section_resource: sr], secure_graded_page(sr))
     |> Repo.exists?()
   end
 

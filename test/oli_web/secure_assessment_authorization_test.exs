@@ -1,10 +1,12 @@
 defmodule OliWeb.SecureAssessmentAuthorizationTest do
   use OliWeb.ConnCase, async: false
+  import Phoenix.LiveViewTest, only: [live: 1, live: 2]
   import Oli.Factory
   alias Oli.Accounts
   alias Oli.Delivery.SecureAssessments, as: Policy
   alias Oli.Delivery.SecureAssessments.Scope
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias OliWeb.LiveSessionPlugs.SecureAssessment, as: LiveBoundary
   alias OliWeb.Plugs.SecureAssessment, as: Boundary
 
   setup do
@@ -353,6 +355,37 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
     assert {:error, :unauthenticated} = Accounts.get_user_session_by_id(c.secure.token_id)
   end
 
+  test "author login mounts with a deleted learner token", c do
+    Accounts.delete_user_session_token(c.normal_token)
+
+    conn = init_test_session(c.conn, %{user_token: c.normal_token, current_user_id: c.user.id})
+    assert {:ok, _view, html} = live(conn, ~p"/authors/log_in")
+    assert html =~ "Sign in"
+  end
+
+  test "an expired learner token leaves an authenticated author able to open settings", c do
+    Oli.Accounts.UserToken
+    |> Oli.Repo.get!(c.normal.token_id)
+    |> Ecto.Changeset.change(inserted_at: DateTime.add(DateTime.utc_now(:second), -61, :day))
+    |> Oli.Repo.update!()
+
+    conn = c.conn |> log_in_author(author_fixture()) |> put_session(:user_token, c.normal_token)
+    assert {:ok, _view, html} = live(conn, ~p"/authors/settings")
+    assert html =~ "Change Password"
+  end
+
+  test "a revoked assessment session cannot reopen its protected lesson", c do
+    Accounts.delete_user_session_token(c.secure_token)
+
+    conn =
+      c.conn
+      |> init_test_session(%{user_token: c.secure_token, current_user_id: c.user.id})
+      |> get("/sections/#{c.section.slug}/lesson/#{c.revision.slug}")
+
+    assert html_response(conn, 403) =~ "Assessment access restricted"
+    refute conn.assigns.current_user
+  end
+
   test "a simultaneous author cookie does not bypass scoped navigation", c do
     conn =
       c.conn
@@ -623,6 +656,84 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
              Boundary.check(c.secure, OliWeb.Api.AttemptController, :file_upload, params)
   end
 
+  test "ordinary authoring mounts without installing assessment callbacks", c do
+    socket = %Phoenix.LiveView.Socket{
+      view: OliWeb.AuthorSettingsLive,
+      router: OliWeb.Router,
+      private: %{lifecycle: %Phoenix.LiveView.Lifecycle{}}
+    }
+
+    for session <- [%{}, %{"user_token" => c.normal_token}] do
+      assert {:cont, mounted} = LiveBoundary.on_mount(:default, %{}, session, socket)
+      assert mounted.private == socket.private
+    end
+
+    assert {:halt, %{redirected: {:redirect, %{to: "/secure-assessment/restricted"}}}} =
+             LiveBoundary.on_mount(:default, %{}, %{"user_token" => c.secure_token}, socket)
+  end
+
+  test "ordinary lesson callbacks follow current instance and graded page settings", c do
+    socket = %Phoenix.LiveView.Socket{
+      view: OliWeb.Delivery.Student.LessonLive,
+      router: OliWeb.Router,
+      private: %{lifecycle: %Phoenix.LiveView.Lifecycle{}}
+    }
+
+    params = %{"section_slug" => c.section.slug, "revision_slug" => c.revision.slug}
+    resource = Oli.Repo.update!(Ecto.Changeset.change(c.sr, secure_delivery: false))
+
+    assert {:cont, socket} =
+             LiveBoundary.on_mount(:default, params, %{"user_token" => c.normal_token}, socket)
+
+    assert {:cont, _} = Phoenix.LiveView.Lifecycle.handle_event("begin_attempt", %{}, socket)
+
+    resource = Oli.Repo.update!(Ecto.Changeset.change(resource, secure_delivery: true))
+
+    assert {:halt, %{redirected: {:redirect, %{to: "/secure-assessment/restricted"}}}} =
+             Phoenix.LiveView.Lifecycle.handle_event("begin_attempt", %{}, socket)
+
+    Application.put_env(:oli, :supports_secure_delivery, false)
+    assert :ok = LiveBoundary.authorize(socket, params)
+
+    Application.put_env(:oli, :supports_secure_delivery, true)
+    Oli.Repo.update!(Ecto.Changeset.change(resource, graded: false))
+    assert :ok = LiveBoundary.authorize(socket, params)
+    refute Policy.protected_attempts?(:resource, [c.attempt.attempt_guid])
+    refute Policy.protected_models?(c.section.slug, [c.activity.resource_id])
+  end
+
+  test "expired learner credentials at socket mount return through HTTP authentication", c do
+    author_conn =
+      c.conn
+      |> init_test_session(%{user_token: c.normal_token})
+      |> get(~p"/authors/reset_password")
+
+    dual_role_conn =
+      c.conn
+      |> log_in_author(author_fixture())
+      |> put_session(:user_token, c.normal_token)
+      |> get(~p"/users/settings")
+
+    assert html_response(author_conn, 200)
+    assert html_response(dual_role_conn, 200)
+    Accounts.delete_user_session_token(c.normal_token)
+
+    assert {:error, {:redirect, %{to: "/authors/log_in"}}} = live(author_conn)
+    assert {:error, {:redirect, %{to: "/users/log_in"}}} = live(dual_role_conn)
+  end
+
+  test "a stale secure session reference cannot fall back to another credential", c do
+    Accounts.delete_user_session_token(c.secure_token)
+
+    assert {:halt, %{redirected: {:redirect, %{to: "/secure-assessment/restricted"}}}} =
+             LiveBoundary.on_mount(
+               :default,
+               %{},
+               %{"secure_session_id" => c.secure.token_id, "user_token" => c.normal_token},
+               %Phoenix.LiveView.Socket{view: OliWeb.AuthorLoginLive}
+             )
+  end
+
   test "connected assessment authorization rechecks deletion and policy", c do
     params = %{"section_slug" => c.section.slug, "revision_slug" => c.revision.slug}
 
@@ -665,9 +776,11 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
     assert {:error, :secure_launch_required} =
              OliWeb.LiveSessionPlugs.SecureAssessment.authorize(socket, params)
 
+    Oli.Repo.update!(Ecto.Changeset.change(c.sr, secure_delivery: false))
+    assert :ok = LiveBoundary.authorize(socket, params)
     Accounts.delete_user_session_token(c.normal_token)
 
-    assert {:error, :unauthenticated} =
+    assert {:error, :learner_login_required} =
              OliWeb.LiveSessionPlugs.SecureAssessment.authorize(socket, params)
   end
 
