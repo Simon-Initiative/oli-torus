@@ -31,15 +31,20 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponent do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_new(:page_prompt_template, fn -> section.page_prompt_template end)}
+     |> assign_new(:page_prompt_template, fn -> section.page_prompt_template end)
+     |> assign_new(:revert_count, fn -> 0 end)
+     |> assign_new(:reverted, fn -> nil end)}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div id={"ai-assistant-#{@id}"}>
-      <%!-- Toggles --%>
-      <div>
+      <%!-- Toggles; a new id after a failed save renders them again from the saved settings --%>
+      <div
+        id={"#{@id}-toggles-#{@revert_count}"}
+        phx-mounted={@revert_count > 0 && JS.focus(to: "##{@reverted}")}
+      >
         <div class="flex py-2 mb-2">
           <div>Enable AI Assistant</div>
           <.toggle_switch
@@ -134,7 +139,7 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponent do
 
       {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to update AI assistant settings"})
-        {:noreply, socket}
+        {:noreply, revert(socket, "toggle-assistant_checkbox")}
     end
   end
 
@@ -149,7 +154,7 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponent do
 
       {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to update activation settings"})
-        {:noreply, socket}
+        {:noreply, revert(socket, "toggle-triggers_checkbox")}
     end
   end
 
@@ -176,6 +181,15 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponent do
       socket.assigns.section,
       attrs,
       Map.keys(attrs)
+    )
+  end
+
+  # Nothing was saved: a new wrapper id renders the toggles again from the saved settings, and
+  # focus returns to the control that was used.
+  defp revert(socket, control) do
+    assign(socket,
+      revert_count: socket.assigns.revert_count + 1,
+      reverted: "#{socket.assigns.id}-#{control}"
     )
   end
 end

@@ -132,6 +132,33 @@ defmodule OliWeb.SchedulingControllerTest do
       assert Enum.all?(cleared, &(&1.source == :api))
     end
 
+    test "an admin's schedule update is recorded as the admin, not the hidden instructor", %{
+      map: map
+    } do
+      admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
+
+      conn =
+        build_conn()
+        |> Plug.Test.init_test_session(%{})
+        |> log_in_author(admin)
+        |> get(Routes.scheduling_path(build_conn(), :index, map.section.slug))
+
+      assert %{"result" => "success", "resources" => resources} = json_response(conn, 200)
+      updates = Enum.map(resources, &Map.put(&1, "end_date", "2024-02-02"))
+
+      conn =
+        conn
+        |> recycle()
+        |> log_in_author(admin)
+        |> put(Routes.scheduling_path(conn, :update, map.section.slug), %{"updates" => updates})
+
+      assert %{"result" => "success"} = json_response(conn, 200)
+
+      events = audit_events(:curriculum_schedule_changed, section_id: map.section.id)
+      assert length(events) == 3
+      assert Enum.all?(events, &({&1.actor_type, &1.author_id} == {:author, admin.id}))
+    end
+
     test "updating the agenda records the change", %{conn: conn, map: map} do
       user = map.teacher
 

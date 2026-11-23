@@ -703,11 +703,17 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       required: [:feedback_scheduled_date]
     )
     |> case do
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
          assign(socket,
            modal_assigns: Map.merge(socket.assigns.modal_assigns, %{changeset: changeset})
          )}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> flash_to_liveview(:error, "The scheduled feedback date could not be saved")
+         |> assign(modal_assigns: %{show: false})}
 
       {:ok, updated_student_exception} ->
         update_liveview_student_exceptions(

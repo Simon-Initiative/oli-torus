@@ -2268,6 +2268,40 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert updated_form_id != form_id
     end
 
+    test "a scheduled date that cannot be recorded closes the modal and keeps the saved mode",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["feedback_mode-#{page_1.resource.id}"],
+        "feedback_mode-#{page_1.resource.id}" => "scheduled"
+      })
+
+      reject_audit_inserts()
+
+      ExUnit.CaptureLog.capture_log(fn ->
+        view
+        |> form(~s{form[phx-submit=submit_scheduled_date]})
+        |> render_submit(%{
+          "section_resource" => %{"feedback_scheduled_date" => "2023-05-29T21:50"}
+        })
+      end)
+
+      refute has_element?(view, ~s{form[phx-submit=submit_scheduled_date]})
+
+      page_1_assessment_settings =
+        get_assessments(section.slug, [])
+        |> Enum.find(&(&1.resource_id == page_1.resource.id))
+
+      assert page_1_assessment_settings.feedback_mode == :allow
+    end
+
     test "feedback_mode value is not set to :scheduled when the modal is cancelled and the modal closes",
          %{
            conn: conn,

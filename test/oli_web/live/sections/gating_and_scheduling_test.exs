@@ -196,20 +196,25 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       assert html =~ "Edit Gating Condition"
     end
 
-    test "a gate of another section cannot be edited or deleted from this section", %{
-      conn: conn,
-      section_1: section,
-      section_2: other_section,
-      page1: page1
-    } do
+    test "a gate of another section cannot be edited, deleted, or used as a parent from this section",
+         %{
+           conn: conn,
+           section_1: section,
+           section_2: other_section,
+           page1: page1
+         } do
       gate = gating_condition_fixture(%{section_id: other_section.id, resource_id: page1.id})
+      own_gate = gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
 
-      {:ok, view, _html} = live(conn, gating_condition_edit_route(section.slug, gate.id))
+      # The pages of this section do not open another section's gate
+      assert {:error, {:redirect, %{to: "/not_found"}}} =
+               live(conn, gating_condition_edit_route(section.slug, gate.id))
 
-      render_hook(view, "schedule_start_date_changed", %{value: "2022-01-12T13:48"})
-      view |> element("button[phx-click='update_gate']") |> render_click()
-      assert render(view) =~ "Gating condition couldn&#39;t be updated."
+      assert {:error, {:redirect, %{to: "/not_found"}}} =
+               live(conn, ~p"/sections/#{section.slug}/gating_and_scheduling/new/#{gate.id}")
 
+      # Nor delete it through the delete event of one of its own gates
+      {:ok, view, _html} = live(conn, gating_condition_edit_route(section.slug, own_gate.id))
       render_hook(view, "delete-gating-condition", %{"id" => to_string(gate.id)})
       assert render(view) =~ "Gating condition couldn&#39;t be deleted."
 

@@ -34,14 +34,20 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:collab_space_status, status)}
+     |> assign(:collab_space_status, status)
+     |> assign_new(:revert_count, fn -> 0 end)
+     |> assign_new(:reverted, fn -> nil end)}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div id={"course-discussions-#{@id}"}>
-      <section>
+      <%!-- A new id after a failed save renders the controls again from the saved settings --%>
+      <section
+        id={"#{@id}-controls-#{@revert_count}"}
+        phx-mounted={@revert_count > 0 && JS.focus(to: "##{@reverted}")}
+      >
         <div class="inline-flex py-2 mb-2 border-b dark:border-gray-700">
           <span>Enable Course Discussions</span>
           <.toggle_switch
@@ -61,6 +67,7 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
           ]}>
             <input
               type="checkbox"
+              id={"#{@id}-auto-accept"}
               checked={@collab_space_config && @collab_space_config.auto_accept}
               disabled={@collab_space_status == :disabled}
               phx-click="toggle_auto_accept"
@@ -76,6 +83,7 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
           ]}>
             <input
               type="checkbox"
+              id={"#{@id}-anonymous-posting"}
               checked={@collab_space_config && @collab_space_config.anonymous_posting}
               disabled={@collab_space_status == :disabled}
               phx-click="toggle_anonymous_posting"
@@ -124,7 +132,7 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
 
       {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to update course discussions"})
-        {:noreply, socket}
+        {:noreply, revert(socket, "toggle-discussions_checkbox")}
     end
   end
 
@@ -157,7 +165,7 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
 
       {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to update discussion settings"})
-        {:noreply, socket}
+        {:noreply, revert(socket, field_control(field))}
     end
   end
 
@@ -168,4 +176,16 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
       config_changes
     )
   end
+
+  # Nothing was saved: a new wrapper id renders the toggles again from the saved settings, and
+  # focus returns to the control that was used.
+  defp revert(socket, control) do
+    assign(socket,
+      revert_count: socket.assigns.revert_count + 1,
+      reverted: "#{socket.assigns.id}-#{control}"
+    )
+  end
+
+  defp field_control(:auto_accept), do: "auto-accept"
+  defp field_control(:anonymous_posting), do: "anonymous-posting"
 end

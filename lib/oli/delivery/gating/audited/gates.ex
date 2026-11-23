@@ -35,7 +35,11 @@ defmodule Oli.Delivery.Gating.Audited.Gates do
 
       true ->
         run(context, section_id, nil, fn nil ->
-          with {:ok, gate} <- Repo.insert(changeset), do: {:ok, gate, [{nil, gate}]}
+          with :ok <-
+                 parent_in_section(section_id, Ecto.Changeset.get_field(changeset, :parent_id)),
+               {:ok, gate} <- Repo.insert(changeset) do
+            {:ok, gate, [{nil, gate}]}
+          end
         end)
     end
   end
@@ -62,8 +66,15 @@ defmodule Oli.Delivery.Gating.Audited.Gates do
     run(context, section_id, gate.id, fn current ->
       exceptions =
         case current.parent_id do
-          nil -> Repo.all(from(gc in GatingCondition, where: gc.parent_id == ^current.id))
-          _parent -> []
+          nil ->
+            Repo.all(
+              from(gc in GatingCondition,
+                where: gc.parent_id == ^current.id and gc.section_id == ^section_id
+              )
+            )
+
+          _parent ->
+            []
         end
 
       ids = [current.id | Enum.map(exceptions, & &1.id)]
@@ -93,6 +104,20 @@ defmodule Oli.Delivery.Gating.Audited.Gates do
             {:error, reason} -> Repo.rollback(reason)
           end
         end)
+    end
+  end
+
+  # A student exception's gate must be a gate of the same section.
+  defp parent_in_section(_section_id, nil), do: :ok
+
+  defp parent_in_section(section_id, parent_id) do
+    case Repo.exists?(
+           from(gc in GatingCondition,
+             where: gc.id == ^parent_id and gc.section_id == ^section_id
+           )
+         ) do
+      true -> :ok
+      false -> {:error, :gating_condition_not_found}
     end
   end
 

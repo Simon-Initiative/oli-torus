@@ -418,15 +418,23 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   end
 
   # Delivery pages are configured by instructors (users) or admins (authors); project pages
-  # by authors.
+  # by authors. An admin is recorded as the admin author, not as the section's hidden
+  # instructor that admin delivery requests sign in as, as `OliWeb.Sections.Mount` does.
   defp audit_context(socket) do
     actor =
-      case socket.assigns.is_delivery do
-        true -> socket.assigns[:current_user] || socket.assigns[:current_author]
-        false -> socket.assigns[:current_author]
+      case {socket.assigns.is_delivery, socket.assigns[:current_author]} do
+        {false, author} -> author
+        {true, author} -> delivery_actor(socket.assigns[:current_user], author)
       end
 
     Context.for_actor(actor, source: :ui)
+  end
+
+  defp delivery_actor(user, author) do
+    case Oli.Accounts.at_least_content_admin?(author) do
+      true -> author
+      false -> user || author
+    end
   end
 
   # first argument is a flag that specifies whether it is delivery or not, to accordingly

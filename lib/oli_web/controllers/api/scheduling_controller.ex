@@ -225,12 +225,17 @@ defmodule OliWeb.Api.SchedulingController do
     end
   end
 
-  # The signed-in user, or the author when no user is signed in
-  defp audit_context(conn),
-    do:
-      Context.for_actor(conn.assigns[:current_user] || conn.assigns[:current_author],
-        source: :api
-      )
+  # The account the access check authorized: an admin author first (admin requests also sign
+  # in as the section's hidden instructor), otherwise the user, as `OliWeb.Sections.Mount` does.
+  defp audit_context(conn) do
+    actor =
+      case Accounts.at_least_content_admin?(conn.assigns[:current_author]) do
+        true -> conn.assigns.current_author
+        false -> conn.assigns[:current_user] || conn.assigns[:current_author]
+      end
+
+    Context.for_actor(actor, source: :api)
+  end
 
   # Restrict access to enrolled instructors, LMS admins, or system
   # (authoring) admins

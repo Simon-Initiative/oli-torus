@@ -248,6 +248,22 @@ defmodule Oli.Delivery.Gating do
   def get_gating_condition!(id), do: Repo.get!(GatingCondition, id)
 
   @doc """
+  Returns the gating condition with `id` when it belongs to the section with `section_id`, or
+  `nil`. `id` may be the string of a URL parameter; one that is not an integer finds nothing.
+  """
+  @spec get_section_gating_condition(pos_integer(), pos_integer() | String.t()) ::
+          %GatingCondition{} | nil
+  def get_section_gating_condition(section_id, id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} -> get_section_gating_condition(section_id, id)
+      _invalid -> nil
+    end
+  end
+
+  def get_section_gating_condition(section_id, id) when is_integer(id),
+    do: Repo.get_by(GatingCondition, id: id, section_id: section_id)
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for tracking gating_condition changes.
 
   ## Examples
@@ -258,16 +274,6 @@ defmodule Oli.Delivery.Gating do
   """
   def change_gating_condition(%GatingCondition{} = gating_condition, attrs \\ %{}) do
     GatingCondition.changeset(gating_condition, attrs)
-  end
-
-  @doc """
-  Updates a sections resource gating index
-  """
-  def update_resource_gating_index(%Section{} = section) do
-    section
-    |> Sections.update_section(%{
-      resource_gating_index: generate_resource_gating_index(section)
-    })
   end
 
   @doc """

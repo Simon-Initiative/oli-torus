@@ -999,7 +999,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
           data: %{start_datetime: yesterday(), end_datetime: tomorrow()}
         })
 
-      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
@@ -1025,7 +1025,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
           data: %{end_datetime: yesterday()}
         })
 
-      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
@@ -1073,7 +1073,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
           data: %{start_datetime: yesterday(), end_datetime: tomorrow()}
         })
 
-      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
       ensure_content_is_visible(view)
@@ -1102,7 +1102,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
           data: %{end_datetime: yesterday()}
         })
 
-      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
       ensure_content_is_visible(view)

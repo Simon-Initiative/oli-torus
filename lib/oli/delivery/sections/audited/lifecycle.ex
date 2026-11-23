@@ -349,7 +349,8 @@ defmodule Oli.Delivery.Sections.Audited.Lifecycle do
     )
   end
 
-  # Runs `fun` in a transaction (a savepoint inside the caller's) and rolls back on error.
+  # Runs `fun` in a transaction and rolls back on error. Inside a caller's transaction it joins
+  # that transaction (Ecto does not use savepoints), so an error rolls back the caller's work too.
   defp transaction(fun) do
     Repo.transaction(fn ->
       case fun.() do

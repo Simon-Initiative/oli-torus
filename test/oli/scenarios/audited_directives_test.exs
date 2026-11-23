@@ -99,6 +99,13 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
         section: standalone
         to: root
 
+    # The customize directive changes the curriculum as a saved remix
+    - customize:
+        to: standalone
+        ops:
+          - remove:
+              from: "Remixed"
+
     # Hiding a page is a curriculum change, saved as a remix; its scheduling type is a schedule
     # update
     - manipulate:
@@ -245,6 +252,16 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
                :section_remix_saved,
                [section_id: section_id.("standalone")] ++ scenario
              )
+
+    # The remixed page was added, then removed by the customize directive
+    remixed =
+      :section_remix_saved
+      |> audit_events([section_id: section_id.("standalone")] ++ scenario)
+      |> Enum.filter(&(&1.entity_snapshot["title"] == "Remixed"))
+
+    assert [added, removed] = remixed
+    refute Map.has_key?(added.changes["position"], "before")
+    refute Map.has_key?(removed.changes["position"], "after")
 
     hidden =
       assert_audited(:section_remix_saved, [section_id: section_id.("from_project")] ++ scenario)

@@ -384,19 +384,4 @@ defmodule Oli.Accounts.AuditedAccessTest do
 
   defp all_events(%Oli.Accounts.Author{id: id}),
     do: Repo.all(from(e in LogEvent, where: e.affected_author_id == ^id))
-
-  defp reject_audit_inserts do
-    Repo.query!("""
-    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
-    BEGIN
-      RAISE EXCEPTION 'audit insert rejected by test';
-    END;
-    $$ LANGUAGE plpgsql
-    """)
-
-    Repo.query!("""
-    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
-      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
-    """)
-  end
 end

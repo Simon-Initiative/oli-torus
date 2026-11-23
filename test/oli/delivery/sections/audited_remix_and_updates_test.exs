@@ -278,6 +278,51 @@ defmodule Oli.Delivery.Sections.AuditedRemixAndUpdatesTest do
       assert {applied.actor_type, applied.actor_key} == {:system, "scheduled_maintenance"}
       assert applied.source == :job
     end
+
+    test "a job with an invalid context or a deleted section is cancelled", %{
+      section: section,
+      project: project,
+      author: author,
+      context: context
+    } do
+      resulting = publish(project, author)
+      args = Worker.args(section.slug, resulting.id, context)
+
+      assert {:cancel, :invalid_audit_context} =
+               perform_job(Worker, put_in(args, ["audit_context", "actor_type"], "admin"))
+
+      assert {:cancel, :section_not_found} =
+               perform_job(Worker, %{args | "section_slug" => "missing-section"})
+
+      assert audit_events(:publication_applied, section_id: section.id) == []
+    end
+  end
+
+  describe "inside another transaction" do
+    test "the commands that own their transaction refuse to join one", %{
+      section: section,
+      project: project,
+      author: author,
+      context: context
+    } do
+      {:ok, state} = Remix.init(section, author)
+      resulting = publish(project, author)
+
+      {:ok, results} =
+        Repo.transaction(fn ->
+          [
+            SectionsAudited.save_remix(context, state, author),
+            SectionsAudited.apply_publication_update(context, section, resulting.id),
+            SectionsAudited.clear_schedule(context, section),
+            Oli.Delivery.Gating.Audited.create_gate(context, section, %{
+              resource_id: hd(unit_ids(state)),
+              type: :schedule
+            })
+          ]
+        end)
+
+      assert Enum.all?(results, &(&1 == {:error, :nested_transaction}))
+    end
   end
 
   defp unit_ids(state), do: Enum.map(state.active.children, & &1.resource_id)
@@ -292,20 +337,5 @@ defmodule Oli.Delivery.Sections.AuditedRemixAndUpdatesTest do
   defp capture_log_result(fun) do
     {result, _log} = ExUnit.CaptureLog.with_log(fun)
     result
-  end
-
-  defp reject_audit_inserts do
-    Repo.query!("""
-    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
-    BEGIN
-      RAISE EXCEPTION 'audit insert rejected by test';
-    END;
-    $$ LANGUAGE plpgsql
-    """)
-
-    Repo.query!("""
-    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
-      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
-    """)
   end
 end

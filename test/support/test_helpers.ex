@@ -306,6 +306,36 @@ defmodule Oli.TestHelpers do
   end
 
   @doc """
+  Writes the gating index of `section` from its current gates, for test setup that inserted gates
+  with the fixtures. Product code rebuilds the index inside `Oli.Delivery.Gating.Audited`.
+  """
+  def update_resource_gating_index_fixture(%Oli.Delivery.Sections.Section{} = section) do
+    Oli.Delivery.Sections.update_section(section, %{
+      resource_gating_index: Oli.Delivery.Gating.generate_resource_gating_index(section)
+    })
+  end
+
+  @doc """
+  Makes every insert into `audit_log_events` fail for the rest of the test's transaction, through
+  a trigger in `pg_temp`, so a test can check that an audited command writes nothing when its
+  event cannot be recorded.
+  """
+  def reject_audit_inserts do
+    Oli.Repo.query!("""
+    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'audit insert rejected by test';
+    END;
+    $$ LANGUAGE plpgsql
+    """)
+
+    Oli.Repo.query!("""
+    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
+      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
+    """)
+  end
+
+  @doc """
   Inserts a gating condition for test setup (a schedule gate by default), without the section
   lock, the gating index, or an audit event. Product code writes conditions through
   `Oli.Delivery.Gating.Audited`.

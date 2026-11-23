@@ -19,6 +19,7 @@ defmodule Oli.Delivery.Settings.Audited.AssessmentSettings do
   alias Ecto.Multi
   alias Oli.Auditing.{Changes, Command, Context}
   alias Oli.Delivery.Sections.{Section, SectionResource, SectionResourceDepot}
+  alias Oli.Delivery.Settings
   alias Oli.Delivery.Settings.AssessmentSettings
   alias Oli.Delivery.Settings.AutoSubmitCustodian
   alias Oli.Delivery.Settings.Audited.Support
@@ -91,11 +92,7 @@ defmodule Oli.Delivery.Settings.Audited.AssessmentSettings do
   # Bulk apply
 
   def bulk_apply(%Context{} = context, %Section{} = section, base_resource_id) do
-    assessments =
-      AssessmentSettings.get_assessments(
-        section,
-        AssessmentSettings.get_student_exceptions(section.id)
-      )
+    assessments = graded_pages(section)
 
     with {:ok, base} <- find_base(assessments, base_resource_id),
          {:ok, changed} <- bulk_write(context, section, base, assessments) do
@@ -105,6 +102,23 @@ defmodule Oli.Delivery.Settings.Audited.AssessmentSettings do
 
       {:ok, changed}
     end
+  end
+
+  # The settings of every graded page of the section, and whether it is adaptive: what the bulk
+  # apply needs, without the names, containers, exceptions, and started pages that the settings
+  # table loads (pages started by students are read inside the transaction).
+  defp graded_pages(section) do
+    section.slug
+    |> DeliveryResolver.graded_pages_revisions_and_section_resources()
+    |> Enum.map(fn {revision, section_resource} ->
+      revision
+      |> Settings.combine(section_resource, nil)
+      |> Map.from_struct()
+      |> Map.merge(%{
+        is_adaptive: Map.get(revision.content || %{}, "advancedDelivery") == true,
+        password: section_resource.password
+      })
+    end)
   end
 
   defp find_base(assessments, base_resource_id) do
@@ -124,6 +138,9 @@ defmodule Oli.Delivery.Settings.Audited.AssessmentSettings do
 
     Command.run(:changed, fn multi ->
       multi
+      # The section first, as the schedule, remix, and publication update lock it before its
+      # resources, so these writers of the same rows cannot deadlock
+      |> Multi.run(:section, fn repo, _changes -> lock_section(repo, section.id) end)
       |> Multi.run(:before, fn _repo, _changes -> lock(section.id, target_ids) end)
       |> Multi.run(:started, fn _repo, _changes ->
         {:ok, AssessmentSettings.student_started_resource_ids(section.id, basic_ids)}
@@ -192,6 +209,13 @@ defmodule Oli.Delivery.Settings.Audited.AssessmentSettings do
   end
 
   # Reads and events
+
+  defp lock_section(repo, section_id) do
+    case repo.one(from(s in Section, where: s.id == ^section_id, lock: "FOR NO KEY UPDATE")) do
+      nil -> {:error, :not_found}
+      section -> {:ok, section}
+    end
+  end
 
   # Locks the section resources of `resource_ids` in ID order, so concurrent writers of the
   # same rows lock them in the same order, and returns them as the before-state.

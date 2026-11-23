@@ -307,5 +307,33 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
       assert event.details["page_count"] == pages_count
       assert event.changes["status"]["after"] == "enabled"
     end
+
+    test "a failed save renders the toggle again from the saved setting", %{
+      conn: conn,
+      product: product,
+      pages_count: pages_count
+    } do
+      {:ok, view, _html} =
+        live_component_isolated(conn, NotesComponent, %{
+          actor: insert(:author),
+          id: "notes-test",
+          section: product,
+          collab_space_pages_count: 0,
+          pages_count: pages_count
+        })
+
+      reject_audit_inserts()
+
+      ExUnit.CaptureLog.capture_log(fn ->
+        view |> form("#notes-test-toggle-notes", %{}) |> render_change()
+      end)
+
+      # The toggle is rendered again, unchecked, and nothing was saved
+      assert has_element?(view, "#notes-test-toggle-wrapper-1")
+      refute has_element?(view, "#notes-test-toggle-notes_checkbox[checked]")
+
+      assert {0, _total} =
+               Collaboration.count_collab_spaces_enabled_in_pages_for_section(product.slug)
+    end
   end
 end

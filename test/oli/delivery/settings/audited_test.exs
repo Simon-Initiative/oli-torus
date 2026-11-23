@@ -105,6 +105,19 @@ defmodule Oli.Delivery.Settings.AuditedTest do
                Audited.update_assessment_settings(context, section, 0, %{max_attempts: 2})
     end
 
+    test "an assessment change inside another transaction is refused", %{
+      section: section,
+      resource_id: resource_id,
+      context: context
+    } do
+      assert {:ok, {:error, :nested_transaction}} =
+               Repo.transaction(fn ->
+                 Audited.update_assessment_settings(context, section, resource_id, %{
+                   max_attempts: 7
+                 })
+               end)
+    end
+
     test "the generic section resource writer refuses assessment settings", %{
       section: section,
       resource_id: resource_id
@@ -132,6 +145,87 @@ defmodule Oli.Delivery.Settings.AuditedTest do
                end)
 
       assert Repo.get!(SectionResource, before.id).max_attempts == before.max_attempts
+    end
+  end
+
+  describe "bulk apply" do
+    setup do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      pages =
+        for n <- 1..3 do
+          insert(:revision,
+            resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+            title: "Quiz #{n}",
+            graded: true
+          )
+        end
+
+      root =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+          title: "Root",
+          children: Enum.map(pages, & &1.resource_id)
+        )
+
+      publication = insert(:publication, project: project, root_resource_id: root.resource_id)
+
+      for revision <- [root | pages] do
+        insert(:published_resource,
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        )
+      end
+
+      section = insert(:section, base_project: project)
+      {:ok, section} = Sections.create_section_resources(section, publication)
+      [base, same, other] = Enum.map(pages, & &1.resource_id)
+
+      # The base and one target already share their settings; the other differs
+      for resource_id <- [base, same] do
+        put_section_resource_fields(
+          Sections.get_section_resource(section.id, resource_id),
+          %{max_attempts: 4}
+        )
+      end
+
+      %{section: section, base: base, same: same, other: other}
+    end
+
+    test "records one event per assessment that changed and returns their count", %{
+      section: section,
+      base: base,
+      same: same,
+      other: other,
+      context: context
+    } do
+      assert {:ok, 1} = Audited.bulk_apply_assessment_settings(context, section, base)
+
+      changed = assert_audited(:assessment_settings_changed, resource_id: other)
+      assert changed.changes["max_attempts"]["after"] == 4
+      assert audit_events(:assessment_settings_changed, resource_id: same) == []
+      assert audit_events(:assessment_settings_changed, resource_id: base) == []
+      assert Sections.get_section_resource(section.id, other).max_attempts == 4
+    end
+
+    test "nothing is written when the events cannot be recorded", %{
+      section: section,
+      base: base,
+      other: other,
+      context: context
+    } do
+      before = Sections.get_section_resource(section.id, other).max_attempts
+      reject_audit_inserts()
+
+      assert {:error, _} =
+               capture_log_result(fn ->
+                 Audited.bulk_apply_assessment_settings(context, section, base)
+               end)
+
+      assert Sections.get_section_resource(section.id, other).max_attempts == before
     end
   end
 
@@ -234,20 +328,5 @@ defmodule Oli.Delivery.Settings.AuditedTest do
   defp capture_log_result(fun) do
     {result, _log} = ExUnit.CaptureLog.with_log(fun)
     result
-  end
-
-  defp reject_audit_inserts do
-    Repo.query!("""
-    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
-    BEGIN
-      RAISE EXCEPTION 'audit insert rejected by test';
-    END;
-    $$ LANGUAGE plpgsql
-    """)
-
-    Repo.query!("""
-    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
-      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
-    """)
   end
 end

@@ -29,7 +29,9 @@ defmodule OliWeb.Live.Components.Sections.NotesComponent do
   def update(assigns, socket) do
     {:ok,
      socket
-     |> assign(assigns)}
+     |> assign(assigns)
+     |> assign_new(:revert_count, fn -> 0 end)
+     |> assign_new(:reverted, fn -> nil end)}
   end
 
   @impl true
@@ -37,7 +39,12 @@ defmodule OliWeb.Live.Components.Sections.NotesComponent do
     ~H"""
     <div id={"notes-#{@id}"}>
       <section>
-        <div class="inline-flex py-2 mb-2 border-b dark:border-gray-700">
+        <%!-- A new id after a failed save renders the toggle again from the saved setting --%>
+        <div
+          id={"#{@id}-toggle-wrapper-#{@revert_count}"}
+          phx-mounted={@revert_count > 0 && JS.focus(to: "##{@reverted}")}
+          class="inline-flex py-2 mb-2 border-b dark:border-gray-700"
+        >
           <span>Enable Notes for all pages in the course</span>
           <.toggle_switch
             id={"#{@id}-toggle-notes"}
@@ -77,7 +84,7 @@ defmodule OliWeb.Live.Components.Sections.NotesComponent do
 
           {:error, _reason} ->
             send(self(), {:flash, :error, "Failed to disable notes"})
-            {:noreply, socket}
+            {:noreply, revert(socket, "toggle-notes_checkbox")}
         end
 
       false ->
@@ -93,8 +100,17 @@ defmodule OliWeb.Live.Components.Sections.NotesComponent do
 
           {:error, _reason} ->
             send(self(), {:flash, :error, "Failed to enable notes"})
-            {:noreply, socket}
+            {:noreply, revert(socket, "toggle-notes_checkbox")}
         end
     end
+  end
+
+  # Nothing was saved: a new wrapper id renders the toggles again from the saved settings, and
+  # focus returns to the control that was used.
+  defp revert(socket, control) do
+    assign(socket,
+      revert_count: socket.assigns.revert_count + 1,
+      reverted: "#{socket.assigns.id}-#{control}"
+    )
   end
 end

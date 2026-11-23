@@ -16,7 +16,9 @@ defmodule Oli.Delivery.Sections.Audited.Remix do
   alias Oli.Delivery.Remix
   alias Oli.Delivery.Remix.{ContainerCreation, State}
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section, SectionResource, SectionResourceMigration}
+  alias Oli.Delivery.DepotCoordinator
+  alias Oli.Delivery.Sections.{Section, SectionCache, SectionResource, SectionResourceDepot}
+  alias Oli.Delivery.Sections.SectionResourceMigration
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Delivery.Sections.Audited.Support
   alias Oli.Lti.PlatformExternalTools
@@ -62,8 +64,15 @@ defmodule Oli.Delivery.Sections.Audited.Remix do
       end
     end)
     |> case do
-      {:ok, section_id} -> {:ok, Sections.get_section!(section_id)}
-      {:error, reason} -> {:error, reason}
+      {:ok, section_id} ->
+        # The rebuild clears these inside the transaction; a read before the commit could have
+        # cached the previous curriculum again
+        SectionCache.clear(section.slug)
+        DepotCoordinator.clear_synchronously(SectionResourceDepot.depot_desc(), section_id)
+        {:ok, Sections.get_section!(section_id)}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

@@ -69,7 +69,7 @@ defmodule Oli.Delivery.Sections.Audited do
   def create_section(%Context{} = context, %SectionCreationRequest{} = request),
     do: Lifecycle.create_section(context, request)
 
-  def create_section(_context, _request), do: {:error, :unauthorized}
+  def create_section(_context, _request), do: {:error, :invalid_request}
 
   @doc """
   Creates a section from `publication` with `attrs` and records `section_created`, for

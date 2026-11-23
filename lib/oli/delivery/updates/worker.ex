@@ -33,10 +33,16 @@ defmodule Oli.Delivery.Updates.Worker do
     end
   end
 
-  @doc "Applies `publication_id` to the section with `section_slug` as `context`."
+  @doc """
+  Applies `publication_id` to the section with `section_slug` as `context`. Returns
+  `{:cancel, :section_not_found}` when no section has that slug.
+  """
   def perform_now(%Context{} = context, section_slug, publication_id) do
-    section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
-    SectionsAudited.apply_publication_update(context, section, publication_id)
+    case Oli.Delivery.Sections.get_section_by_slug(section_slug) do
+      # The section was deleted after the job was enqueued: retrying cannot help
+      nil -> {:cancel, :section_not_found}
+      section -> SectionsAudited.apply_publication_update(context, section, publication_id)
+    end
   end
 
   defp job_context(%{"audit_context" => audit_context}), do: Context.from_job_args(audit_context)

@@ -1699,19 +1699,4 @@ defmodule Oli.Delivery.SectionCreationTest do
   defp resource_access_query(section_id) do
     from(ra in Oli.Delivery.Attempts.Core.ResourceAccess, where: ra.section_id == ^section_id)
   end
-
-  defp reject_audit_inserts do
-    Repo.query!("""
-    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
-    BEGIN
-      RAISE EXCEPTION 'audit insert rejected by test';
-    END;
-    $$ LANGUAGE plpgsql
-    """)
-
-    Repo.query!("""
-    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
-      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
-    """)
-  end
 end

@@ -733,6 +733,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
          assign(socket,
            modal_assigns: Map.merge(socket.assigns.modal_assigns, %{changeset: changeset})
          )}
+
+      # Nothing was saved: the modal closes and the row shows the saved feedback mode again
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> flash_to_liveview(:error, "The scheduled feedback date could not be saved")
+         |> assign(modal_assigns: %{show: false})
+         |> assign(form_id: UUID.uuid4())}
     end
   end
 
@@ -749,15 +757,23 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
               :secure_delivery_unsupported,
               :invalid_secure_delivery_target
             ] do
-    {:noreply, flash_to_liveview(socket, :error, "Secure delivery setting could not be updated")}
+    {:noreply, failed_update(socket, "Secure delivery setting could not be updated")}
   end
 
   defp process_updated_result({:error, :not_found}, socket) do
-    {:noreply, flash_to_liveview(socket, :error, "Could not find section resource")}
+    {:noreply, failed_update(socket, "Could not find section resource")}
   end
 
   defp process_updated_result({:error, _reason}, socket) do
-    {:noreply, flash_to_liveview(socket, :error, "ERROR: Failed to update the section resource")}
+    {:noreply, failed_update(socket, "ERROR: Failed to update the section resource")}
+  end
+
+  # A new form ID re-renders the row from the saved assessments, so the control no longer shows
+  # the value that was not saved.
+  defp failed_update(socket, message) do
+    socket
+    |> flash_to_liveview(:error, message)
+    |> assign(form_id: UUID.uuid4())
   end
 
   defp scoring_mode_bulk_apply_warning(base_assessment, assessments) do
@@ -805,9 +821,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
          )}
 
       _ ->
-        {:noreply,
-         socket
-         |> flash_to_liveview(:error, "ERROR: Setting could not be updated")}
+        {:noreply, failed_update(socket, "ERROR: Setting could not be updated")}
     end
   end
 

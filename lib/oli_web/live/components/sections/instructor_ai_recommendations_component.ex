@@ -26,25 +26,33 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponent d
      |> assign(assigns)
      |> assign_new(:instructor_recommendation_prompt_template, fn ->
        section.instructor_recommendation_prompt_template || Prompt.default_template()
-     end)}
+     end)
+     |> assign_new(:revert_count, fn -> 0 end)
+     |> assign_new(:reverted, fn -> nil end)}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div id={"instructor-ai-recommendations-#{@id}"} class="text-[#373A44]">
-      <div class="flex py-2 mb-2">
-        <div class="font-open-sans text-[16px] leading-[24px] text-[#373A44] dark:text-white">
-          Enable AI Recommendations
+      <%!-- A new id after a failed save renders the toggle again from the saved setting --%>
+      <div
+        id={"#{@id}-toggle-wrapper-#{@revert_count}"}
+        phx-mounted={@revert_count > 0 && JS.focus(to: "##{@reverted}")}
+      >
+        <div class="flex py-2 mb-2">
+          <div class="font-open-sans text-[16px] leading-[24px] text-[#373A44] dark:text-white">
+            Enable AI Recommendations
+          </div>
+          <.toggle_switch
+            id={"#{@id}-toggle-recommendations"}
+            class="ml-4"
+            checked={@section.instructor_recommendations_enabled}
+            on_toggle="toggle_instructor_recommendations"
+            name="toggle_instructor_recommendations"
+            phx_target={@myself}
+          />
         </div>
-        <.toggle_switch
-          id={"#{@id}-toggle-recommendations"}
-          class="ml-4"
-          checked={@section.instructor_recommendations_enabled}
-          on_toggle="toggle_instructor_recommendations"
-          name="toggle_instructor_recommendations"
-          phx_target={@myself}
-        />
       </div>
 
       <section class="mt-8 flex flex-col space-y-4 border-t border-Border-border-default pt-6">
@@ -107,7 +115,7 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponent d
 
       {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to update instructor AI recommendation settings"})
-        {:noreply, socket}
+        {:noreply, revert(socket, "toggle-recommendations_checkbox")}
     end
   end
 
@@ -172,4 +180,13 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponent d
   defp blank_prompt_template?(_), do: true
 
   defp set_value_event(id), do: "instructor_ai_recommendations_set_value:#{id}"
+
+  # Nothing was saved: a new wrapper id renders the toggles again from the saved settings, and
+  # focus returns to the control that was used.
+  defp revert(socket, control) do
+    assign(socket,
+      revert_count: socket.assigns.revert_count + 1,
+      reverted: "#{socket.assigns.id}-#{control}"
+    )
+  end
 end

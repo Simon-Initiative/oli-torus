@@ -1362,19 +1362,4 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
   defp settings_events(project, author) do
     audit_events(:project_settings_changed, project_id: project.id, actor: author, source: :ui)
   end
-
-  defp reject_audit_inserts do
-    Oli.Repo.query!("""
-    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
-    BEGIN
-      RAISE EXCEPTION 'audit insert rejected by test';
-    END;
-    $$ LANGUAGE plpgsql
-    """)
-
-    Oli.Repo.query!("""
-    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
-      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
-    """)
-  end
 end

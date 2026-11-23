@@ -476,7 +476,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
               data: %{end_datetime: yesterday()}
             })
 
-            Oli.Delivery.Gating.update_resource_gating_index(c.section)
+            update_resource_gating_index_fixture(c.section)
 
           false ->
             :ok
@@ -1838,7 +1838,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
           data: %{start_datetime: yesterday(), end_datetime: tomorrow()}
         })
 
-      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
 
@@ -1863,7 +1863,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
           data: %{end_datetime: yesterday()}
         })
 
-      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
 

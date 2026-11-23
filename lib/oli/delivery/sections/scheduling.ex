@@ -7,7 +7,6 @@ defmodule Oli.Delivery.Sections.Scheduling do
   import Ecto.Query, warn: false
 
   alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
 
   @doc """
@@ -24,7 +23,8 @@ defmodule Oli.Delivery.Sections.Scheduling do
   # "manually_scheduled", and "removed_from_schedule" (atom or string keys; other attributes
   # are ignored). Dates are read in `timezone`, at `preferred_scheduling_time` when they have
   # no time. Returns `{:ok, sql, params, ids}` for one `UPDATE` of the section resources
-  # (`$1` is the section ID), `{:ok, :empty}`, or `{:error, :missing_update_parameters}`.
+  # (`$1` is the section ID) that returns the written schedule of each row, `{:ok, :empty}`, or
+  # `{:error, :missing_update_parameters}`.
   def update_statement(updates, timezone, preferred_scheduling_time) do
     case is_valid_update?(updates) do
       false ->
@@ -49,6 +49,9 @@ defmodule Oli.Delivery.Sections.Scheduling do
                   VALUES #{Enum.join(values, ",")}
               ) AS batch_values (id, scheduling_type, start_date, end_date, manually_scheduled, removed_from_schedule)
               WHERE section_resources.id = batch_values.id and section_resources.section_id = $1
+              RETURNING section_resources.id, section_resources.scheduling_type,
+                section_resources.start_date, section_resources.end_date,
+                section_resources.manually_scheduled, section_resources.removed_from_schedule
             """
 
             {:ok, sql, params, Enum.map(updates, &to_id(val(&1, :id)))}
@@ -58,18 +61,6 @@ defmodule Oli.Delivery.Sections.Scheduling do
 
   defp to_id(id) when is_integer(id), do: id
   defp to_id(id) when is_binary(id), do: String.to_integer(id)
-
-  @doc """
-  The section resources of the section with `section_id` that have a start or end date.
-  `Oli.Delivery.Sections.Audited.clear_schedule/2` clears them.
-  """
-  def get_section_resources_with_schedule(_changes, section_id) do
-    from(
-      sr in SectionResource,
-      where:
-        sr.section_id == ^section_id and (not is_nil(sr.start_date) or not is_nil(sr.end_date))
-    )
-  end
 
   @doc """
   Check if a course section has any resources that have been scheduled.

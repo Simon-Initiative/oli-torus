@@ -134,6 +134,26 @@ defmodule Oli.Delivery.Gating.AuditedTest do
       assert Repo.get(GatingCondition, gate.id)
     end
 
+    test "a student exception cannot hang from a gate of another section", %{
+      section_1: section,
+      section_2: other,
+      page1: page,
+      user_a: student,
+      context: context
+    } do
+      foreign = gating_condition_fixture(%{section_id: other.id, resource_id: page.id})
+
+      assert {:error, :gating_condition_not_found} =
+               GatingAudited.create_gate(context, section, %{
+                 resource_id: page.id,
+                 type: :always_open,
+                 parent_id: foreign.id,
+                 user_id: student.id
+               })
+
+      assert Repo.aggregate(GatingCondition, :count) == 1
+    end
+
     test "nothing is written when the event cannot be recorded", %{
       section_1: section,
       page1: page,
@@ -193,6 +213,35 @@ defmodule Oli.Delivery.Gating.AuditedTest do
       # An empty update records nothing
       assert {:ok, 0} = SectionsAudited.update_schedule(context, section, [], "Etc/UTC")
       assert length(audit_events(:curriculum_schedule_changed, section_id: section.id)) == 1
+    end
+
+    test "rewriting a dated row with its own values records nothing", %{
+      section_1: section,
+      page1: page1,
+      context: context
+    } do
+      first = Sections.get_section_resource(section.id, page1.id)
+
+      {:ok, 1} =
+        SectionsAudited.update_schedule(
+          context,
+          section,
+          [schedule_update(first, "due_by", "2099-03-01")],
+          "Etc/UTC"
+        )
+
+      dated = Sections.get_section_resource(section.id, page1.id)
+      assert dated.end_date
+
+      assert {:ok, 1} =
+               SectionsAudited.update_schedule(
+                 context,
+                 section,
+                 [schedule_update(dated, "due_by", nil, dated)],
+                 "Etc/UTC"
+               )
+
+      assert length(audit_events(:curriculum_schedule_changed, resource_id: page1.id)) == 1
     end
 
     test "the generic section resource writer refuses scheduling fields", %{
@@ -267,20 +316,5 @@ defmodule Oli.Delivery.Gating.AuditedTest do
   defp capture_log_result(fun) do
     {result, _log} = ExUnit.CaptureLog.with_log(fun)
     result
-  end
-
-  defp reject_audit_inserts do
-    Repo.query!("""
-    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
-    BEGIN
-      RAISE EXCEPTION 'audit insert rejected by test';
-    END;
-    $$ LANGUAGE plpgsql
-    """)
-
-    Repo.query!("""
-    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
-      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
-    """)
   end
 end

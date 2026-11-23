@@ -208,7 +208,7 @@ defmodule Oli.Delivery.GatingTest do
           data: %{start_datetime: ~U[2099-01-01 00:00:00Z]}
         })
 
-      {:ok, _} = Gating.update_resource_gating_index(section)
+      {:ok, _} = update_resource_gating_index_fixture(section)
 
       assert {:ok, updated_gate} =
                update_gate(gate, %{resource_id: page2.id})
@@ -225,7 +225,7 @@ defmodule Oli.Delivery.GatingTest do
       page1: page
     } do
       gate = gating_condition_fixture(%{section_id: section.id, resource_id: page.id})
-      {:ok, _} = Gating.update_resource_gating_index(section)
+      {:ok, _} = update_resource_gating_index_fixture(section)
 
       assert {:ok, deleted} = delete_gate(gate)
       assert deleted.id == gate.id
@@ -262,7 +262,7 @@ defmodule Oli.Delivery.GatingTest do
       page2: page2
     } do
       gate = gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
-      {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       from(s in Oli.Delivery.Sections.Section, where: s.id == ^section.id)
       |> Repo.update_all(set: [requires_payment: true, amount: nil])
@@ -281,7 +281,7 @@ defmodule Oli.Delivery.GatingTest do
       page1: page
     } do
       gate = gating_condition_fixture(%{section_id: section.id, resource_id: page.id})
-      {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       assert {:error, %Ecto.Changeset{}} =
                update_gate(gate, %{type: nil})
@@ -676,7 +676,7 @@ defmodule Oli.Delivery.GatingTest do
           data: %{end_datetime: yesterday()}
         })
 
-      {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       # check resource that has no gating condition defined
       assert Gating.blocked_by(section, user_a, page1.id) == []
@@ -719,7 +719,7 @@ defmodule Oli.Delivery.GatingTest do
         data: %{start_datetime: yesterday()}
       })
 
-      {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       # check resource that has no gating condition defined for user_a, but it blocked for user_b
       assert Gating.blocked_by(section, user_a, page2.id) == []
@@ -749,7 +749,7 @@ defmodule Oli.Delivery.GatingTest do
         type: :always_open
       })
 
-      {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       # check resource that has no gating condition defined for user_a, but it blocked for user_b
       assert Gating.blocked_by(section, user_a, page2.id) == []
@@ -780,7 +780,7 @@ defmodule Oli.Delivery.GatingTest do
         data: %{start_datetime: tomorrow()}
       })
 
-      {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       # check resource that has no gating condition defined for user_b, but it blocked for user_a
       refute Gating.blocked_by(section, user_a, page2.id) == []
