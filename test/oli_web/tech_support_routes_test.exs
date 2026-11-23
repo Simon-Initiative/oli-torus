@@ -6,17 +6,17 @@ defmodule OliWeb.TechSupportRoutesTest do
   import Phoenix.LiveViewTest
 
   describe "authoring layout" do
-    test "student log in has two tech support buttons", %{conn: conn} do
+    test "student log in has a tech support link and button", %{conn: conn} do
       conn = get(conn, "/")
 
       response_parsed = html_response(conn, 200) |> Floki.parse_document!()
 
       assert response_parsed
-             |> Floki.find("span#tech_support_student_sign_in[phx-click]")
+             |> Floki.find("a#tech_support_student_sign_in[href='#'][tabindex='0'][phx-click]")
              |> Floki.text() =~ "contact our support team."
 
       assert response_parsed
-             |> Floki.find("span#tech_support_navbar_sign_in[phx-click]")
+             |> Floki.find("button#tech_support_navbar_sign_in[type='button'][phx-click]")
              |> Floki.text() =~ "Support"
     end
 
@@ -26,7 +26,7 @@ defmodule OliWeb.TechSupportRoutesTest do
       response_parsed = html_response(conn, 200) |> Floki.parse_document!()
 
       assert response_parsed
-             |> Floki.find("span#tech_support_navbar_sign_in[phx-click]")
+             |> Floki.find("button#tech_support_navbar_sign_in[type='button'][phx-click]")
              |> Floki.text() =~ "Support"
     end
   end
@@ -38,7 +38,9 @@ defmodule OliWeb.TechSupportRoutesTest do
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       assert view
-             |> element("span#tech_support_is_not_independet_instructor[phx-click]")
+             |> element(
+               "a#tech_support_is_not_independet_instructor[href='#'][tabindex='0'][phx-click]"
+             )
              |> render() =~ "contact support."
     end
 
@@ -61,11 +63,11 @@ defmodule OliWeb.TechSupportRoutesTest do
       response_parsed = html_response(conn, 200) |> Floki.parse_document!()
 
       assert response_parsed
-             |> Floki.find("div#trigger-tech-support-modal")
+             |> Floki.find("button#trigger-tech-support-modal")
              |> Floki.text()
 
       assert response_parsed
-             |> Floki.find("span#tech_support_enroll_top_navbar")
+             |> Floki.find("button#tech_support_enroll_top_navbar[type='button']")
              |> Floki.text()
     end
   end

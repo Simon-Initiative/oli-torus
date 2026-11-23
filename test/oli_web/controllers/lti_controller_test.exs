@@ -1308,7 +1308,12 @@ defmodule OliWeb.LtiControllerTest do
           "/lti/register_form?issuer=http%3A%2F%2Fpending-issuer.edu&client_id=pending-client-id&deployment_id=pending-deployment"
         )
 
-      assert html_response(conn, 200) =~ "Pending Institution"
+      html = html_response(conn, 200)
+      assert html =~ "Pending Institution"
+
+      document = Floki.parse_document!(html)
+      assert [_] = Floki.find(document, "a#tech_support_lti_error[href='#'][tabindex='0']")
+      assert [] = Floki.find(document, "a #tech_support_lti_error")
     end
 
     test "show_registration_form can be refreshed without session reconstruction", %{conn: conn} do

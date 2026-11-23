@@ -1463,19 +1463,40 @@ defmodule OliWeb.Components.Common do
     """
   end
 
+  @doc """
+  Renders a Tech Support launcher and saves focus for dismissal.
+
+  The default is a native button. Set `inline` for a link that wraps with surrounding text.
+  Both variants stay in the tab order across browsers and align text to the start.
+  Set `aria_label` when the slot contains only an icon.
+  """
   attr :id, :string, required: true
   attr :class, :string, default: ""
+  attr :aria_label, :string, default: nil
+  attr :inline, :boolean, default: false
   slot :inner_block, required: true
 
   def tech_support_link(assigns) do
+    {tag_name, tag_attrs} =
+      case assigns.inline do
+        true -> {"a", %{href: "#"}}
+        false -> {"button", %{type: "button"}}
+      end
+
+    assigns = assign(assigns, tag_name: tag_name, tag_attrs: tag_attrs)
+
     ~H"""
-    <span
+    <.dynamic_tag
+      tag_name={@tag_name}
       id={@id}
+      tabindex="0"
+      aria-label={@aria_label}
       phx-click={JS.push_focus() |> JS.dispatch("click", to: "#trigger-tech-support-modal")}
-      class={@class}
+      class={["text-start", @class]}
+      {@tag_attrs}
     >
       {render_slot(@inner_block)}
-    </span>
+    </.dynamic_tag>
     """
   end
 

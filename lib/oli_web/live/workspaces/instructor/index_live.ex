@@ -212,6 +212,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
             To create course sections,
             <.tech_support_link
               id="tech_support_is_not_independet_instructor"
+              inline
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline text-base font-bold font-['Open Sans'] tracking-tight cursor-pointer"
             >
               contact support.

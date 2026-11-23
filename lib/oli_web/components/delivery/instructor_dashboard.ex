@@ -159,6 +159,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   defp is_active?(current_view, view), do: current_view == view
 
+  @doc """
+  Renders the shared instructor navigation header with account and Tech Support controls.
+  """
   attr(:ctx, SessionContext)
   attr(:is_admin, :boolean, required: true)
   attr(:section, Section)
@@ -226,9 +229,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
         <div class="flex items-center border-l border-slate-300 my-2">
           <.tech_support_link
             id="tech_support_top_navbar"
-            class="btn rounded ml-4 no-underline text-slate-100 hover:no-underline hover:bg-delivery-instructor-dashboard-header-700 active:bg-delivery-instructor-dashboard-header-600"
+            aria_label={gettext("Tech Support")}
+            class="btn rounded ml-4 no-underline text-slate-100 hover:no-underline hover:bg-delivery-instructor-dashboard-header-700 active:bg-delivery-instructor-dashboard-header-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
-            <i class="fa-regular fa-circle-question fa-lg"></i>
+            <i class="fa-regular fa-circle-question fa-lg" aria-hidden="true"></i>
           </.tech_support_link>
         </div>
       </div>
