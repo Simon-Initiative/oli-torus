@@ -269,6 +269,46 @@ defmodule OliWeb.AuthorAuthTest do
         end
       end
 
+      test "#{hook} redirects a locked system admin to the login page", %{conn: conn} do
+        {:ok, author} = Accounts.lock_author(author_with_role(:system_admin))
+
+        assert {:halt, updated_socket} =
+                 AuthorAuth.on_mount(
+                   unquote(hook),
+                   %{},
+                   session_for(conn, author),
+                   role_hook_socket()
+                 )
+
+        assert {:redirect, %{to: "/authors/log_in"}} = updated_socket.redirected
+
+        assert updated_socket.assigns.flash["error"] ==
+                 "Your account has been locked. Please contact support for assistance."
+      end
+
+      test "#{hook} redirects an unconfirmed system admin to the confirmation page", %{
+        conn: conn
+      } do
+        author =
+          :system_admin
+          |> author_with_role()
+          |> Ecto.Changeset.change(email_confirmed_at: nil)
+          |> Oli.Repo.update!()
+
+        assert {:halt, updated_socket} =
+                 AuthorAuth.on_mount(
+                   unquote(hook),
+                   %{},
+                   session_for(conn, author),
+                   role_hook_socket()
+                 )
+
+        assert {:redirect, %{to: "/authors/confirm"}} = updated_socket.redirected
+
+        assert updated_socket.assigns.flash["info"] ==
+                 "You must confirm your email to continue."
+      end
+
       test "#{hook} redirects to the login page if there isn't an author_token", %{conn: conn} do
         assert {:halt, updated_socket} =
                  AuthorAuth.on_mount(

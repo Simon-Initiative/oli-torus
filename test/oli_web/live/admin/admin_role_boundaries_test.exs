@@ -89,6 +89,27 @@ defmodule OliWeb.Admin.AdminRoleBoundariesTest do
     end
   end
 
+  describe "locked account admin" do
+    setup [:account_admin_conn]
+
+    test "is rejected on live navigation within the session after being locked", %{
+      conn: conn,
+      account_admin: account_admin
+    } do
+      {:ok, view, _html} = live(conn, ~p"/admin/users")
+
+      {:ok, _author} = Accounts.lock_author(account_admin)
+
+      result = live_redirect(view, to: ~p"/admin/authors")
+
+      assert {:error, {:redirect, %{to: "/authors/log_in"}}} = result
+      assert {:ok, conn} = follow_redirect(result, conn)
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Your account has been locked. Please contact support for assistance."
+    end
+  end
+
   describe "system admin" do
     setup [:admin_conn]
 
