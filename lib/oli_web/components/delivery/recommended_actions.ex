@@ -106,13 +106,13 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
     ~H"""
     <.link
       navigate={@to}
-      class="group border border-gray-200 dark:border-gray-600 rounded p-3 pl-8 flex flex-col justify-center cursor-pointer hover:bg-delivery-primary-50 active:bg-delivery-primary active:text-white hover:no-underline"
+      class="group border border-gray-200 dark:border-gray-600 rounded p-3 pl-8 flex flex-col justify-center cursor-pointer text-Text-text-link hover:bg-delivery-primary-50 dark:hover:bg-gray-700 active:bg-delivery-primary active:text-white hover:no-underline"
     >
       <div class="flex items-center gap-2">
-        {render_slot(@icon)}
+        <span aria-hidden="true">{render_slot(@icon)}</span>
         <h4>{render_slot(@title)}</h4>
       </div>
-      <span class="torus-span group-hover:text-gray-500 group-active:text-white">
+      <span class="torus-span group-hover:text-gray-500 dark:group-hover:text-gray-200 group-active:text-white">
         {render_slot(@description)}
       </span>
     </.link>
