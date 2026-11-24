@@ -3,6 +3,10 @@ export const ListNavigatorDropdown = {
     this.attachInputListener();
     this.attachPointerListener();
     this.setInitialHighlightedIndex();
+    this.onShowStart = () => this.syncExpandedState(true);
+    this.onHideStart = () => this.syncExpandedState(false);
+    this.el.addEventListener('phx:show-start', this.onShowStart);
+    this.el.addEventListener('phx:hide-start', this.onHideStart);
     this.syncExpandedState(this.isOpen());
     this.applyHighlight(false);
   },
@@ -10,7 +14,6 @@ export const ListNavigatorDropdown = {
   updated() {
     this.attachInputListener();
     this.attachPointerListener();
-    this.syncExpandedState(this.isOpen());
     this.ensureValidHighlightedIndex();
     this.applyHighlight(false);
   },
@@ -23,6 +26,9 @@ export const ListNavigatorDropdown = {
     if (this.onMouseMove) {
       this.el.removeEventListener('mousemove', this.onMouseMove);
     }
+
+    this.el.removeEventListener('phx:show-start', this.onShowStart);
+    this.el.removeEventListener('phx:hide-start', this.onHideStart);
   },
 
   attachInputListener() {
@@ -70,6 +76,12 @@ export const ListNavigatorDropdown = {
   handleKeyDown(event: KeyboardEvent) {
     if (!this.isOpen()) return;
 
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeDropdown();
+      return;
+    }
+
     const options = this.getOptions();
     if (options.length === 0) return;
 
@@ -87,10 +99,6 @@ export const ListNavigatorDropdown = {
       case 'Enter':
         event.preventDefault();
         options[this.highlightedIndex]?.click();
-        break;
-      case 'Escape':
-        event.preventDefault();
-        this.closeDropdown();
         break;
       default:
         break;
@@ -152,15 +160,12 @@ export const ListNavigatorDropdown = {
   syncExpandedState(isExpanded: boolean) {
     const trigger = this.getTriggerElement();
     if (trigger) {
-      trigger.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+      this.js().setAttribute(trigger, 'aria-expanded', isExpanded ? 'true' : 'false');
     }
   },
 
   closeDropdown() {
-    this.el.style.removeProperty('display');
-    this.el.classList.remove('inline-flex');
-    this.el.classList.add('hidden');
-    this.syncExpandedState(false);
+    this.js().hide(this.el);
     this.getTriggerElement()?.focus();
   },
 

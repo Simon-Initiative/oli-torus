@@ -112,7 +112,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                             offset={8}
                           >
                             <:trigger>
-                              <span class="scale-[0.9]">
+                              <span class="scale-[0.9]" aria-hidden="true">
                                 <Icons.info />
                               </span>
                             </:trigger>
@@ -136,7 +136,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                           offset={8}
                         >
                           <:trigger>
-                            <span class="scale-[0.9]">
+                            <span class="scale-[0.9]" aria-hidden="true">
                               <Icons.info />
                             </span>
                           </:trigger>
@@ -230,7 +230,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                           disabled={sentiment_disabled?(@recommendation, @tile_state)}
                           class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-default disabled:opacity-60"
                         >
-                          <Icons.thumbs_up_ai class="stroke-current" />
+                          <Icons.thumbs_up_ai class="stroke-current" aria-hidden="true" />
                         </button>
                         <div
                           id={"summary-recommendation-tooltip-up-#{@id}"}
@@ -251,7 +251,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                           disabled={sentiment_disabled?(@recommendation, @tile_state)}
                           class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-default disabled:opacity-60"
                         >
-                          <Icons.thumbs_down_ai class="stroke-current" />
+                          <Icons.thumbs_down_ai class="stroke-current" aria-hidden="true" />
                         </button>
                         <div
                           id={"summary-recommendation-tooltip-down-#{@id}"}
@@ -276,7 +276,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       }
                       class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      <Icons.regenerate_ai class="stroke-current" />
+                      <Icons.regenerate_ai class="stroke-current" aria-hidden="true" />
                     </button>
                     <div
                       id={"summary-recommendation-tooltip-regenerate-#{@id}"}

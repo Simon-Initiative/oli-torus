@@ -64,6 +64,34 @@ defmodule OliWeb.Components.Delivery.Students.EmailButtonTest do
       refute html =~ "chevron_down"
     end
 
+    test "hides the envelope inside the Email Selected button from screen readers but keeps its text as its name",
+         %{conn: conn} do
+      attrs = %{
+        variant: :minimal,
+        selected_students: [1],
+        selected_emails: "student1@test.com",
+        students: [
+          %{id: 1, email: "student1@test.com", name: "Student 1"}
+        ],
+        section_title: "Test Course",
+        instructor_email: "instructor@test.com",
+        section_slug: "test-section"
+      }
+
+      {:ok, _lcd, html} = live_component_isolated(conn, EmailButton, attrs)
+
+      assert [button] =
+               html
+               |> Floki.parse_document!()
+               |> Floki.find(~s{button[phx-click="show_email_modal"]})
+
+      assert button |> Floki.text() |> String.trim() == "Email Selected"
+      assert [_envelope] = Floki.find(button, "svg")
+
+      assert [_hidden_envelope] =
+               Floki.find(button, ~s{svg[aria-hidden="true"], [aria-hidden="true"] svg})
+    end
+
     test "defaults selected_emails when it is not provided", %{conn: conn} do
       attrs = %{
         selected_students: [1],

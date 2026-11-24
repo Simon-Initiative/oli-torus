@@ -42,7 +42,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
               class="inline-flex items-center gap-1.5 text-xs font-bold text-Text-text-button transition hover:text-Text-text-button hover:underline focus:outline-none focus:underline"
               phx-disable-with="Preparing ZIP..."
             >
-              <span class="inline-flex items-center justify-center text-current [&_svg]:h-4 [&_svg]:w-4">
+              <span
+                class="inline-flex items-center justify-center text-current [&_svg]:h-4 [&_svg]:w-4"
+                aria-hidden="true"
+              >
                 <OliWeb.Icons.download stroke_class="stroke-current" />
               </span>
               <span>Download dashboard data (CSV)</span>

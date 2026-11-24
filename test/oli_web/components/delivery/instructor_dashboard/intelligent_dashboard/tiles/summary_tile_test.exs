@@ -721,6 +721,65 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       assert html =~ "Shift attention to Module 3."
       refute html =~ "Scoped overview for Unit 2."
     end
+
+    test "hides the info icon inside each metric definition button from screen readers but keeps its name, with or without the recommendation panel",
+         %{conn: conn} do
+      for show_recommendation <- [true, false] do
+        {:ok, component, _html} =
+          live_component_isolated(conn, SummaryTile, %{
+            id: "summary_tile",
+            projection: ready_projection(),
+            projection_status: %{status: :ready},
+            tile_state: %{regenerate_in_flight?: false},
+            show_recommendation: show_recommendation
+          })
+
+        triggers =
+          component
+          |> render()
+          |> Floki.parse_document!()
+          |> Floki.find(~s{button[id^="summary-tooltip-trigger-"]})
+
+        assert triggers |> Enum.flat_map(&Floki.attribute(&1, "aria-label")) |> Enum.sort() == [
+                 "Average Assessment Score definition",
+                 "Average Class Proficiency definition",
+                 "Average Student Progress definition"
+               ]
+
+        for trigger <- triggers do
+          assert [_icon] = Floki.find(trigger, "svg")
+
+          assert [_hidden_icon] =
+                   Floki.find(trigger, ~s{svg[aria-hidden="true"], [aria-hidden="true"] svg})
+        end
+      end
+    end
+
+    test "hides the icons inside the recommendation buttons from screen readers but keeps their names",
+         %{conn: conn} do
+      {:ok, component, _html} =
+        live_component_isolated(conn, SummaryTile, %{
+          id: "summary_tile",
+          projection: ready_projection(),
+          projection_status: %{status: :ready},
+          tile_state: %{regenerate_in_flight?: false}
+        })
+
+      doc = component |> render() |> Floki.parse_document!()
+
+      icons =
+        for label <- ["Good recommendation", "Bad recommendation", "Regenerate recommendation"] do
+          assert [button] = Floki.find(doc, "button[aria-label='#{label}']")
+          assert [icon] = Floki.find(button, "svg")
+          {label, Floki.attribute(icon, "aria-hidden")}
+        end
+
+      assert icons == [
+               {"Good recommendation", ["true"]},
+               {"Bad recommendation", ["true"]},
+               {"Regenerate recommendation", ["true"]}
+             ]
+    end
   end
 
   defp scope_projection(

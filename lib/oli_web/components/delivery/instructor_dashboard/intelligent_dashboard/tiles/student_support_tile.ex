@@ -189,7 +189,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       <div class="mb-4 space-y-2 px-1 pt-1">
         <div class="flex items-start justify-between gap-4">
           <div class="flex items-center gap-2">
-            <Icons.person class="fill-Text-text-high" />
+            <Icons.person class="fill-Text-text-high" aria-hidden="true" />
             <h3 class="text-lg font-semibold leading-6 text-Text-text-high">Student Support</h3>
           </div>
           <.link
@@ -225,6 +225,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             >
               <div
                 id={"student-support-chart-#{@id}"}
+                aria-hidden="true"
                 phx-hook="StudentSupportChart"
                 data-spec={Jason.encode!(@chart_spec)}
                 data-colors={Jason.encode!(@chart_colors)}
@@ -567,13 +568,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       phx-value-student_id={@value}
       class="inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[3px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
     >
-      <span class={[
-        "inline-flex h-5 w-5 items-center justify-center rounded-[3px] border",
-        @checked &&
-          "border-transparent bg-Fill-Buttons-fill-primary text-Icon-icon-white",
-        !@checked &&
-          "border-2 border-Border-border-default bg-Background-bg-primary text-transparent"
-      ]}>
+      <span
+        aria-hidden="true"
+        class={[
+          "inline-flex h-5 w-5 items-center justify-center rounded-[3px] border",
+          @checked &&
+            "border-transparent bg-Fill-Buttons-fill-primary text-Icon-icon-white",
+          !@checked &&
+            "border-2 border-Border-border-default bg-Background-bg-primary text-transparent"
+        ]}
+      >
         <Icons.checkmark class="h-4 w-4" />
       </span>
     </button>

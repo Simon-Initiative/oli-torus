@@ -129,19 +129,19 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           class="px-4 py-2 rounded-md flex justify-center items-center gap-2"
         >
           <div class="pr-2 flex justify-end items-center gap-2 text-Text-text-button opacity-90">
-            <Icons.left_chevron class="w-4 h-4 stroke-Text-text-button fill-none" />
+            <Icons.left_chevron
+              class="w-4 h-4 stroke-Text-text-button fill-none"
+              aria-hidden="true"
+            />
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
               Previous {resource_label(@previous_item)}
             </div>
           </div>
         </.nav_link>
       <% else %>
-        <div
-          role="previous item link disabled"
-          class="px-4 py-2 rounded-md flex justify-center items-center gap-2 cursor-not-allowed"
-        >
+        <div class="px-4 py-2 rounded-md flex justify-center items-center gap-2 cursor-not-allowed">
           <div class="pr-2 flex justify-end items-center gap-2 text-gray-400 opacity-50">
-            <Icons.left_chevron class="w-4 h-4 stroke-gray-400/50 fill-none" />
+            <Icons.left_chevron class="w-4 h-4 stroke-gray-400/50 fill-none" aria-hidden="true" />
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
               Previous {@current_item_label}
             </div>
@@ -162,6 +162,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           }
           aria-haspopup="listbox"
           aria-controls="searchable_dropdown"
+          aria-expanded="false"
           class="w-[465px] px-2 py-1 rounded-md inline-flex flex-row justify-center items-center"
         >
           <div
@@ -172,7 +173,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
               do: item_title(@current_item_label, @current_item),
               else: "No item selected"}
           </div>
-          <div class="self-end">
+          <div class="self-end" aria-hidden="true">
             <Icons.chevron_down width="24" height="24" />
           </div>
         </button>
@@ -195,19 +196,16 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
               Next {resource_label(@next_item)}
             </div>
-            <Icons.chevron_right width="24" height="24" />
+            <Icons.chevron_right width="24" height="24" aria-hidden="true" />
           </div>
         </.nav_link>
       <% else %>
-        <div
-          role="next item link disabled"
-          class="px-4 py-2 rounded-md flex justify-center items-center gap-2 cursor-not-allowed"
-        >
+        <div class="px-4 py-2 rounded-md flex justify-center items-center gap-2 cursor-not-allowed">
           <div class="pl-2 flex justify-center items-center gap-2 text-gray-400 opacity-50">
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
               Next {@current_item_label}
             </div>
-            <Icons.chevron_right width="24" height="24" />
+            <Icons.chevron_right width="24" height="24" aria-hidden="true" />
           </div>
         </div>
       <% end %>

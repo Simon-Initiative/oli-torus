@@ -519,5 +519,77 @@ defmodule OliWeb.Components.Delivery.ListNavigatorTest do
       refute html =~ "previous item link"
       refute html =~ "next item link"
     end
+
+    test "renders the item selector collapsed, so screen readers announce its state before any interaction",
+         %{
+           conn: conn,
+           items: items,
+           current_item_resource_id: current_id,
+           path_builder_fn: path_fn
+         } do
+      doc = render_navigator(conn, items, current_id, path_fn)
+
+      assert [trigger] = Floki.find(doc, ~s{button[aria-controls="searchable_dropdown"]})
+      assert Floki.attribute(trigger, "aria-expanded") == ["false"]
+    end
+
+    test "hides the item selector's arrow from screen readers but keeps the selected item as its name",
+         %{conn: conn, items: items, path_builder_fn: path_fn} do
+      doc = render_navigator(conn, items, Enum.at(items, 1).resource_id, path_fn)
+
+      [trigger] = Floki.find(doc, ~s{button[aria-controls="searchable_dropdown"]})
+      assert [_arrow] = Floki.find(trigger, "svg")
+      assert [_hidden_arrow] = Floki.find(trigger, ~s{[aria-hidden="true"] svg})
+      assert Floki.text(trigger) =~ "Unit 1: Fundamentals Unit"
+      refute Floki.text(Floki.find(trigger, ~s{[aria-hidden="true"]})) =~ "Fundamentals Unit"
+    end
+
+    test "hides the Previous and Next arrows from screen readers, whether or not they can be followed",
+         %{conn: conn, items: items, path_builder_fn: path_fn} do
+      first = render_navigator(conn, items, Enum.at(items, 0).resource_id, path_fn)
+      last = render_navigator(conn, items, Enum.at(items, 3).resource_id, path_fn)
+
+      arrows =
+        Floki.find(first, "div.cursor-not-allowed svg") ++
+          Floki.find(first, ~s{[role="next item link"] svg}) ++
+          Floki.find(last, ~s{[role="previous item link"] svg}) ++
+          Floki.find(last, "div.cursor-not-allowed svg")
+
+      assert length(arrows) == 4
+      assert Enum.all?(arrows, &(Floki.attribute(&1, "aria-hidden") == ["true"]))
+    end
+
+    test "does not present an unavailable Previous or Next as a link", %{
+      conn: conn,
+      items: items,
+      path_builder_fn: path_fn
+    } do
+      first = render_navigator(conn, items, Enum.at(items, 0).resource_id, path_fn)
+      last = render_navigator(conn, items, Enum.at(items, 3).resource_id, path_fn)
+
+      assert [unavailable_previous] = Floki.find(first, "div.cursor-not-allowed")
+      assert [unavailable_next] = Floki.find(last, "div.cursor-not-allowed")
+
+      assert Floki.text(unavailable_previous) =~ "Previous"
+      assert Floki.text(unavailable_next) =~ "Next"
+
+      for unavailable <- [unavailable_previous, unavailable_next] do
+        assert Floki.attribute(unavailable, "role") == []
+        assert Floki.find(unavailable, ~s{a, [role*="link"]}) == []
+      end
+    end
+  end
+
+  defp render_navigator(conn, items, current_item_resource_id, path_builder_fn) do
+    {:ok, _lcd, html} =
+      live_component_isolated(
+        conn,
+        ListNavigator,
+        items: items,
+        current_item_resource_id: current_item_resource_id,
+        path_builder_fn: path_builder_fn
+      )
+
+    Floki.parse_document!(html)
   end
 end

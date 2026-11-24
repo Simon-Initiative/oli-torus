@@ -60,6 +60,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       toggle_event={@toggle_event}
       reorder_event={@reorder_event}
       show_move_handle={@show_move_handle}
+      move_label={gettext("Move Engagement card")}
     >
       <div
         id="learning-dashboard-engagement-group-tiles"

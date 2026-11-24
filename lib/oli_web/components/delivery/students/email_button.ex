@@ -28,7 +28,9 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
           class="whitespace-nowrap !gap-1 !rounded-lg !bg-transparent"
         >
           <:icon_left>
-            <Icons.email class="h-4 w-4 stroke-current" />
+            <span class="inline-flex" aria-hidden="true">
+              <Icons.email class="h-4 w-4 stroke-current" />
+            </span>
           </:icon_left>
           Email Selected
         </Button.button>

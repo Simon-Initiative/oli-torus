@@ -111,7 +111,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                     phx-click="assessment_row_toggled"
                     phx-value-assessment_id={row.assessment_id}
                     class="flex min-h-[112px] w-full items-start justify-between gap-5 rounded-xl px-[15px] py-[15px] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-Fill-Buttons-fill-primary"
-                    aria-expanded={expanded?(@expanded_assessment_id, row.assessment_id)}
+                    aria-expanded={to_string(expanded?(@expanded_assessment_id, row.assessment_id))}
                     aria-controls={"assessment-details-#{row.assessment_id}"}
                     aria-label={
                       disclosure_label(
@@ -150,13 +150,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       </div>
                     </div>
 
-                    <Icons.chevron_down class={
+                    <Icons.chevron_down
+                      aria-hidden="true"
+                      class={
                         "mt-[2px] h-6 w-6 shrink-0 stroke-Text-text-high transition-transform" <>
                           if(expanded?(@expanded_assessment_id, row.assessment_id),
                             do: " rotate-180",
                             else: ""
                           )
-                      } />
+                      }
+                    />
                   </button>
 
                   <div
@@ -174,7 +177,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                         phx-value-assessment_id={row.assessment_id}
                         class="inline-flex items-center justify-center gap-1 rounded-md py-1 text-sm font-semibold leading-4 text-Text-text-button transition hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
                       >
-                        <Icons.email class="h-4 w-4 stroke-current" /> Email Students Not Completed
+                        <span class="inline-flex" aria-hidden="true">
+                          <Icons.email class="h-4 w-4 stroke-current" />
+                        </span>
+                        Email Students Not Completed
                       </button>
 
                       <div class="w-full pt-8">
