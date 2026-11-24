@@ -33,9 +33,7 @@ test.beforeAll(async ({ seedScenario }) => {
 });
 
 test.describe('Tech Support keyboard access @pr @accessibility', () => {
-  test('inline support text wraps naturally and opens help on a narrow screen', async ({
-    page,
-  }) => {
+  test('inline support button fits and opens help on a narrow screen', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 900 });
     await new TechSupportCO(page).expectInlineSupportAccess();
   });

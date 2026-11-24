@@ -1312,7 +1312,7 @@ defmodule OliWeb.LtiControllerTest do
       assert html =~ "Pending Institution"
 
       document = Floki.parse_document!(html)
-      assert [_] = Floki.find(document, "a#tech_support_lti_error[href='#'][tabindex='0']")
+      assert [_] = Floki.find(document, "button#tech_support_lti_error[type='button']")
       assert [] = Floki.find(document, "a #tech_support_lti_error")
     end
 

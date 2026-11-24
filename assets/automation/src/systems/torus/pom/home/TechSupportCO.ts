@@ -12,7 +12,6 @@ export class TechSupportCO {
     await this.page.keyboard.press('Tab');
     await expect(launcher).toBeFocused();
     await expect(launcher).toHaveAttribute('type', 'button');
-    await expect(launcher).toHaveAttribute('tabindex', '0');
     await expect(launcher).toHaveCSS('outline-style', 'solid');
     await expect(launcher).toHaveCSS('outline-width', '2px');
 
@@ -27,12 +26,12 @@ export class TechSupportCO {
   }
 
   async expectInlineSupportAccess() {
-    const launcher = this.page.getByRole('link', {
+    const launcher = this.page.getByRole('button', {
       name: 'contact our support team.',
       exact: true,
     });
     await expect(launcher).toBeVisible();
-    await expect(launcher).toHaveCSS('display', 'inline');
+    await expect(launcher).toHaveAttribute('type', 'button');
     await expect(launcher).toHaveCSS('text-align', 'start');
 
     const bounds = await launcher.boundingBox();
@@ -40,14 +39,22 @@ export class TechSupportCO {
     expect(bounds!.x).toBeGreaterThanOrEqual(0);
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(this.page.viewportSize()!.width);
 
+    await expect(
+      this.page.locator('[data-phx-session]:has(#trigger-tech-support-modal)'),
+    ).toHaveClass(/phx-connected/);
+
     const url = this.page.url();
     await launcher.focus();
-    await this.page.keyboard.press('Enter');
     const dialog = this.page.getByRole('dialog', { name: 'Tech Support', exact: true });
-    await expect(dialog).toBeVisible();
-    await this.page.keyboard.press('Escape');
-    await expect(dialog).toBeHidden();
-    await expect(launcher).toBeFocused();
+
+    for (const key of ['Enter', 'Space']) {
+      await this.page.keyboard.press(key);
+      await expect(dialog).toBeVisible();
+      await this.page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+      await expect(launcher).toBeFocused();
+    }
+
     expect(this.page.url()).toBe(url);
   }
 }

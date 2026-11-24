@@ -1464,10 +1464,11 @@ defmodule OliWeb.Components.Common do
   end
 
   @doc """
-  Renders a Tech Support launcher and saves focus for dismissal.
+  Renders a native button that opens Tech Support and saves focus for dismissal.
 
-  The default is a native button. Set `inline` for a link that wraps with surrounding text.
-  Both variants stay in the tab order across browsers and align text to the start.
+  Set `inline` for a text-style button within prose. Both variants retain native
+  Enter and Space activation. On narrow screens, the button may reflow as a single
+  control rather than wrapping across lines with the surrounding sentence.
   Set `aria_label` when the slot contains only an icon.
   """
   attr :id, :string, required: true
@@ -1477,26 +1478,20 @@ defmodule OliWeb.Components.Common do
   slot :inner_block, required: true
 
   def tech_support_link(assigns) do
-    {tag_name, tag_attrs} =
-      case assigns.inline do
-        true -> {"a", %{href: "#"}}
-        false -> {"button", %{type: "button"}}
-      end
-
-    assigns = assign(assigns, tag_name: tag_name, tag_attrs: tag_attrs)
-
     ~H"""
-    <.dynamic_tag
-      tag_name={@tag_name}
+    <button
       id={@id}
-      tabindex="0"
+      type="button"
       aria-label={@aria_label}
       phx-click={JS.push_focus() |> JS.dispatch("click", to: "#trigger-tech-support-modal")}
-      class={["text-start", @class]}
-      {@tag_attrs}
+      class={[
+        "text-start",
+        @inline && "p-0 border-0 bg-transparent align-baseline max-w-full whitespace-normal",
+        @class
+      ]}
     >
       {render_slot(@inner_block)}
-    </.dynamic_tag>
+    </button>
     """
   end
 

@@ -6,13 +6,13 @@ defmodule OliWeb.TechSupportRoutesTest do
   import Phoenix.LiveViewTest
 
   describe "authoring layout" do
-    test "student log in has a tech support link and button", %{conn: conn} do
+    test "student log in has two tech support buttons", %{conn: conn} do
       conn = get(conn, "/")
 
       response_parsed = html_response(conn, 200) |> Floki.parse_document!()
 
       assert response_parsed
-             |> Floki.find("a#tech_support_student_sign_in[href='#'][tabindex='0'][phx-click]")
+             |> Floki.find("button#tech_support_student_sign_in[type='button'][phx-click]")
              |> Floki.text() =~ "contact our support team."
 
       assert response_parsed
@@ -39,7 +39,7 @@ defmodule OliWeb.TechSupportRoutesTest do
 
       assert view
              |> element(
-               "a#tech_support_is_not_independet_instructor[href='#'][tabindex='0'][phx-click]"
+               "button#tech_support_is_not_independet_instructor[type='button'][phx-click]"
              )
              |> render() =~ "contact support."
     end
@@ -62,13 +62,10 @@ defmodule OliWeb.TechSupportRoutesTest do
       conn = get(conn, "/sections/#{section.slug}/enroll")
       response_parsed = html_response(conn, 200) |> Floki.parse_document!()
 
-      assert response_parsed
-             |> Floki.find("button#trigger-tech-support-modal")
-             |> Floki.text()
+      assert [_] = Floki.find(response_parsed, "button#trigger-tech-support-modal")
 
-      assert response_parsed
-             |> Floki.find("button#tech_support_enroll_top_navbar[type='button']")
-             |> Floki.text()
+      assert [_] =
+               Floki.find(response_parsed, "button#tech_support_enroll_top_navbar[type='button']")
     end
   end
 

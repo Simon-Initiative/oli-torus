@@ -137,7 +137,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
         assert has_element?(
                  view,
-                 "button#tech_support_top_navbar[type='button'][tabindex='0'][aria-label='Tech Support']:not([disabled])"
+                 "button#tech_support_top_navbar[type='button'][aria-label='Tech Support']:not([disabled])"
                )
       end
     end
