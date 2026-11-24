@@ -11,10 +11,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
   alias Oli.Resources.Collaboration
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.LiveSessionPlugs.InitPage
+  alias Phoenix.LiveView.Socket
 
   @default_selected_view :gallery
   @sayg_banner_title "Score as you go Activity"
@@ -4276,6 +4279,29 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Verify it redirects to the adaptive route
       assert redirect_path =~ "/adaptive_lesson/"
+    end
+
+    test "disables idle timeout in connected adaptive chromeless page props", %{
+      user: user,
+      section: section,
+      exploration_1: exploration_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      create_attempt(user, section, exploration_1, %{lifecycle_state: :active})
+
+      page_context = PageContext.create_for_visit(section, exploration_1.slug, user, UUID.uuid4())
+
+      socket = %Socket{
+        endpoint: @endpoint,
+        transport_pid: self(),
+        assigns: %{__changed__: %{}, page_context: page_context, section: section}
+      }
+
+      assert {:cont, socket} = InitPage.on_mount(:init_context_state, %{}, %{}, socket)
+
+      assert socket.assigns.view == :adaptive_chromeless
+      assert %{screenIdleTimeOutInSeconds: 0, signoutUrl: nil} = socket.assigns.app_params
     end
   end
 

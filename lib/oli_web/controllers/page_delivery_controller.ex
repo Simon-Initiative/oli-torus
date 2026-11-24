@@ -748,15 +748,9 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          preview_mode
        ) do
-    # Control idle timeout based on rendering context.
-    # This function is reused in two scenarios:
-    #   1. True chromeless pages (displayApplicationChrome = false) - timeout enabled
-    #   2. Iframe rendering for chrome pages (displayApplicationChrome = true) - timeout disabled
-    # When rendered in an iframe (case #2), the parent page manages the user session,
-    # so we disable idle timeout here to prevent duplicate/conflicting logout behavior.
-
-    screen_idle_timeout_disabled? =
-      Map.get(context.page.content, "displayApplicationChrome", false)
+    # Disable idle timeout for all adaptive/chromeless rendering.
+    # Adaptive pages should match basic Torus page behavior without session timeout.
+    screen_idle_timeout_disabled? = true
 
     section = conn.assigns.section
 
@@ -845,7 +839,7 @@ defmodule OliWeb.PageDeliveryController do
       graded: context.page.graded,
       latest_attempts: %{},
       mount_dialogue_window?:
-        !screen_idle_timeout_disabled? and
+        !Map.get(context.page.content, "displayApplicationChrome", false) and
           not (context.review_mode and section_resource.secure_delivery),
       next_page: next,
       current_page: current,

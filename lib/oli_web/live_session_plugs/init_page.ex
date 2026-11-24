@@ -174,7 +174,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         :adaptive_chromeless
       end
 
-    screen_idle_timeout_enabled? = view != :adaptive_with_chrome
+    # Disable idle timeout for all adaptive pages to match basic Torus page behavior
+    screen_idle_timeout_enabled? = false
 
     section = socket.assigns.section
     activity_types = Oli.Activities.activities_for_section()
