@@ -75,6 +75,8 @@ defmodule Oli.Delivery.Gating.AuditedTest do
 
       assert gate_removed.entity_id == to_string(gate.id)
       assert gate_removed.changes["type"] == %{"operation" => "set", "before" => "schedule"}
+      refute Map.has_key?(gate_removed.changes, "end_datetime")
+      refute Map.has_key?(gate_removed.changes, "parent_id")
       assert exception_removed.affected_user_id == student.id
       assert gate_removed.operation_id == exception_removed.operation_id
       refute Repo.get(GatingCondition, exception.id)
@@ -99,6 +101,10 @@ defmodule Oli.Delivery.Gating.AuditedTest do
                "operation" => "set",
                "after" => source.id
              }
+
+      # A new condition records only the fields it has, not its empty ones
+      assert Map.keys(created.changes) ==
+               ~w(graded_resource_policy minimum_percentage source_resource_id type)
 
       assert {:ok, _} =
                GatingAudited.update_gate(context, section, gate, %{

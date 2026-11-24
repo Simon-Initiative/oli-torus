@@ -180,7 +180,7 @@ defmodule Oli.Delivery.Gating.Audited.Gates do
       entity: {:gating_condition, gate.id, %{id: gate.id}},
       scope: %{section_id: section_id, resource_id: gate.resource_id},
       event_key: "gating:#{gate.id}:#{key}",
-      changes: Changes.diff(state(before), state(after_gate), Fields.gating())
+      changes: Changes.diff(state(before, after_gate), state(after_gate, before), Fields.gating())
     }
     |> put_affected(gate.user_id)
   end
@@ -195,7 +195,16 @@ defmodule Oli.Delivery.Gating.Audited.Gates do
 
   # The recorded fields of a condition, with its data flattened (the source resource of a
   # prerequisite as `source_resource_id`).
-  defp state(nil), do: nil
+  #
+  # A condition that is created or deleted (`other` is nil) records only the fields it has, so an
+  # empty field is not recorded as set to or from nothing; an update records every field that
+  # changed, including one that was emptied.
+  defp state(nil, _other), do: nil
+
+  defp state(%GatingCondition{} = gate, nil),
+    do: gate |> state() |> Map.reject(fn {_field, value} -> is_nil(value) end)
+
+  defp state(%GatingCondition{} = gate, %GatingCondition{}), do: state(gate)
 
   defp state(%GatingCondition{} = gate) do
     data = gate.data || %{}
