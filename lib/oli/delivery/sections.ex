@@ -1587,15 +1587,16 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
-  # Section resource fields written only by audited commands: the discussion configuration
-  # (`Oli.Delivery.Sections.Audited`) and the assessment settings
-  # (`Oli.Delivery.Settings.Audited`).
+  # Section resource fields written only by audited commands: the discussion configuration, the
+  # curriculum fields a remix saves, and the schedule (`Oli.Delivery.Sections.Audited`), and the
+  # assessment settings (`Oli.Delivery.Settings.Audited`).
   @protected_section_resource_fields [
     :collab_space_config
     | Map.keys(Oli.Auditing.EventCatalog.Fields.assessment_settings()) ++
         Map.keys(Oli.Auditing.EventCatalog.Fields.remix()) ++
         Map.keys(Oli.Auditing.EventCatalog.Fields.gating())
   ]
+  @protected_keys MapSet.new(@protected_section_resource_fields, &Atom.to_string/1)
 
   @doc """
   Updates a section resource's display or creation fields.
@@ -1617,9 +1618,10 @@ defmodule Oli.Delivery.Sections do
   @spec update_section_resource(SectionResource.t(), map()) ::
           {:ok, SectionResource.t()} | {:error, Ecto.Changeset.t() | :protected}
   def update_section_resource(%SectionResource{} = section_resource, attrs) do
-    protected = MapSet.new(@protected_section_resource_fields, &Atom.to_string/1)
-
-    case Enum.any?(Map.keys(attrs), &MapSet.member?(protected, to_string(&1))) do
+    case Enum.any?(
+           Map.keys(attrs),
+           &MapSet.member?(@protected_keys, to_string(&1))
+         ) do
       true ->
         {:error, :protected}
 

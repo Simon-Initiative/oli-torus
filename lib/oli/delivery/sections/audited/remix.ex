@@ -206,17 +206,23 @@ defmodule Oli.Delivery.Sections.Audited.Remix do
 
   defp source_refs(_old, _new, _changes, _labels), do: []
 
+  # The labels of the publications that `source_refs/4` names: those of entries whose source
+  # changed or that were added.
   defp publication_labels(changed) do
-    ids =
-      changed
-      |> Enum.flat_map(fn {_resource_id, _old, new, _changes} ->
-        case new do
-          %{source_publication_id: id} when is_integer(id) -> [id]
-          _removed -> []
-        end
-      end)
-      |> Enum.uniq()
+    changed
+    |> Enum.flat_map(fn {_resource_id, _old, new, changes} ->
+      case {new, Map.has_key?(changes, "source_publication_id")} do
+        {%{source_publication_id: id}, true} when is_integer(id) -> [id]
+        _no_source_ref -> []
+      end
+    end)
+    |> Enum.uniq()
+    |> labels()
+  end
 
+  defp labels([]), do: %{}
+
+  defp labels(ids) do
     from(p in Publication,
       where: p.id in ^ids,
       select: {p.id, p.edition, p.major, p.minor}

@@ -140,24 +140,46 @@ defmodule Oli.Delivery.Gating.AuditedTest do
       assert Repo.get(GatingCondition, gate.id)
     end
 
-    test "a student exception cannot hang from a gate of another section", %{
-      section_1: section,
-      section_2: other,
-      page1: page,
-      user_a: student,
-      context: context
-    } do
+    test "a student exception hangs only from a top-level gate of its section, when created or updated",
+         %{
+           section_1: section,
+           section_2: other,
+           page1: page,
+           user_a: student,
+           context: context
+         } do
       foreign = gating_condition_fixture(%{section_id: other.id, resource_id: page.id})
+      gate = gating_condition_fixture(%{section_id: section.id, resource_id: page.id})
 
-      assert {:error, :gating_condition_not_found} =
-               GatingAudited.create_gate(context, section, %{
-                 resource_id: page.id,
-                 type: :always_open,
-                 parent_id: foreign.id,
-                 user_id: student.id
-               })
+      exception =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page.id,
+          parent_id: gate.id,
+          user_id: student.id
+        })
 
-      assert Repo.aggregate(GatingCondition, :count) == 1
+      exception_attrs = %{resource_id: page.id, type: :always_open, user_id: student.id}
+
+      # Created under a gate of another section, or under another exception
+      for parent <- [foreign, exception] do
+        assert {:error, :gating_condition_not_found} =
+                 GatingAudited.create_gate(
+                   context,
+                   section,
+                   Map.put(exception_attrs, :parent_id, parent.id)
+                 )
+      end
+
+      # Moved under a gate of another section, or under another exception
+      for parent <- [foreign, exception] do
+        assert {:error, :gating_condition_not_found} =
+                 GatingAudited.update_gate(context, section, exception, %{parent_id: parent.id})
+      end
+
+      assert Repo.aggregate(GatingCondition, :count) == 3
+      assert Repo.get!(GatingCondition, exception.id).parent_id == gate.id
+      assert audit_events(:gating_changed, section_id: section.id) == []
     end
 
     test "nothing is written when the event cannot be recorded", %{

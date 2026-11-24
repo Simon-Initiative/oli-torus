@@ -46,18 +46,20 @@ defmodule Oli.Delivery.Gating.Audited.Gates do
 
   def update(%Context{} = context, %Section{id: section_id}, %GatingCondition{} = gate, attrs) do
     run(context, section_id, gate.id, fn current ->
-      current
-      |> GatingCondition.changeset(attrs)
-      |> Ecto.Changeset.validate_change(:section_id, fn :section_id, new_section_id ->
-        case new_section_id == section_id do
-          true -> []
-          false -> [section_id: "cannot move a gate to another section"]
-        end
-      end)
-      |> Repo.update()
-      |> case do
-        {:ok, updated} -> {:ok, updated, [{current, updated}]}
-        error -> error
+      changeset =
+        current
+        |> GatingCondition.changeset(attrs)
+        |> Ecto.Changeset.validate_change(:section_id, fn :section_id, new_section_id ->
+          case new_section_id == section_id do
+            true -> []
+            false -> [section_id: "cannot move a gate to another section"]
+          end
+        end)
+
+      with :ok <-
+             parent_in_section(section_id, Ecto.Changeset.get_field(changeset, :parent_id)),
+           {:ok, updated} <- Repo.update(changeset) do
+        {:ok, updated, [{current, updated}]}
       end
     end)
   end
@@ -107,13 +109,14 @@ defmodule Oli.Delivery.Gating.Audited.Gates do
     end
   end
 
-  # A student exception's gate must be a gate of the same section.
+  # A student exception hangs from a top-level gate of the same section: gating has two levels,
+  # and access is evaluated only for top-level gates and their direct exceptions.
   defp parent_in_section(_section_id, nil), do: :ok
 
   defp parent_in_section(section_id, parent_id) do
     case Repo.exists?(
            from(gc in GatingCondition,
-             where: gc.id == ^parent_id and gc.section_id == ^section_id
+             where: gc.id == ^parent_id and gc.section_id == ^section_id and is_nil(gc.parent_id)
            )
          ) do
       true -> :ok
