@@ -1,3 +1,27 @@
+/**
+ * Vertical scroll delta for `scroll_mode: "nearest"`: the minimum scroll that reveals a target
+ * below `offset` without ever moving the target's top edge above `offset`.
+ *
+ * - Top edge hidden behind the offset: scroll up until the top edge sits at the offset.
+ * - Bottom edge cut off: scroll down by the overflow. A target that fits always has
+ *   `overflowBelow <= spaceAbove`, so it ends up fully visible. A target taller than the visible
+ *   area is capped at `spaceAbove` and ends up top-aligned; scrolling the full overflow would hide
+ *   its top edge, where the focused disclosure toggle lives.
+ * - Already fully visible: no scroll.
+ */
+export const nearestScrollDelta = (
+  rect: Pick<DOMRect, 'top' | 'bottom'>,
+  offset: number,
+  viewportHeight: number,
+): number => {
+  // Negative when the top edge is hidden behind the offset.
+  const spaceAbove = rect.top - offset;
+  // Positive when the bottom edge is cut off by the viewport.
+  const overflowBelow = Math.max(0, rect.bottom - viewportHeight);
+
+  return Math.min(spaceAbove, overflowBelow);
+};
+
 export const Scroller = {
   // This hook has five listeners that can be executed from the server side.
   //
@@ -22,6 +46,12 @@ export const Scroller = {
   // the hook scrolls only when the target is outside the visible viewport and only by the
   // minimum amount needed to bring it into view. This is useful for disclosure content that
   // should stay in context instead of always snapping to the top.
+  //
+  // `scroll_mode: "nearest"` scrolls only when the target is cut off, by the minimum amount
+  // needed to show it, and never moves the target's top edge above the offset: a target hidden
+  // behind the offset is aligned to it, and a target taller than the visible area ends up
+  // top-aligned. Useful for disclosures whose toggle sits at the top of the target and keeps
+  // focus, so the toggle stays visible.
   //
   //  ** Scroll X to Target **
   // Is used to scroll to a specific element on the unit slider in the X direction.
@@ -221,6 +251,12 @@ export const Scroller = {
 
             if (targetTop !== null) {
               window.scrollTo({ top: targetTop, behavior: scrollBehavior });
+            }
+          } else if (scrollMode === 'nearest') {
+            const delta = nearestScrollDelta(rect, offset, window.innerHeight);
+
+            if (delta !== 0) {
+              window.scrollTo({ top: window.scrollY + delta, behavior: scrollBehavior });
             }
           } else {
             window.scrollTo({ top: absoluteTop - offset, behavior: scrollBehavior });

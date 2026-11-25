@@ -4203,7 +4203,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     Phoenix.LiveView.push_event(socket, "scroll-y-to-target", %{
       id: "learning-dashboard-assessment-card-#{expanded_assessment_id}",
       offset: 6,
-      scroll_mode: "contain",
+      scroll_mode: "nearest",
       scroll_delay: 120,
       offset_target_id: "instructor-dashboard-header"
     })
