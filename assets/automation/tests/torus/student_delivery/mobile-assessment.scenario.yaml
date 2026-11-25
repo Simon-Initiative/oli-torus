@@ -1,0 +1,196 @@
+# Reuses the multiple-choice scoring and multi-input delivery models.
+# Attempts and answers are created by the browser, not by scenario directives.
+- project:
+    name: 'mobile_assessment_project'
+    title: 'Mobile Assessment Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Mobile Assessment'
+
+- create_activity:
+    project: 'mobile_assessment_project'
+    title: 'Mobile Input Question'
+    virtual_id: 'mobile_inputs'
+    type: 'oli_multi_input'
+    content_format: 'json'
+    content:
+      activityType: 'oli_multi_input'
+      submitPerPart: false
+      choices:
+        - id: 'choice_correct'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Correct choice'
+        - id: 'choice_incorrect'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Incorrect choice'
+      inputs:
+        - id: 'text_blank'
+          inputType: 'text'
+          partId: 'text_blank_part'
+        - id: 'numeric_blank'
+          inputType: 'numeric'
+          partId: 'numeric_blank_part'
+        - id: 'dropdown_blank'
+          inputType: 'dropdown'
+          partId: 'dropdown_blank_part'
+          choiceIds: ['choice_correct', 'choice_incorrect']
+      stem:
+        id: 'mobile_input_stem'
+        content:
+          - type: 'p'
+            children:
+              - text: 'Enter the word answer: '
+              - type: 'input_ref'
+                id: 'text_blank'
+                children:
+                  - text: ''
+          - type: 'p'
+            children:
+              - text: 'Enter the number 42: '
+              - type: 'input_ref'
+                id: 'numeric_blank'
+                children:
+                  - text: ''
+          - type: 'p'
+            children:
+              - text: 'Select Correct choice: '
+              - type: 'input_ref'
+                id: 'dropdown_blank'
+                children:
+                  - text: ''
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ''
+        parts:
+          - id: 'text_blank_part'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            responses:
+              - id: 'text_correct'
+                rule: 'input contains {answer}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'text_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct text.'
+              - id: 'text_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'text_feedback_incorrect'
+                  content: []
+            hints: []
+          - id: 'numeric_blank_part'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            responses:
+              - id: 'numeric_correct'
+                rule: 'input = {42}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'numeric_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct number.'
+              - id: 'numeric_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'numeric_feedback_incorrect'
+                  content: []
+            hints: []
+          - id: 'dropdown_blank_part'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            responses:
+              - id: 'dropdown_correct'
+                rule: 'input like {choice_correct}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'dropdown_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct choice.'
+              - id: 'dropdown_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'dropdown_feedback_incorrect'
+                  content: []
+            hints: []
+
+- edit_page:
+    project: 'mobile_assessment_project'
+    page: 'Mobile Assessment'
+    content: |
+      title: "Mobile Assessment"
+      graded: true
+      blocks:
+        - type: activity
+          virtual_id: "mobile_choice"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "What is 2 + 2?"
+            choices:
+              - id: "incorrect"
+                body_md: "3"
+                score: 0
+                feedback_md: "Incorrect. 2 + 2 equals 4."
+              - id: "correct"
+                body_md: "4"
+                score: 1
+                feedback_md: "Correct. 2 + 2 equals 4."
+        - type: activity_reference
+          virtual_id: "mobile_inputs"
+
+- publish:
+    to: 'mobile_assessment_project'
+    description: 'Deterministic scored mobile assessment'
+
+- section:
+    name: 'mobile_assessment_section'
+    title: 'Mobile Assessment Course ${RUN_ID}'
+    from: 'mobile_assessment_project'
+    type: 'enrollable'
+    registration_open: true
+
+- manipulate:
+    to: 'mobile_assessment_section'
+    ops:
+      - revise:
+          target: 'Mobile Assessment'
+          set:
+            assessment_mode: '@atom(one_at_a_time)'
+            batch_scoring: true
+            max_attempts: 1
+            time_limit: 0
+            review_submission: '@atom(allow)'
+            feedback_mode: '@atom(allow)'
+
+- user:
+    name: 'mobile_assessment_student'
+    type: 'student'
+    email: 'mobile-assessment-student${RUN_ID}@example.com'
+    given_name: 'Mobile'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'mobile_assessment_student'
+    section: 'mobile_assessment_section'
+    role: 'student'
