@@ -236,10 +236,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
             project_slug = socket.assigns.project.slug
             container_slug = socket.assigns.container.slug
             author = socket.assigns.author
+            context = Oli.Auditing.Context.for_actor(author, source: :ui)
 
             task =
               Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
-                importer.import(project_slug, container_slug, file_id, author, opts)
+                importer.import(context, project_slug, container_slug, file_id, author, opts)
               end)
 
             {:noreply,
@@ -364,7 +365,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
     %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
 
-    {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
+    socket =
+      ContainerLiveHelpers.move_entry(
+        socket,
+        revision,
+        from_container,
+        to_container,
+        author,
+        project
+      )
 
     {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
@@ -380,7 +389,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
     to_container = nil
 
-    {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
+    socket =
+      ContainerLiveHelpers.move_entry(
+        socket,
+        revision,
+        from_container,
+        to_container,
+        author,
+        project
+      )
 
     {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
@@ -421,15 +438,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
 
     case container do
       nil ->
-        result =
-          Oli.Repo.transaction(fn ->
-            revision =
-              Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, revision.slug)
+        context = Oli.Auditing.Context.for_actor(author, source: :ui)
 
-            Oli.Publishing.ChangeTracker.track_revision(project.slug, revision, %{deleted: true})
-          end)
-
-        case result do
+        case Oli.Authoring.Audited.delete_unattached_page(context, project, revision.slug) do
           {:ok, _} ->
             {:noreply,
              socket
@@ -447,7 +458,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
         end
 
       _ ->
-        case ContainerEditor.remove_child(container, project, author, slug) do
+        case Oli.Authoring.Audited.remove_from_curriculum(
+               Oli.Auditing.Context.for_actor(author, source: :ui),
+               container,
+               project,
+               author,
+               slug
+             ) do
           {:ok, _} ->
             {:noreply,
              socket
@@ -526,7 +543,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     source = Enum.at(socket.assigns.children, String.to_integer(source_index))
 
     socket =
-      case ContainerEditor.reorder_child(
+      case Oli.Authoring.Audited.reorder_curriculum_entry(
+             Oli.Auditing.Context.for_actor(socket.assigns.author, source: :ui),
              socket.assigns.container,
              socket.assigns.project,
              socket.assigns.author,

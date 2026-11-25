@@ -16,6 +16,8 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
   @admin [:user, :author]
   @lifecycle_outcomes [:succeeded]
   @job_outcomes [:succeeded, :partial, :failed]
+  # Ownership is assigned once, to the author who creates, copies, or imports the project.
+  @project_owner [affected_kinds: [:author], affected_required: true]
 
   @doc "Returns `[{family, label, defaults, [{name, label, description, overrides}]}]`."
   @spec families() :: [{atom(), String.t(), keyword(), [tuple()]}]
@@ -117,20 +119,23 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
       {:project, "Project",
        [
          entity_types: [:project],
+         # The system actor covers technical setup (end-to-end fixtures) that creates, imports,
+         # and publishes projects.
+         actor_kinds: [:user, :author, :system],
          required: [:project_id],
          detail_keys: ~w(project_title publication_id version description source_project_id)
        ],
        [
-         {:project_created, "Project created", "A new authoring project was created.", []},
+         {:project_created, "Project created",
+          "A new authoring project was created; its creator is the owner.", @project_owner},
          {:project_duplicated, "Project duplicated",
-          "A project was created as a copy of another project.", ref_roles: [:source]},
+          "A project was created as a copy of another project; the author who copied it is the owner.",
+          [ref_roles: [:source]] ++ @project_owner},
          {:project_imported, "Project imported",
-          "A project was created from an imported course archive.", outcomes: @job_outcomes},
+          "A project was created from an imported course archive; the importing author is the owner.",
+          @project_owner},
          {:project_deleted, "Project deleted",
           "A project was marked deleted and hidden from authors.", []},
-         {:project_ownership_changed, "Project ownership changed",
-          "Ownership of a project was transferred to another author.",
-          affected_kinds: [:author], affected_required: true},
          {:project_collaborator_changed, "Project collaborator changed",
           "An author was added, removed, or changed as a project collaborator.",
           affected_kinds: [:author],
@@ -214,10 +219,11 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
        ],
        [
          {:authoring_content_removed, "Content removed",
-          "A page, activity, or container was deleted from a project.", []},
+          "A page, activity, or container was deleted from a project.",
+          detail_keys: ~w(removed_activity_ids)},
          {:authoring_content_replaced, "Content replaced",
           "The content of a resource was replaced wholesale, for example by a repair or import.",
-          []},
+          detail_keys: ~w(reason remapped_activity_count)},
          {:bank_question_deleted, "Bank question deleted",
           "A question was deleted from a project's activity bank.", []},
          {:media_deleted, "Media deleted", "A media library item was deleted from a project.",
@@ -279,7 +285,8 @@ defmodule Oli.Auditing.EventCatalog.Definitions do
        ],
        [
          {:project_settings_changed, "Project settings changed",
-          "Persisted settings of a project, such as visibility or duplication, were changed.", []}
+          "Persisted settings of a project, such as visibility or duplication, were changed.",
+          detail_keys: ~w(blueprint_count experiment_id alternatives_group_id)}
        ]},
       {:authoring_configuration, "Authoring configuration",
        [

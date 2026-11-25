@@ -4,7 +4,6 @@ defmodule OliWeb.Api.ResourceControllerTest do
   import Oli.Factory
 
   alias Oli.Resources
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Publishing
   alias Oli.Utils.Time
@@ -157,7 +156,7 @@ defmodule OliWeb.Api.ResourceControllerTest do
       page_1: page
     } do
       {:ok, project} =
-        Course.update_project(project, %{
+        Oli.TestHelpers.update_project_fixture(project, %{
           alternatives_enabled: false,
           experiments_enabled: true
         })
@@ -199,6 +198,89 @@ defmodule OliWeb.Api.ResourceControllerTest do
         })
 
       assert response(conn, 403) == "alternatives authoring is not enabled for this project"
+      assert audit_events(:authoring_settings_changed, project_id: project.id) == []
+    end
+
+    test "records the page settings an editor save changes for the author", %{
+      author: author,
+      conn: conn,
+      project: project,
+      page_1: page
+    } do
+      project.slug
+      |> Publishing.project_working_publication()
+      |> then(&Publishing.get_published_resource!(&1.id, page.resource_id))
+      |> Publishing.update_published_resource(%{
+        lock_updated_at: Time.now(),
+        locked_by_id: author.id
+      })
+
+      conn =
+        put(conn, "/api/v1/project/#{project.slug}/resource/#{page.slug}", %{
+          "update" => %{"title" => "Renamed Page", "releaseLock" => false}
+        })
+
+      assert %{"type" => "success"} = json_response(conn, 200)
+
+      event =
+        assert_audited(:authoring_settings_changed,
+          project_id: project.id,
+          actor: author,
+          source: :api
+        )
+
+      assert event.resource_id == page.resource_id
+
+      assert event.changes["title"] == %{
+               "operation" => "set",
+               "before" => "First Page",
+               "after" => "Renamed Page"
+             }
+    end
+  end
+
+  describe "update/2 with protected fields" do
+    setup [:author_conn, :create_project_with_pages]
+
+    test "rejects a save that sets a page's children", %{
+      conn: conn,
+      project: project,
+      page_1: page
+    } do
+      conn =
+        put(conn, "/api/v1/project/#{project.slug}/resource/#{page.slug}", %{
+          "update" => %{"children" => [], "releaseLock" => false}
+        })
+
+      assert response(conn, 400) == "the update includes fields that cannot be changed"
+    end
+  end
+
+  describe "create_objective/2" do
+    setup [:author_conn]
+
+    # The action has no route; it is called directly to cover its audit event.
+    test "records the created objective for the author", %{conn: conn, author: author} do
+      {:ok, %{project: project}} = create_project_fixture("Objectives", author)
+
+      conn =
+        conn
+        |> Plug.Conn.assign(:current_author, author)
+        |> OliWeb.Api.ResourceController.create_objective(%{
+          "project_id" => project.slug,
+          "title" => "Explain diffusion"
+        })
+
+      assert %{"type" => "success"} = json_response(conn, 200)
+
+      event =
+        assert_audited(:learning_objectives_changed,
+          project_id: project.id,
+          actor: author,
+          source: :api
+        )
+
+      assert event.changes["title"]["after"] == "Explain diffusion"
     end
   end
 

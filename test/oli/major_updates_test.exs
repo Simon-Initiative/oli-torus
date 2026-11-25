@@ -19,7 +19,11 @@ defmodule Oli.MajorUpdatesTest do
 
       # Publish the destination project to get an initial publication for the section
       {:ok, dest_initial_pub} =
-        Publishing.publish_project(dest_map.project, "initial destination", dest_map.author.id)
+        Oli.TestHelpers.publish_project_fixture(
+          dest_map.project,
+          "initial destination",
+          dest_map.author.id
+        )
 
       # Create a course section using the destination project's initial publication
       {:ok, section} =
@@ -149,7 +153,7 @@ defmodule Oli.MajorUpdatesTest do
 
       # Publish the major changes (this creates a MAJOR publication)
       {:ok, major_publication} =
-        Publishing.publish_project(
+        Oli.TestHelpers.publish_project_fixture(
           dest_map.project,
           "major structural changes",
           dest_map.author.id
@@ -196,7 +200,11 @@ defmodule Oli.MajorUpdatesTest do
 
       # Publish source project (seeder returns unpublished working publication)
       {:ok, source_initial_pub} =
-        Publishing.publish_project(source_map.project, "initial source", source_map.author.id)
+        Oli.TestHelpers.publish_project_fixture(
+          source_map.project,
+          "initial source",
+          source_map.author.id
+        )
 
       # STEP 1: Remix source container into section
       current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -234,7 +242,11 @@ defmodule Oli.MajorUpdatesTest do
         )
 
       {:ok, source_update_pub} =
-        Publishing.publish_project(source_map.project, "added activity", source_map.author.id)
+        Oli.TestHelpers.publish_project_fixture(
+          source_map.project,
+          "added activity",
+          source_map.author.id
+        )
 
       # STEP 3: Apply source update → new activity gets children: nil (the bug trigger)
       Oli.Delivery.Sections.Updates.apply_publication_update(section, source_update_pub.id)
@@ -281,7 +293,11 @@ defmodule Oli.MajorUpdatesTest do
         )
 
       {:ok, dest_major_pub} =
-        Publishing.publish_project(dest_map.project, "major update", dest_map.author.id)
+        Oli.TestHelpers.publish_project_fixture(
+          dest_map.project,
+          "major update",
+          dest_map.author.id
+        )
 
       # STEP 5: Apply base project major update → crashes without fix, succeeds with fix
       Oli.Delivery.Sections.Updates.apply_publication_update(section, dest_major_pub.id)

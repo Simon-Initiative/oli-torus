@@ -271,12 +271,21 @@ defmodule Oli.Seeding.ProjectIngest do
   defp stop_response(_response), do: :ok
 
   defp ingest(path, author, opts) do
-    ingest_fun = Keyword.get(opts, :ingest_fun, &Ingest.ingest/2)
+    ingest_fun = Keyword.get(opts, :ingest_fun, &seed_ingest/2)
 
     with :ok <- validate_archive(path, opts) do
       safe_ingest(ingest_fun, path, author)
     end
   end
+
+  # Seeding is technical setup, recorded under the Setup PW system actor.
+  defp seed_ingest(path, author),
+    do:
+      Ingest.ingest(
+        path,
+        author,
+        Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario)
+      )
 
   defp safe_ingest(ingest_fun, path, author) do
     case ingest_fun.(path, author) do

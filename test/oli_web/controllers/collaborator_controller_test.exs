@@ -7,7 +7,7 @@ defmodule OliWeb.CollaboratorControllerTest do
   alias Oli.Accounts
   alias Oli.Accounts.AuthorToken
   alias Oli.AssentAuth.AuthorIdentity
-  alias Oli.Authoring.{Collaborators, Course}
+  alias Oli.Authoring.Course
   alias Oli.Repo
 
   @admin_email System.get_env("ADMIN_EMAIL", "admin@example.edu")
@@ -23,7 +23,11 @@ defmodule OliWeb.CollaboratorControllerTest do
   setup [:author_project_conn]
 
   describe "create" do
-    test "redirects to project path when data is valid", %{conn: conn, project: project} do
+    test "redirects to project path when data is valid", %{
+      conn: conn,
+      author: owner,
+      project: project
+    } do
       expect_recaptcha_success()
 
       conn =
@@ -37,6 +41,15 @@ defmodule OliWeb.CollaboratorControllerTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
                "Collaborator invitations sent!"
+
+      invited = Accounts.get_author_by_email(@admin_email)
+
+      assert_audited(:project_collaborator_changed,
+        project_id: project.id,
+        affected_author_id: invited.id,
+        actor: owner,
+        source: :ui
+      )
     end
 
     test "allows multiple comma separated values", %{conn: conn, project: project} do
@@ -163,6 +176,7 @@ defmodule OliWeb.CollaboratorControllerTest do
       @status status
       test "preserves #{@account_type} accounts when removing #{@status} collaborations", %{
         conn: conn,
+        author: owner,
         project: project
       } do
         author =
@@ -191,7 +205,12 @@ defmodule OliWeb.CollaboratorControllerTest do
         session_token = Accounts.generate_author_session_token(author)
         identities = Repo.preload(author, :user_identities).user_identities
 
-        {:ok, _} = Collaborators.do_add_collaborator(author.email, project.slug, @status)
+        insert(:author_project,
+          author_id: author.id,
+          project_id: project.id,
+          project_role_id: Oli.Authoring.Authors.ProjectRole.role_id().contributor,
+          status: @status
+        )
 
         tokens =
           for slug <- [project.slug, project.slug, original.slug] do
@@ -205,6 +224,14 @@ defmodule OliWeb.CollaboratorControllerTest do
         conn = delete(conn, Routes.collaborator_path(conn, :delete, project, author.email))
 
         assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Author removed from project"
+
+        assert_audited(:project_collaborator_changed,
+          project_id: project.id,
+          affected_author_id: author.id,
+          actor: owner,
+          source: :ui
+        )
+
         assert Accounts.get_author_by_email(author.email).id == author.id
         assert Course.get_author_project(original.slug, author.id) == original_membership
         assert Course.get_author_project(project.slug, author.id, filter_by_status: false) == nil
@@ -221,7 +248,7 @@ defmodule OliWeb.CollaboratorControllerTest do
         assert Accounts.get_author_token_by_collaboration_invitation_token(retained_token)
 
         {:ok, reinvited} =
-          Collaborators.invite_collaborator(
+          Oli.Authoring.Audited.invite_collaborator(
             Oli.Auditing.Context.for_actor(insert(:author), source: :ui),
             "Owner",
             "owner@example.edu",
@@ -234,7 +261,6 @@ defmodule OliWeb.CollaboratorControllerTest do
     end
 
     test "redirects to project path when data is valid", %{conn: conn, project: project} do
-      Oli.Authoring.Collaborators.add_collaborator(@admin_email, project.slug)
       conn = delete(conn, Routes.collaborator_path(conn, :delete, project, @admin_email))
       assert html_response(conn, 302) =~ "/workspaces/course_author/#{project.slug}/overview"
     end

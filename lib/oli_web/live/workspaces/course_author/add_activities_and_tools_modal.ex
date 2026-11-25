@@ -133,14 +133,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
     to_add = pending_changes.activities_to_add ++ pending_changes.tools_to_add
     to_remove = pending_changes.activities_to_remove ++ pending_changes.tools_to_remove
 
-    case Activities.bulk_update_project_activities(project_id, to_add, to_remove) do
+    context = Oli.Auditing.Context.for_actor(socket.assigns.author, source: :ui)
+    changes = %{add: to_add, remove: to_remove}
+
+    case Oli.Activities.Audited.update_project_activities(
+           context,
+           to_integer(project_id),
+           changes
+         ) do
       :ok ->
         send(self(), {:flash_message, {:info, "Activities and tools updated successfully."}})
         send(self(), {:refresh_tools_and_activities})
         {:noreply, reset_modal(socket, show_modal?: false)}
 
-      {:error, message} ->
-        send(self(), {:flash_message, {:error, message}})
+      {:error, _reason} ->
+        send(self(), {:flash_message, {:error, "Failed to update project activities."}})
         {:noreply, socket}
     end
   end
@@ -528,4 +535,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
   end
 
   defp test_env?, do: Application.get_env(:oli, :env) == :test
+
+  # The project ID arrives as a string when the modal opens from the page.
+  defp to_integer(id) when is_integer(id), do: id
+  defp to_integer(id) when is_binary(id), do: String.to_integer(id)
 end

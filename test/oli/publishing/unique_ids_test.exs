@@ -133,7 +133,8 @@ defmodule Oli.Publishing.UniqueIdsTest do
         })
 
       # publish the project
-      {:ok, published} = Oli.Publishing.publish_project(project, "initial publish", author.id)
+      {:ok, published} =
+        Oli.TestHelpers.publish_project_fixture(project, "initial publish", author.id)
 
       # verify that the ids_added field is set to true for the revisions
       assert %Oli.Publishing.PublishedResource{

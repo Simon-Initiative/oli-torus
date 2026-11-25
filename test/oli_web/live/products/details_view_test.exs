@@ -805,12 +805,12 @@ defmodule OliWeb.Products.DetailsViewTest do
     })
 
     {:ok, _initial_publication} =
-      Oli.Publishing.publish_project(project, "initial publication", admin.id)
+      Oli.TestHelpers.publish_project_fixture(project, "initial publication", admin.id)
 
     {:ok, product} = Blueprint.create_blueprint(project.slug, "Test Product", nil)
 
     {:ok, _latest_publication} =
-      Oli.Publishing.publish_project(project, "follow-up publication", admin.id)
+      Oli.TestHelpers.publish_project_fixture(project, "follow-up publication", admin.id)
 
     {:ok, project: project, product: product}
   end

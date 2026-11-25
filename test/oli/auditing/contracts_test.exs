@@ -332,7 +332,7 @@ defmodule Oli.Auditing.ContractsTest do
     end
 
     test "reports legacy provenance and author-only affected errors on their own columns" do
-      example = EventExamples.example(:project_ownership_changed)
+      example = EventExamples.example(:project_collaborator_changed)
 
       assert {:error, errors} = EventCatalog.validate(%{example | legacy_id: 1})
       assert List.keymember?(errors, :legacy_id, 0)

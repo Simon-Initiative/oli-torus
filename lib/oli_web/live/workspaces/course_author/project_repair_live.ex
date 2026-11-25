@@ -525,12 +525,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProjectRepairLive do
 
   defp start_repair(socket) do
     %{author: author, project: project} = socket.assigns
+    context = Oli.Auditing.Context.for_actor(author, source: :ui)
 
     # Repair may re-analyze, lock resources, clone activities, and write revisions.
     # `start_async/3` avoids monopolizing the LiveView process while preserving
     # the context's authoritative locking and fresh-plan validation.
     start_async(socket, :repair_project, fn ->
-      ProjectRepair.repair_project(project, author)
+      Oli.Authoring.Audited.repair_project(context, project, author)
     end)
   end
 

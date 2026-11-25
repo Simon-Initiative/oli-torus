@@ -2,7 +2,13 @@ defmodule Oli.Delivery.SecureAssessmentAdmissionTest do
   use Oli.DataCase, async: false
   import Oli.Factory
   alias Oli.Accounts
-  alias Oli.Accounts.UserToken
+  alias Oli.Accounts.{Author, UserToken}
+  alias Oli.Authoring.Authors.AuthorProject
+  alias Oli.Authoring.Course.Family
+  alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Institutions.Institution
+  alias Oli.Inventories.Publisher
+  alias Oli.Lti.Tool.Registration
   alias Oli.Delivery.SecureAssessments, as: Policy
   alias Oli.Delivery.SecureAssessments.Admission
 
@@ -101,13 +107,9 @@ defmodule Oli.Delivery.SecureAssessmentAdmissionTest do
           )
 
         sr =
-          insert(:section_resource,
-            section: section,
-            resource_id: revision.resource_id,
+          insert_secure_page(section, revision.resource_id,
             revision_slug: revision.slug,
-            resource_type_id: revision.resource_type_id,
-            graded: true,
-            secure_delivery: true
+            resource_type_id: revision.resource_type_id
           )
 
         enrollment = insert(:enrollment, user: user, section: section)
@@ -118,9 +120,9 @@ defmodule Oli.Delivery.SecureAssessmentAdmissionTest do
       Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
         delete_login_events(user)
         Repo.delete_all(from t in UserToken, where: t.user_id == ^user.id)
-        Enum.each([enrollment, sr, section, revision], &Repo.delete!/1)
+        Enum.each([enrollment, sr, revision], &Repo.delete!/1)
         Repo.delete!(Oli.Resources.Resource |> Repo.get!(revision.resource_id))
-        Repo.delete!(user)
+        delete_section_and_learner(section, user)
       end)
     end)
 
@@ -216,12 +218,8 @@ defmodule Oli.Delivery.SecureAssessmentAdmissionTest do
         resource = insert(:resource)
 
         sr =
-          insert(:section_resource,
-            section: section,
-            resource_id: resource.id,
-            resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-            graded: true,
-            secure_delivery: true
+          insert_secure_page(section, resource.id,
+            resource_type_id: Oli.Resources.ResourceType.id_for_page()
           )
 
         enrollment = insert(:enrollment, user: user, section: section)
@@ -234,7 +232,8 @@ defmodule Oli.Delivery.SecureAssessmentAdmissionTest do
       Ecto.Adapters.SQL.Sandbox.unboxed_run(Repo, fn ->
         delete_login_events(user)
         Repo.delete_all(from t in UserToken, where: t.user_id == ^user.id)
-        Enum.each([enrollment, sr, section, resource, user], &Repo.delete!/1)
+        Enum.each([enrollment, sr, resource], &Repo.delete!/1)
+        delete_section_and_learner(section, user)
       end)
     end)
 
@@ -276,6 +275,57 @@ defmodule Oli.Delivery.SecureAssessmentAdmissionTest do
     send(editor.pid, :commit)
     assert {:ok, :ok} = Task.await(editor)
     assert {:error, :secure_target_invalid} = Task.await(entrant)
+  end
+
+  # The section_resource factory always commits an extra project and resource, so the committed
+  # fixtures insert the section resource directly against the section's base project.
+  defp insert_secure_page(section, resource_id, attrs) do
+    Repo.insert!(
+      struct!(
+        %SectionResource{
+          section_id: section.id,
+          project_id: section.base_project_id,
+          resource_id: resource_id,
+          slug: "secure_page_#{resource_id}",
+          graded: true,
+          secure_delivery: true
+        },
+        attrs
+      )
+    )
+  end
+
+  # The section and user factories commit a whole graph: the deployment with its registration and
+  # institution, the brand with its institution, the publisher, the base project with its family,
+  # publisher, and authors, and the user's author. Later tests count some of these tables, so
+  # every row is removed, referencing rows first.
+  defp delete_section_and_learner(section, user) do
+    section =
+      Repo.preload(section, [:brand, :lti_1p3_deployment, base_project: :authors], force: true)
+
+    project = section.base_project
+    deployment = section.lti_1p3_deployment
+    author_ids = [user.author_id | Enum.map(project.authors, & &1.id)]
+
+    Repo.delete!(section)
+    Repo.delete_all(from ap in AuthorProject, where: ap.project_id == ^project.id)
+    Repo.delete!(project)
+    Repo.delete_all(from f in Family, where: f.id == ^project.family_id)
+
+    Repo.delete_all(
+      from p in Publisher, where: p.id in ^[project.publisher_id, section.publisher_id]
+    )
+
+    Repo.delete!(user)
+    Repo.delete_all(from a in Author, where: a.id in ^author_ids)
+    Repo.delete!(section.brand)
+    Repo.delete!(deployment)
+    Repo.delete_all(from r in Registration, where: r.id == ^deployment.registration_id)
+
+    Repo.delete_all(
+      from i in Institution,
+        where: i.id in ^[deployment.institution_id, section.brand.institution_id]
+    )
   end
 
   # Secure launches record the learner's login; the audit table is append-only, so committed

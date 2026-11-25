@@ -3,7 +3,6 @@ defmodule Oli.Scenarios.Ops do
   Operations that can be applied to course structures.
   """
   alias Oli.{Publishing}
-  alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Scenarios.Builder
 
@@ -150,7 +149,14 @@ defmodule Oli.Scenarios.Ops do
 
         # Use ContainerEditor.move_to to handle the move
         {:ok, _} =
-          ContainerEditor.move_to(source_rev, old_parent_rev, new_parent_rev, author, proj)
+          Oli.Authoring.Audited.move_curriculum_entry(
+            Oli.Auditing.Context.for_actor(author, source: :scenario),
+            source_rev,
+            old_parent_rev,
+            new_parent_rev,
+            author,
+            proj
+          )
 
         # Get updated parent revisions
         updated_new_parent =
@@ -242,7 +248,14 @@ defmodule Oli.Scenarios.Ops do
         if target_index do
           # Use ContainerEditor.reorder_child for the actual reordering
           {:ok, _} =
-            ContainerEditor.reorder_child(parent_rev, proj, author, source_rev.slug, target_index)
+            Oli.Authoring.Audited.reorder_curriculum_entry(
+              Oli.Auditing.Context.for_actor(author, source: :scenario),
+              parent_rev,
+              proj,
+              author,
+              source_rev.slug,
+              target_index
+            )
 
           # Get updated parent revision
           parent_title =
@@ -274,7 +287,7 @@ defmodule Oli.Scenarios.Ops do
 
   defp remove!(dest, title) do
     %{project: proj} = dest
-    _author = dest.root.author
+    author = dest.root.author
 
     revision = dest.rev_by_title[title]
 
@@ -289,23 +302,20 @@ defmodule Oli.Scenarios.Ops do
 
       case parent_info do
         {parent_title, parent_rev} ->
-          # ContainerEditor.remove_child also marks the child as deleted,
-          # which we don't actually want for reorganization. Instead,
-          # just remove from parent's children list directly.
-          new_children = Enum.filter(parent_rev.children, &(&1 != revision.resource_id))
-
-          # Create new revision with updated children
-          {:ok, updated_parent_rev} =
-            Oli.Resources.create_revision_from_previous(
+          # Removing the child from the curriculum would also mark it as deleted, which
+          # reorganization does not want: moving it out of its parent only detaches it.
+          {:ok, _} =
+            Oli.Authoring.Audited.move_curriculum_entry(
+              Oli.Auditing.Context.for_actor(author, source: :scenario),
+              revision,
               parent_rev,
-              %{children: new_children}
+              nil,
+              author,
+              proj
             )
 
-          # Update published resource
-          pub = Publishing.project_working_publication(proj.slug)
-
-          Publishing.get_published_resource!(pub.id, parent_rev.resource_id)
-          |> Publishing.update_published_resource(%{revision_id: updated_parent_rev.id})
+          updated_parent_rev =
+            AuthoringResolver.from_resource_id(proj.slug, parent_rev.resource_id)
 
           %{
             dest
@@ -335,7 +345,15 @@ defmodule Oli.Scenarios.Ops do
     with rev when not is_nil(rev) <- dest.rev_by_title[target],
          author_id <- extract_author_id(dest),
          revision_params <- build_revision_params(set_params, author_id),
-         {:ok, _} <- ContainerEditor.edit_page(proj, rev.slug, revision_params),
+         {:ok, _} <-
+           Oli.Authoring.Audited.update_page_options(
+             Oli.Auditing.Context.for_actor(Oli.Accounts.get_author!(author_id),
+               source: :scenario
+             ),
+             proj,
+             rev.slug,
+             revision_params
+           ),
          updated_rev <- AuthoringResolver.from_resource_id(proj.slug, rev.resource_id) do
       update_destination_state(dest, target, set_params, rev, updated_rev)
     else
@@ -447,13 +465,34 @@ defmodule Oli.Scenarios.Ops do
       end)
       |> Enum.into(%{})
 
-    # Update the project using standard changeset
-    case Oli.Authoring.Course.update_project(project, change_params) do
-      {:ok, updated_project} ->
-        %{dest | project: updated_project}
+    # Change the settings through the audited commands, as the author who built the project.
+    # Activation points can only be enabled, through their own command.
+    context = Oli.Auditing.Context.for_actor(dest.root.author, source: :scenario)
+    {allow_triggers, settings} = Map.pop(change_params, :allow_triggers)
 
-      {:error, changeset} ->
+    with {:ok, updated_project} <-
+           Oli.Authoring.Audited.update_project_settings(
+             context,
+             project.id,
+             settings,
+             Oli.Authoring.Audited.project_settings_fields()
+           ),
+         {:ok, updated_project} <- maybe_enable_triggers(context, updated_project, allow_triggers) do
+      %{dest | project: updated_project}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
         raise "Failed to change project settings: #{inspect(changeset.errors)}"
+
+      {:error, reason} ->
+        raise "Failed to change project settings: #{inspect(reason)}"
     end
   end
+
+  defp maybe_enable_triggers(_context, project, nil), do: {:ok, project}
+
+  defp maybe_enable_triggers(context, project, true),
+    do: Oli.Authoring.Audited.enable_triggers(context, project.id)
+
+  defp maybe_enable_triggers(_context, _project, _value),
+    do: {:error, "activation points can only be enabled"}
 end

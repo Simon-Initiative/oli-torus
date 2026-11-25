@@ -157,7 +157,13 @@ defmodule OliWeb.Api.LtiController do
       }) do
     with true <- same_origin?(conn),
          {:ok, revision} <-
-           AuthoringLaunch.save_result(conn.assigns[:current_author], project, activity, token) do
+           AuthoringLaunch.save_result(
+             audit_context(conn.assigns[:current_author]),
+             conn.assigns[:current_author],
+             project,
+             activity,
+             token
+           ) do
       json(conn, %{
         model: revision.content,
         title: revision.title,
@@ -648,4 +654,8 @@ defmodule OliWeb.Api.LtiController do
         error
     end
   end
+
+  # The save validates the author first; without one there is nobody to record.
+  defp audit_context(nil), do: nil
+  defp audit_context(author), do: Oli.Auditing.Context.for_actor(author, source: :api)
 end

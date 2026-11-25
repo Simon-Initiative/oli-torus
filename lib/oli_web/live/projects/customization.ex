@@ -1,5 +1,7 @@
 defmodule OliWeb.Projects.CustomizationLive do
   use OliWeb, :live_view
+  alias Oli.Accounts
+  alias Oli.Auditing.Context
   alias Oli.Authoring.Course
   alias Oli.Branding.CustomLabels
   alias OliWeb.Common.CustomLabelsForm
@@ -7,11 +9,13 @@ defmodule OliWeb.Projects.CustomizationLive do
   def mount(
         _params,
         %{
-          "project_slug" => project_slug
+          "project_slug" => project_slug,
+          "author_id" => author_id
         },
         socket
       ) do
     project = Course.get_project_by_slug(project_slug)
+    author = Accounts.get_author!(author_id)
 
     labels =
       case project.customizations do
@@ -22,6 +26,7 @@ defmodule OliWeb.Projects.CustomizationLive do
     {:ok,
      assign(socket,
        project: project,
+       author: author,
        labels: labels
      )}
   end
@@ -47,19 +52,31 @@ defmodule OliWeb.Projects.CustomizationLive do
         end
       end)
 
-    case Course.update_project(socket.assigns.project, %{customizations: params}) do
+    %{project: project, author: author} = socket.assigns
+
+    case Oli.Authoring.Audited.update_project_settings(
+           Context.for_actor(author, source: :ui),
+           project.id,
+           %{customizations: params},
+           [:customizations]
+         ) do
       {:ok, project} ->
         {:noreply, assign(socket, :project, project)}
 
-      {:error, %Ecto.Changeset{} = _changeset} ->
-        socket =
-          put_flash(
-            socket,
-            :error,
-            "Project couldn't be updated"
-          )
+      {:error, _reason} ->
+        {:noreply, flash_error(socket, "Project couldn't be updated")}
+    end
+  end
 
-        {:noreply, assign(socket, :project, socket.assigns.project)}
+  # This view is rendered inside the project overview, which shows its flash messages
+  defp flash_error(socket, message) do
+    case socket.parent_pid do
+      nil ->
+        put_flash(socket, :error, message)
+
+      parent ->
+        send(parent, {:flash_message, {:error, message}})
+        socket
     end
   end
 end

@@ -8,7 +8,6 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers do
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink
-  alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Scenarios
   alias Oli.Scenarios.LtiExternalTool.DeepLinkingHooks, as: Hooks
@@ -80,7 +79,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHelpers do
   @doc "Publishes the scenario's current project draft."
   def publish(state) do
     assert {:ok, publication} =
-             Publishing.publish_project(
+             Oli.TestHelpers.publish_project_fixture(
                Hooks.project(state),
                "Tool selection update",
                state.current_author.id

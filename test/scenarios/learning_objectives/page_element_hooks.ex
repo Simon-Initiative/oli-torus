@@ -82,10 +82,16 @@ defmodule Oli.Scenarios.LearningObjectives.PageElementHooks do
            ) in [{:acquired}, {:updated}]
 
     assert {:ok, updated_revision} =
-             PageEditor.edit(built_project.project.slug, page_revision.slug, author.email, %{
-               "content" => content,
-               "releaseLock" => true
-             })
+             Oli.Authoring.Audited.edit_page(
+               Oli.TestHelpers.author_audit_context(),
+               built_project.project.slug,
+               page_revision.slug,
+               author.email,
+               %{
+                 "content" => content,
+                 "releaseLock" => true
+               }
+             )
 
     assert learning_objectives_element?(updated_revision.content)
 

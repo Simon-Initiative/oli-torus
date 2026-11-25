@@ -10,6 +10,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   alias Oli.Resources.{Resource, ResourceType, Revision}
   alias Oli.Repo
 
+  defp experiment_events(project, author) do
+    audit_events(:project_settings_changed, project_id: project.id, actor: author, source: :ui)
+  end
+
   defp live_view_experiments_route(project_slug, params \\ %{}),
     do: ~p"/workspaces/course_author/#{project_slug}/experiments?#{params}"
 
@@ -238,6 +242,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       revision = Experiments.get_latest_experiment(project.slug)
       assert revision.title == "Homepage Decision"
       assert revision.content["strategy"] == "experiment_controlled"
+
+      assert [created] = audit_events(:project_settings_changed, project_id: project.id)
+      assert created.changes["alternatives_groups"]["operation"] == "added"
+      assert created.details == %{"alternatives_group_id" => revision.resource_id}
     end
 
     test "sorts decision points by creation date ascending and renders the create action below them",
@@ -431,6 +439,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> render_click()
 
       refute has_element?(view, ".alternatives-group", decision_point.title)
+
+      event =
+        assert_audited(:authoring_content_removed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.resource_id == decision_point.resource_id
     end
 
     test "uses the shared modal for deleting a condition", %{
@@ -698,6 +715,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
     test "creates and starts a weighted random A/B Testing experiment", %{
       conn: conn,
+      admin: admin,
       project: project
     } do
       _group = insert_alternatives_group(project)
@@ -857,10 +875,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(archived_index_view, "#show-archived-experiments[checked]")
       assert has_element?(archived_index_view, "#ab-experiments-table", "Homepage Study")
       assert has_element?(archived_index_view, "#ab-experiments-table", "Archived")
+
+      events = experiment_events(project, admin)
+
+      assert Enum.flat_map(events, &List.wrap(&1.changes["experiment_status"]["after"])) ==
+               ~w(draft active paused active completed archived)
+
+      assert [weighted] =
+               Enum.filter(events, &(Map.keys(&1.changes) == ["experiment_conditions"]))
+
+      assert hd(weighted.changes["experiment_conditions"]["after"])["weight"] == 3.0
     end
 
     test "configures weighted-random assignment scope and shows UUID in details", %{
       conn: conn,
+      admin: admin,
       project: project
     } do
       insert_alternatives_group(project)
@@ -989,6 +1018,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert Repo.get!(ExperimentDefinition, experiment.id).assignment_scope == :intervention
 
+      assert [edited] =
+               Enum.filter(
+                 experiment_events(project, admin),
+                 &(&1.changes["experiment_definition"]["before"]["assignment_scope"] ==
+                     "section_enrollment")
+               )
+
+      assert edited.changes["experiment_definition"]["after"]["assignment_scope"] ==
+               "intervention"
+
       details_view
       |> element("button[phx-click='start_experiment']", "Start")
       |> render_click()
@@ -1089,8 +1128,58 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(details_view, "#experiment-configuration", "Archived")
     end
 
+    test "saving participating sections from the experiments list records the change", %{
+      conn: conn,
+      admin: admin,
+      project: project,
+      publication: publication
+    } do
+      insert_alternatives_group(project)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+      open_create_experiment(view)
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Section Study",
+          "slug" => "section-study",
+          "algorithm" => "weighted_random",
+          "alternatives_resource_id" => selected_decision_point_value(view),
+          "weight_a" => "1",
+          "weight_b" => "1"
+        }
+      })
+
+      id = experiment_id(view)
+      section = insert(:section, base_project: project, title: "Spring cohort")
+
+      insert(:section_project_publication,
+        section: section,
+        project: project,
+        publication: publication
+      )
+
+      render_hook(view, "configure_sections", %{"id" => id})
+
+      view
+      |> element("#section-participation-form")
+      |> render_submit(%{
+        "participation" => %{"experiment_id" => id, "section_ids" => [to_string(section.id)]}
+      })
+
+      assert render(view) =~ "Participating sections updated."
+
+      assert [_created, participation] = experiment_events(project, admin)
+
+      assert participation.changes["experiment_definition"]["after"]["sections"] == [
+               %{"id" => section.id, "title" => "Spring cohort"}
+             ]
+    end
+
     test "configuration page shows details and paginates editable participating sections", %{
       conn: conn,
+      admin: admin,
       project: project,
       publication: publication
     } do
@@ -1188,6 +1277,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
                details_view,
                "#participating-section-#{first_section.id} input[type='checkbox'][checked]"
              )
+
+      assert [_created, participation] = experiment_events(project, admin)
+      assert participation.details == %{"experiment_id" => String.to_integer(id)}
+      assert Map.keys(participation.changes) == ["experiment_definition"]
+      assert participation.changes["experiment_definition"]["before"]["sections"] == []
+
+      assert participation.changes["experiment_definition"]["after"]["sections"] == [
+               %{"id" => first_section.id, "title" => first_section.title}
+             ]
 
       {:ok, page_two_view, _html} = live(conn, "#{path}?page=2")
 

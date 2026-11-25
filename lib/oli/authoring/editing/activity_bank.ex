@@ -196,13 +196,15 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   end
 
   @doc """
-  Updates a banked activity using the same ActivityEditor path as the UI.
+  Updates a banked activity through the audited activity edit, the same path as the UI, after
+  resolving objective and tag references. `context` identifies who changes it for the audit log.
   """
-  def update(project_slug, author, activity_resource_id, attrs) when is_map(attrs) do
+  def update(context, project_slug, author, activity_resource_id, attrs) when is_map(attrs) do
     with {:ok, _project} <- authorize_project(project_slug, author),
          {:ok, _revision} <- get_banked_activity(project_slug, activity_resource_id),
          {:ok, attrs} <- normalize_update_attrs(project_slug, attrs) do
-      ActivityEditor.edit(
+      Oli.Authoring.Audited.edit_activity(
+        context,
         project_slug,
         activity_resource_id,
         activity_resource_id,
@@ -213,23 +215,34 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   end
 
   @doc """
-  Deletes a banked activity using the same ActivityEditor path as the UI.
+  Deletes a banked activity through the audited activity deletion, the same path as the UI.
   """
-  def delete(project_slug, author, activity_resource_id) do
+  def delete(context, project_slug, author, activity_resource_id) do
     with {:ok, _project} <- authorize_project(project_slug, author),
          {:ok, _revision} <- get_banked_activity(project_slug, activity_resource_id) do
-      ActivityEditor.delete(project_slug, activity_resource_id, activity_resource_id, author)
+      Oli.Authoring.Audited.delete_activity(
+        context,
+        project_slug,
+        activity_resource_id,
+        activity_resource_id,
+        author
+      )
     end
   end
 
   @doc """
-  Deletes multiple banked activities.
+  Deletes multiple banked activities, all or nothing, through the audited activity deletion.
   """
-  def delete_bulk(project_slug, author, activity_resource_ids)
+  def delete_bulk(context, project_slug, author, activity_resource_ids)
       when is_list(activity_resource_ids) do
     with {:ok, _project} <- authorize_project(project_slug, author),
          {:ok, _revisions} <- get_banked_activities(project_slug, activity_resource_ids) do
-      ActivityEditor.delete_bulk(project_slug, activity_resource_ids, author)
+      Oli.Authoring.Audited.delete_activities(
+        context,
+        project_slug,
+        activity_resource_ids,
+        author
+      )
     end
   end
 

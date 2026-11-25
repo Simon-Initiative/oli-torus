@@ -13,6 +13,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
   alias Oli.Delivery.Sections.Enrollment
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Experiments
+  alias Oli.Experiments.Audited, as: ExperimentsAudited
 
   alias Oli.Experiments.{
     AssignConditionRequest,
@@ -288,99 +289,115 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
          {:ok, later_assessment_revision} <-
            revision_by_title(Map.fetch!(state.projects, @project_name), @later_assessment_title),
          {:ok, weighted_definition} <-
-           Experiments.create_experiment(%CreateExperimentRequest{
-             scope: authoring_scope(scope, state),
-             slug: "scenario-delivery-runtime",
-             name: "Scenario delivery runtime",
-             algorithm: :weighted_random,
-             assignment_scope: :intervention,
-             section_ids: [
-               scope.section_id,
-               Map.fetch!(state.sections, @second_selected_section_name).id
-             ],
-             conditions: [
-               %{
-                 client_ref: @condition_code,
-                 label: "Condition A",
-                 active: true,
-                 position: 0,
-                 option_id: @option_id,
-                 weight: 1.0
-               },
-               %{
-                 client_ref: @option_b_id,
-                 label: "Condition B",
-                 active: true,
-                 position: 1,
-                 option_id: @option_b_id,
-                 weight: 1.0
-               }
-             ],
-             alternatives_resource_id: alternatives_revision.resource_id,
-             interventions: [
-               %{
-                 page_resource_id: page_revision.resource_id,
-                 content_element_id: "scenario-ab-alternatives"
-               },
-               %{
-                 page_resource_id: page_revision.resource_id,
-                 content_element_id: "scenario-ab-alternatives-2"
-               }
-             ]
-           }),
+           ExperimentsAudited.create_experiment(
+             Oli.TestHelpers.author_audit_context(),
+             %CreateExperimentRequest{
+               scope: authoring_scope(scope, state),
+               slug: "scenario-delivery-runtime",
+               name: "Scenario delivery runtime",
+               algorithm: :weighted_random,
+               assignment_scope: :intervention,
+               section_ids: [
+                 scope.section_id,
+                 Map.fetch!(state.sections, @second_selected_section_name).id
+               ],
+               conditions: [
+                 %{
+                   client_ref: @condition_code,
+                   label: "Condition A",
+                   active: true,
+                   position: 0,
+                   option_id: @option_id,
+                   weight: 1.0
+                 },
+                 %{
+                   client_ref: @option_b_id,
+                   label: "Condition B",
+                   active: true,
+                   position: 1,
+                   option_id: @option_b_id,
+                   weight: 1.0
+                 }
+               ],
+               alternatives_resource_id: alternatives_revision.resource_id,
+               interventions: [
+                 %{
+                   page_resource_id: page_revision.resource_id,
+                   content_element_id: "scenario-ab-alternatives"
+                 },
+                 %{
+                   page_resource_id: page_revision.resource_id,
+                   content_element_id: "scenario-ab-alternatives-2"
+                 }
+               ]
+             }
+           ),
          {:ok, _active} <-
-           Experiments.activate_experiment(weighted_definition.id, %LifecycleRequest{
-             scope: authoring_scope(scope, state)
-           }),
+           ExperimentsAudited.transition_experiment(
+             Oli.TestHelpers.author_audit_context(),
+             weighted_definition.id,
+             :activate,
+             %LifecycleRequest{
+               scope: authoring_scope(scope, state)
+             }
+           ),
          {:ok, adaptive_definition} <-
-           Experiments.create_experiment(%CreateExperimentRequest{
-             scope: authoring_scope(scope, state),
-             slug: "scenario-adaptive-runtime",
-             name: "Scenario adaptive runtime",
-             algorithm: :thompson_sampling,
-             section_ids: [scope.section_id],
-             alternatives_resource_id: adaptive_revision.resource_id,
-             conditions: [
-               %{
-                 client_ref: @condition_code,
-                 label: "Condition A",
-                 active: true,
-                 position: 0,
-                 option_id: @option_id,
-                 weight: 1.0
-               },
-               %{
-                 client_ref: @option_b_id,
-                 label: "Condition B",
-                 active: true,
-                 position: 1,
-                 option_id: @option_b_id,
-                 weight: 1.0
-               }
-             ],
-             interventions: [
-               %{
-                 page_resource_id: page_revision.resource_id,
-                 content_element_id: "scenario-ts-alternatives",
-                 assessment_binding: %{
-                   assessment_page_resource_id: assessment_revision.resource_id,
-                   reward_threshold: Decimal.new("1.0")
+           ExperimentsAudited.create_experiment(
+             Oli.TestHelpers.author_audit_context(),
+             %CreateExperimentRequest{
+               scope: authoring_scope(scope, state),
+               slug: "scenario-adaptive-runtime",
+               name: "Scenario adaptive runtime",
+               algorithm: :thompson_sampling,
+               section_ids: [scope.section_id],
+               alternatives_resource_id: adaptive_revision.resource_id,
+               conditions: [
+                 %{
+                   client_ref: @condition_code,
+                   label: "Condition A",
+                   active: true,
+                   position: 0,
+                   option_id: @option_id,
+                   weight: 1.0
+                 },
+                 %{
+                   client_ref: @option_b_id,
+                   label: "Condition B",
+                   active: true,
+                   position: 1,
+                   option_id: @option_b_id,
+                   weight: 1.0
                  }
-               },
-               %{
-                 page_resource_id: later_revision.resource_id,
-                 content_element_id: "scenario-ts-alternatives-later",
-                 assessment_binding: %{
-                   assessment_page_resource_id: later_assessment_revision.resource_id,
-                   reward_threshold: Decimal.new("1.0")
+               ],
+               interventions: [
+                 %{
+                   page_resource_id: page_revision.resource_id,
+                   content_element_id: "scenario-ts-alternatives",
+                   assessment_binding: %{
+                     assessment_page_resource_id: assessment_revision.resource_id,
+                     reward_threshold: Decimal.new("1.0")
+                   }
+                 },
+                 %{
+                   page_resource_id: later_revision.resource_id,
+                   content_element_id: "scenario-ts-alternatives-later",
+                   assessment_binding: %{
+                     assessment_page_resource_id: later_assessment_revision.resource_id,
+                     reward_threshold: Decimal.new("1.0")
+                   }
                  }
-               }
-             ]
-           }),
+               ]
+             }
+           ),
          {:ok, _active} <-
-           Experiments.activate_experiment(adaptive_definition.id, %LifecycleRequest{
-             scope: authoring_scope(scope, state)
-           }) do
+           ExperimentsAudited.transition_experiment(
+             Oli.TestHelpers.author_audit_context(),
+             adaptive_definition.id,
+             :activate,
+             %LifecycleRequest{
+               scope: authoring_scope(scope, state)
+             }
+           ) do
       state
     else
       {:error, reason} -> flunk("activate_native_experiment failed: #{inspect(reason)}")
@@ -424,9 +441,14 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
              )
            ),
          {:ok, _completed} <-
-           Experiments.complete_experiment(intervention_definition.id, %LifecycleRequest{
-             scope: authoring_scope(first_scope, state)
-           }),
+           ExperimentsAudited.transition_experiment(
+             Oli.TestHelpers.author_audit_context(),
+             intervention_definition.id,
+             :complete,
+             %LifecycleRequest{
+               scope: authoring_scope(first_scope, state)
+             }
+           ),
          {:ok, canonical_definition} <-
            create_canonical_weighted_experiment(
              state,
@@ -435,9 +457,14 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
              alternatives_revision
            ),
          {:ok, _active} <-
-           Experiments.activate_experiment(canonical_definition.id, %LifecycleRequest{
-             scope: authoring_scope(first_scope, state)
-           }),
+           ExperimentsAudited.transition_experiment(
+             Oli.TestHelpers.author_audit_context(),
+             canonical_definition.id,
+             :activate,
+             %LifecycleRequest{
+               scope: authoring_scope(first_scope, state)
+             }
+           ),
          {:ok, first_visit} <-
            prepare_delivery_page(state, first_page, @section_name, @student_name),
          {:ok, revisit} <-
@@ -520,32 +547,35 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
          second_scope,
          alternatives_revision
        ) do
-    Experiments.create_experiment(%CreateExperimentRequest{
-      scope: authoring_scope(first_scope, state),
-      slug: "scenario-section-enrollment-runtime",
-      name: "Scenario section and enrollment runtime",
-      algorithm: :weighted_random,
-      section_ids: [first_scope.section_id, second_scope.section_id],
-      alternatives_resource_id: alternatives_revision.resource_id,
-      conditions: [
-        %{
-          client_ref: @condition_code,
-          label: "Condition A",
-          active: true,
-          position: 0,
-          option_id: @option_id,
-          weight: 1.0
-        },
-        %{
-          client_ref: @option_b_id,
-          label: "Condition B",
-          active: true,
-          position: 1,
-          option_id: @option_b_id,
-          weight: 1.0
-        }
-      ]
-    })
+    ExperimentsAudited.create_experiment(
+      Oli.TestHelpers.author_audit_context(),
+      %CreateExperimentRequest{
+        scope: authoring_scope(first_scope, state),
+        slug: "scenario-section-enrollment-runtime",
+        name: "Scenario section and enrollment runtime",
+        algorithm: :weighted_random,
+        section_ids: [first_scope.section_id, second_scope.section_id],
+        alternatives_resource_id: alternatives_revision.resource_id,
+        conditions: [
+          %{
+            client_ref: @condition_code,
+            label: "Condition A",
+            active: true,
+            position: 0,
+            option_id: @option_id,
+            weight: 1.0
+          },
+          %{
+            client_ref: @option_b_id,
+            label: "Condition B",
+            active: true,
+            position: 1,
+            option_id: @option_b_id,
+            weight: 1.0
+          }
+        ]
+      }
+    )
   end
 
   defp canonical_assignments(scope, experiment_id) do

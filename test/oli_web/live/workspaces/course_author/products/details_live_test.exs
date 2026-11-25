@@ -85,7 +85,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
     test "renders the template updates banner when updates are available", ctx do
       %{conn: conn, project: project, product: product, author: author} = ctx
 
-      Oli.Publishing.publish_project(project, "fresh update", author.id)
+      Oli.TestHelpers.publish_project_fixture(project, "fresh update", author.id)
 
       {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
 
@@ -434,7 +434,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
 
   ##### HELPER FUNCTIONS #####
   alias Oli.Delivery.Sections.Blueprint
-  alias Oli.Publishing
   alias Oli.Resources.ResourceType
 
   defp response_to_map({:ok, list}) do
@@ -448,7 +447,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
   end
 
   defp publish_project(ctx) do
-    Publishing.publish_project(ctx.project, "Datashop test", ctx.author.id)
+    Oli.TestHelpers.publish_project_fixture(ctx.project, "Datashop test", ctx.author.id)
     ctx
   end
 

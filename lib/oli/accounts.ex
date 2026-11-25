@@ -1444,12 +1444,19 @@ defmodule Oli.Accounts do
   def accept_collaborator_invitation(author, author_project, attrs \\ %{}) do
     Multi.new()
     |> Oli.Accounts.Audited.accept_invitation_multi(:account, {:author, author, attrs, :password})
-    |> Multi.update(
-      :author_project,
-      AuthorProject.changeset(author_project, %{status: :accepted})
-    )
+    |> accept_collaboration_multi(author, author_project)
     |> Repo.transaction()
     |> normalize_invitation_transaction(:author_project)
+  end
+
+  # The invited author accepts the collaboration in the same transaction as the account change.
+  defp accept_collaboration_multi(multi, author, author_project) do
+    Oli.Authoring.Audited.respond_to_invitation_multi(
+      multi,
+      :author_project,
+      Oli.Auditing.Context.for_actor(author, source: :ui),
+      {author_project.author_id, author_project.project_id, :accepted}
+    )
   end
 
   defp normalize_invitation_transaction({:ok, changes}, membership) do
@@ -1497,10 +1504,7 @@ defmodule Oli.Accounts do
   def accept_collaborator_invitation_via_sso(author, author_project, attrs \\ %{}) do
     Multi.new()
     |> Oli.Accounts.Audited.accept_invitation_multi(:account, {:author, author, attrs, :sso})
-    |> Multi.update(
-      :author_project,
-      AuthorProject.changeset(author_project, %{status: :accepted})
-    )
+    |> accept_collaboration_multi(author, author_project)
     |> Repo.transaction()
     |> normalize_invitation_transaction(:account)
   end

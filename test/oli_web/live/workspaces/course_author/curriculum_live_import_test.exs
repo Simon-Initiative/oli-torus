@@ -231,6 +231,32 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveImportTest do
       assert_redirect(view, Routes.live_path(@endpoint, EditorLive, project.slug, expected_slug))
     end
 
+    test "a real import creates the page and records the import as the author", %{
+      view: view,
+      project: project,
+      content_admin: content_admin
+    } do
+      Application.put_env(:oli, :google_docs_import, client: __MODULE__.MarkdownClient)
+
+      view
+      |> form("#google-docs-import-form", %{@import_form_key => %{"file_id" => "1RealDocFileId"}})
+      |> render_submit()
+
+      await_import_tasks()
+
+      assert render(view) =~ "Imported &quot;Real Doc&quot; successfully."
+
+      event =
+        assert_audited(:google_doc_imported,
+          project_id: project.id,
+          actor: content_admin,
+          source: :ui
+        )
+
+      assert event.details["page_title"] == "Real Doc"
+      refute inspect(event) =~ "1RealDocFileId"
+    end
+
     test "import error displays descriptive message", %{view: view} do
       Application.put_env(:oli, :google_docs_import, importer: __MODULE__.ErrorImporter)
 
@@ -257,7 +283,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveImportTest do
   defmodule SuccessImporter do
     alias Oli.Resources.Revision
 
-    def import(_project_slug, _container_slug, file_id, _author, _opts) do
+    def import(_context, _project_slug, _container_slug, file_id, _author, _opts) do
       revision = %Revision{
         id: System.unique_integer([:positive]),
         resource_id: System.unique_integer([:positive]),
@@ -278,8 +304,32 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveImportTest do
     end
   end
 
+  # Waits for the import tasks the view started, so the view has their result before rendering.
+  defp await_import_tasks do
+    for pid <- Task.Supervisor.children(Oli.TaskSupervisor) do
+      ref = Process.monitor(pid)
+      assert_receive {:DOWN, ^ref, :process, ^pid, _reason}, 10_000
+    end
+  end
+
+  defmodule MarkdownClient do
+    def fetch_markdown(file_id, _opts) do
+      body = "# Real Doc\n\nImported text.\n"
+
+      {:ok,
+       %{
+         body: body,
+         bytes: byte_size(body),
+         content_type: "text/markdown",
+         headers: [{"content-type", "text/markdown"}],
+         url: "https://docs.google.com/document/d/#{file_id}/export?format=md",
+         file_id: file_id
+       }}
+    end
+  end
+
   defmodule ErrorImporter do
-    def import(_project_slug, _container_slug, _file_id, _author, _opts) do
+    def import(_context, _project_slug, _container_slug, _file_id, _author, _opts) do
       {:error, {:invalid_file_id, :format}, []}
     end
   end
@@ -287,7 +337,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveImportTest do
   defmodule RedirectImporter do
     alias Oli.GoogleDocs.Warnings
 
-    def import(_project_slug, _container_slug, _file_id, _author, _opts) do
+    def import(_context, _project_slug, _container_slug, _file_id, _author, _opts) do
       warnings = [
         Warnings.build(:download_redirect, %{status: 307, location: "https://accounts.google.com"})
       ]

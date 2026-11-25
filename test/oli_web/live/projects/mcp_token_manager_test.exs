@@ -71,7 +71,7 @@ defmodule OliWeb.Projects.MCPTokenManagerTest do
 
   defp create_project_with_author(author) do
     # Use Course.create_project to ensure proper publication and root container setup
-    {:ok, %{project: project}} = Oli.Authoring.Course.create_project("Test Project", author)
+    {:ok, %{project: project}} = Oli.TestHelpers.create_project_fixture("Test Project", author)
     project
   end
 end

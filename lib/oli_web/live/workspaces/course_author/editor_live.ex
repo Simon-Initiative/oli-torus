@@ -478,7 +478,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     %{current_author: author, project: project} = socket.assigns
     original_slug = socket.assigns.revision_slug
 
-    case PageEditor.edit(project.slug, revision.slug, author.email, revision_params) do
+    context = Oli.Auditing.Context.for_actor(author, source: :ui)
+
+    case Oli.Authoring.Audited.edit_page(
+           context,
+           project.slug,
+           revision.slug,
+           author.email,
+           revision_params
+         ) do
       {:ok, updated_revision} ->
         breadcrumbs =
           Breadcrumb.trail_to(
@@ -875,10 +883,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
     with {:acquired} <- PageEditor.acquire_lock(project_slug, revision_slug, author.email),
          {:ok, revision} <-
-           PageEditor.edit(project_slug, revision_slug, author.email, %{
-             "title" => title,
-             "releaseLock" => false
-           }) do
+           Oli.Authoring.Audited.edit_page(
+             Oli.Auditing.Context.for_actor(author, source: :ui),
+             project_slug,
+             revision_slug,
+             author.email,
+             %{"title" => title, "releaseLock" => false}
+           ) do
       breadcrumbs =
         Breadcrumb.trail_to(
           project_slug,

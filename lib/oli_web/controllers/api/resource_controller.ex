@@ -3,7 +3,6 @@ defmodule OliWeb.Api.ResourceController do
 
   alias Oli.Accounts
   alias Oli.Authoring.Course
-  alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Delivery.Hierarchy
   alias Oli.Publishing.AuthoringResolver
@@ -98,7 +97,15 @@ defmodule OliWeb.Api.ResourceController do
   def update(conn, %{"project" => project_slug, "resource" => resource_slug, "update" => update}) do
     author = conn.assigns[:current_author]
 
-    case PageEditor.edit(project_slug, resource_slug, author.email, update) do
+    context = Oli.Auditing.Context.for_actor(author, source: :api)
+
+    case Oli.Authoring.Audited.edit_page(
+           context,
+           project_slug,
+           resource_slug,
+           author.email,
+           update
+         ) do
       {:ok, revision} ->
         json(conn, %{"type" => "success", "revision_slug" => revision.slug})
 
@@ -114,6 +121,9 @@ defmodule OliWeb.Api.ResourceController do
       {:error, {:feature_disabled, feature}} ->
         error(conn, 403, "#{feature} authoring is not enabled for this project")
 
+      {:error, :protected} ->
+        error(conn, 400, "the update includes fields that cannot be changed")
+
       e ->
         {_, msg} = Oli.Utils.log_error("Could not update resource", e)
         error(conn, 500, msg)
@@ -124,7 +134,13 @@ defmodule OliWeb.Api.ResourceController do
     project = Course.get_project_by_slug(project_slug)
     author = conn.assigns[:current_author]
 
-    case ObjectiveEditor.add_new(%{title: title}, author, project, nil) do
+    case Oli.Authoring.Audited.create_objective(
+           Oli.Auditing.Context.for_actor(author, source: :api),
+           %{title: title},
+           author,
+           project,
+           nil
+         ) do
       {:ok, %{revision: revision}} ->
         conn
         |> json(%{"type" => "success", "revisionSlug" => revision.slug})

@@ -46,6 +46,48 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandlerTest do
     assert child.resource_id in parent.children
     refute removed_child.resource_id in parent.children
     assert removed_child.deleted
+
+    events =
+      audit_events(:learning_objectives_changed,
+        project_id: built_project.project.id,
+        actor: result.state.current_author,
+        source: :scenario
+      )
+
+    assert Enum.any?(events, &(&1.resource_id == child.resource_id))
+
+    assert Enum.any?(
+             events,
+             &(&1.resource_id == removed_child.resource_id and &1.changes["deleted"]["after"])
+           )
+  end
+
+  test "objectives declared on a scenario project are recorded as created by its author" do
+    yaml = """
+    - project:
+        name: "declared_objectives"
+        title: "Declared Objectives"
+        objectives:
+          - "Objective A"
+        root:
+          children:
+            - page: "Practice"
+    """
+
+    result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+    assert result.errors == []
+    built_project = Engine.get_project(result.state, "declared_objectives")
+    objective = built_project.objectives_by_title["Objective A"]
+
+    event =
+      assert_audited(:learning_objectives_changed,
+        project_id: built_project.project.id,
+        resource_id: objective.resource_id,
+        source: :scenario
+      )
+
+    assert event.changes["title"]["after"] == "Objective A"
   end
 
   test "objectives directive reports missing parents" do

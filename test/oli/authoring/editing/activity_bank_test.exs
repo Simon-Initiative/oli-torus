@@ -236,15 +236,31 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
                })
 
       assert {:error, {:not_authorized}} =
-               ActivityBank.update(project.slug, unauthorized_author, revision.resource_id, %{
-                 "title" => "Unauthorized update"
-               })
+               ActivityBank.update(
+                 Oli.TestHelpers.author_audit_context(),
+                 project.slug,
+                 unauthorized_author,
+                 revision.resource_id,
+                 %{
+                   "title" => "Unauthorized update"
+                 }
+               )
 
       assert {:error, {:not_authorized}} =
-               ActivityBank.delete(project.slug, unauthorized_author, revision.resource_id)
+               ActivityBank.delete(
+                 Oli.TestHelpers.author_audit_context(),
+                 project.slug,
+                 unauthorized_author,
+                 revision.resource_id
+               )
 
       assert {:error, {:not_authorized}} =
-               ActivityBank.delete_bulk(project.slug, unauthorized_author, [revision.resource_id])
+               ActivityBank.delete_bulk(
+                 Oli.TestHelpers.author_audit_context(),
+                 project.slug,
+                 unauthorized_author,
+                 [revision.resource_id]
+               )
     end
 
     test "rejects non-banked resources before update and delete", %{
@@ -269,23 +285,45 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
         "Activity resource '#{embedded_revision.resource_id}' is not banked"
 
       assert {:error, ^expected_scope_error} =
-               ActivityBank.update(project.slug, author, embedded_revision.resource_id, %{
-                 "title" => "Updated embedded"
-               })
+               ActivityBank.update(
+                 Oli.TestHelpers.author_audit_context(),
+                 project.slug,
+                 author,
+                 embedded_revision.resource_id,
+                 %{
+                   "title" => "Updated embedded"
+                 }
+               )
 
       assert {:error, ^expected_scope_error} =
-               ActivityBank.delete(project.slug, author, embedded_revision.resource_id)
+               ActivityBank.delete(
+                 Oli.TestHelpers.author_audit_context(),
+                 project.slug,
+                 author,
+                 embedded_revision.resource_id
+               )
 
       assert {:error, ^expected_scope_error} =
-               ActivityBank.delete_bulk(project.slug, author, [embedded_revision.resource_id])
+               ActivityBank.delete_bulk(
+                 Oli.TestHelpers.author_audit_context(),
+                 project.slug,
+                 author,
+                 [embedded_revision.resource_id]
+               )
 
       expected_type_error =
         "Activity resource '#{tag.resource_id}' does not have the expected resource type"
 
       assert {:error, ^expected_type_error} =
-               ActivityBank.update(project.slug, author, tag.resource_id, %{
-                 "title" => "Updated tag"
-               })
+               ActivityBank.update(
+                 Oli.TestHelpers.author_audit_context(),
+                 project.slug,
+                 author,
+                 tag.resource_id,
+                 %{
+                   "title" => "Updated tag"
+                 }
+               )
     end
 
     test "rejects metadata update ids outside the project", %{
@@ -305,21 +343,39 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
         "Objective resource '#{other.objective.resource_id}' not found in project"
 
       assert {:error, ^expected_objective_error} =
-               ActivityBank.update(project.slug, author, revision.resource_id, %{
-                 "objectives" => %{"1" => [other.objective.resource_id]}
-               })
+               ActivityBank.update(
+                 Oli.TestHelpers.author_audit_context(),
+                 project.slug,
+                 author,
+                 revision.resource_id,
+                 %{
+                   "objectives" => %{"1" => [other.objective.resource_id]}
+                 }
+               )
 
       assert {:error, ^expected_objective_error} =
-               ActivityBank.update(project.slug, author, revision.resource_id, %{
-                 "objective_map" => %{"1" => [other.objective.resource_id]}
-               })
+               ActivityBank.update(
+                 Oli.TestHelpers.author_audit_context(),
+                 project.slug,
+                 author,
+                 revision.resource_id,
+                 %{
+                   "objective_map" => %{"1" => [other.objective.resource_id]}
+                 }
+               )
 
       expected_tag_error = "Tag resource '#{other.tag.resource_id}' not found in project"
 
       assert {:error, ^expected_tag_error} =
-               ActivityBank.update(project.slug, author, revision.resource_id, %{
-                 "tags" => [other.tag.resource_id]
-               })
+               ActivityBank.update(
+                 Oli.TestHelpers.author_audit_context(),
+                 project.slug,
+                 author,
+                 revision.resource_id,
+                 %{
+                   "tags" => [other.tag.resource_id]
+                 }
+               )
     end
   end
 

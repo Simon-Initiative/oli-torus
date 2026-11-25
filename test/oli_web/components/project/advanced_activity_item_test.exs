@@ -7,6 +7,7 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
   describe "AdvancedActivityItem" do
     setup do
       project = insert(:project)
+      author = insert(:author)
 
       activity =
         insert(:activity_registration, %{
@@ -16,12 +17,14 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
 
       [
         project: project,
+        author: author,
         activity: activity
       ]
     end
 
     test "renders activity information correctly", %{
       conn: conn,
+      author: author,
       project: project,
       activity: activity
     } do
@@ -31,14 +34,15 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
           OliWeb.Components.Project.AdvancedActivityItem,
           id: "test-item",
           activity: activity,
-          project_id: project.id
+          project_id: project.id,
+          author: author
         )
 
       assert html =~ activity.title
       assert has_element?(lcd, "div", activity.title)
     end
 
-    test "shows deployment ID for LTI activities", %{conn: conn, project: project} do
+    test "shows deployment ID for LTI activities", %{conn: conn, author: author, project: project} do
       lti_activity =
         insert(:activity_registration, %{
           title: "LTI Activity",
@@ -60,7 +64,8 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
           OliWeb.Components.Project.AdvancedActivityItem,
           id: "test-item",
           activity: activity_with_deployment,
-          project_id: project.id
+          project_id: project.id,
+          author: author
         )
 
       assert has_element?(lcd, "span", "Deployment Id: #{deployment.deployment_id}")
@@ -68,6 +73,7 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
 
     test "shows enable button for disabled activities", %{
       conn: conn,
+      author: author,
       project: project,
       activity: activity
     } do
@@ -79,7 +85,8 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
           OliWeb.Components.Project.AdvancedActivityItem,
           id: "test-item",
           activity: disabled_activity,
-          project_id: project.id
+          project_id: project.id,
+          author: author
         )
 
       assert has_element?(lcd, "button", "Enable")
@@ -87,6 +94,7 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
 
     test "shows disable button for enabled activities", %{
       conn: conn,
+      author: author,
       project: project,
       activity: activity
     } do
@@ -98,7 +106,8 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
           OliWeb.Components.Project.AdvancedActivityItem,
           id: "test-item",
           activity: enabled_activity,
-          project_id: project.id
+          project_id: project.id,
+          author: author
         )
 
       assert has_element?(lcd, "button", "Disable")
@@ -106,6 +115,7 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
 
     test "enables activity when enable button is clicked", %{
       conn: conn,
+      author: author,
       project: project,
       activity: activity
     } do
@@ -124,7 +134,8 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
           OliWeb.Components.Project.AdvancedActivityItem,
           id: "test-item",
           activity: disabled_activity,
-          project_id: project.id
+          project_id: project.id,
+          author: author
         )
 
       # Click enable button
@@ -134,10 +145,20 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
 
       # Should update the activity status in the component
       assert has_element?(lcd, "button", "Disable")
+
+      event =
+        assert_audited(:project_settings_changed,
+          project_id: project.id,
+          actor: author,
+          source: :ui
+        )
+
+      assert event.changes["enabled_activities"]["operation"] == "added"
     end
 
     test "disables activity when disable button is clicked", %{
       conn: conn,
+      author: author,
       project: project,
       activity: activity
     } do
@@ -156,7 +177,8 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
           OliWeb.Components.Project.AdvancedActivityItem,
           id: "test-item",
           activity: enabled_activity,
-          project_id: project.id
+          project_id: project.id,
+          author: author
         )
 
       # Click disable button
@@ -166,6 +188,15 @@ defmodule OliWeb.Components.Project.AdvancedActivityItemTest do
 
       # Should update the activity status in the component
       assert has_element?(lcd, "button", "Enable")
+
+      event =
+        assert_audited(:project_settings_changed,
+          project_id: project.id,
+          actor: author,
+          source: :ui
+        )
+
+      assert event.changes["enabled_activities"]["operation"] == "removed"
     end
   end
 end

@@ -212,6 +212,7 @@ defmodule OliWeb.Admin.IngestV2 do
     state = %{
       state
       | author: socket.assigns.author,
+        context: Oli.Auditing.Context.for_actor(socket.assigns.author, source: :ui),
         errors: [],
         bypass_validation: socket.assigns.bypass_validation,
         notify_step_start: fn step, num_tasks ->

@@ -46,7 +46,8 @@ defmodule Oli.Scenarios.Directives.ProductHandler do
       nil ->
         # Create initial publication
         {:ok, pub} =
-          Publishing.publish_project(
+          Oli.Publishing.Audited.publish_project(
+            Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
             source_project.project,
             "Initial publication for product",
             state.current_author.id

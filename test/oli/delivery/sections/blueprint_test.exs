@@ -4,14 +4,12 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
   import Oli.Factory
   import Ecto.Query, warn: false
 
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.InstructorCustomizations
   alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Delivery.Gating
-  alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Publishing.DeliveryResolver
@@ -377,7 +375,8 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       institution: institution,
       author: author
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, initial_pub} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -407,7 +406,8 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       institution: institution,
       author: author
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, initial_pub} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -861,7 +861,8 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       project: project,
       author: author
     } do
-      {:ok, _publication} = Publishing.publish_project(project, "initial publication", author.id)
+      {:ok, _publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "initial publication", author.id)
 
       custom_labels = %{"unit" => "Module", "lesson" => "Section"}
 
@@ -923,7 +924,9 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
         |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
         |> Repo.update!()
 
-      {:ok, _publication} = Publishing.publish_project(project, "initial publication", author.id)
+      {:ok, _publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "initial publication", author.id)
+
       {:ok, blueprint} = Blueprint.create_blueprint(project.slug, "LKT Blueprint", %{})
 
       assert blueprint.learning_model_version == :lkt_aoa
@@ -939,7 +942,8 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       project: project,
       author: author
     } do
-      {:ok, _publication} = Publishing.publish_project(project, "initial publication", author.id)
+      {:ok, _publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "initial publication", author.id)
 
       {:ok, blueprint} =
         Blueprint.create_blueprint(
@@ -992,7 +996,8 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
           publisher_id: project.publisher_id
         })
 
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, initial_pub} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # Create a blueprint using the initial publication
       {:ok, section} =
@@ -1018,12 +1023,14 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       # We then change the other project to be global visibility, but project
       # does not yet have a publication, so the product created from it is not
       # visible.
-      Course.update_project(another.project, %{visibility: :global})
+      Oli.TestHelpers.update_project_fixture(another.project, %{visibility: :global})
       available = Blueprint.available_products(author, institution)
       assert length(available) == 2
 
       # After publishing the project, the product is now visible
-      {:ok, _} = Publishing.publish_project(another.project, "some changes", author.id)
+      {:ok, _} =
+        Oli.TestHelpers.publish_project_fixture(another.project, "some changes", author.id)
+
       available = Blueprint.available_products(author, institution)
       assert length(available) == 3
     end

@@ -3,7 +3,7 @@ defmodule Oli.Authoring.Course do
 
   alias Oli.Accounts.Author
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
-  alias Oli.Authoring.{Collaborators, ProjectSearch}
+  alias Oli.Authoring.ProjectSearch
 
   alias Oli.Authoring.Course.{
     Project,
@@ -16,15 +16,12 @@ defmodule Oli.Authoring.Course do
   alias Oli.Tags.ProjectTag
 
   alias Oli.Groups.CommunityVisibility
-  alias Oli.Inventories
-  alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Publishing.PublishedResource
   alias Oli.{Accounts, Repo}
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Resources.{ResourceType, Revision, ScoringStrategy}
+  alias Oli.Resources.Revision
   alias Oli.Delivery.Sections.SectionsProjectsPublications
-  alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.PublishedResource
 
   def create_project_resource(attrs) do
@@ -1063,194 +1060,28 @@ defmodule Oli.Authoring.Course do
     create_and_attach_resource(project, attrs)
   end
 
-  @doc "Creates a new project using the latest learning proficiency framework."
-  def create_project(attrs) do
-    %Project{}
-    |> Project.changeset(attrs)
-    |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
-    |> Repo.insert()
-  end
+  # Export and snapshot outputs that background jobs write. Settings go through
+  # `Oli.Authoring.Audited`, which records them.
+  @system_maintained_fields ~w(latest_export_url latest_export_timestamp
+    latest_analytics_snapshot_url latest_analytics_snapshot_timestamp latest_datashop_snapshot_url
+    latest_datashop_snapshot_timestamp)
 
   @doc """
-  Creates a Project whose trusted compatibility state is copied from a source Project.
-
-  Source values take precedence over any values present in `attrs`.
+  Updates the export and snapshot fields that background jobs maintain. Any other key returns
+  `{:error, :protected}`: project settings change only through `Oli.Authoring.Audited`.
   """
-  def create_project_from_source(attrs, %Project{} = source_project) do
-    %Project{}
-    |> Project.changeset(attrs)
-    |> Project.trusted_learning_model_changeset(%{
-      learning_model_version: source_project.learning_model_version
-    })
-    |> Project.trusted_lo_well_formed_changeset(%{
-      lo_well_formed: source_project.lo_well_formed
-    })
-    |> Repo.insert()
-  end
-
-  @doc "Creates a new project and its initial content using LKT-AOA by default."
-  def create_project(title, author, additional_attrs \\ %{}) do
-    do_create_project(title, author, additional_attrs, :lkt_aoa, :use_default)
-  end
-
-  @doc """
-  Creates a Project from a validated archive learning-model selection.
-
-  This is a trusted import boundary; ordinary Project creation remains pinned to
-  the application default and ignores learning-model attributes.
-  """
-  def create_project_from_archive(title, author, learning_model_version, additional_attrs \\ %{})
-      when learning_model_version in [:naive, :lkt_aoa] do
-    do_create_project(
-      title,
-      author,
-      Map.delete(additional_attrs, :lo_well_formed),
-      learning_model_version,
-      Map.get(additional_attrs, :lo_well_formed)
-    )
-  end
-
-  defp do_create_project(
-         title,
-         author,
-         additional_attrs,
-         learning_model_version,
-         lo_well_formed
-       ) do
-    Repo.transaction(fn ->
-      with {:ok, project_family} <- create_family(default_family(title)),
-           {:ok, project} <-
-             create_project_with_trusted_state(
-               default_project(title, project_family, additional_attrs),
-               learning_model_version,
-               lo_well_formed
-             ),
-           {:ok, collaborator} <- Collaborators.add_collaborator(author, project),
-           {:ok, %{resource: resource, revision: resource_revision}} <-
-             initial_resource_setup(author, project),
-           {:ok, %{publication: publication, published_resource: published_resource}} <-
-             Publishing.initial_publication_setup(project, resource, resource_revision) do
-        %{
-          project_family: project_family,
-          project: project,
-          author_project: collaborator,
-          resource: resource,
-          resource_revision: resource_revision,
-          publication: publication,
-          published_resource: published_resource
-        }
-      else
-        {:error, error} -> Repo.rollback(error)
-      end
-    end)
-  end
-
-  defp create_project_with_trusted_state(attrs, learning_model_version, lo_well_formed) do
-    %Project{}
-    |> Project.changeset(attrs)
-    |> maybe_set_learning_model(learning_model_version)
-    |> maybe_set_lo_well_formed(lo_well_formed)
-    |> Repo.insert()
-  end
-
-  defp maybe_set_learning_model(changeset, nil), do: changeset
-
-  defp maybe_set_learning_model(changeset, learning_model_version) do
-    Project.trusted_learning_model_changeset(changeset, %{
-      learning_model_version: learning_model_version
-    })
-  end
-
-  defp maybe_set_lo_well_formed(changeset, :use_default), do: changeset
-
-  defp maybe_set_lo_well_formed(changeset, lo_well_formed) do
-    Project.trusted_lo_well_formed_changeset(changeset, %{
-      lo_well_formed: lo_well_formed
-    })
-  end
-
-  defp default_project(title, family, additional_attrs) do
-    default_publisher = Inventories.default_publisher()
-
-    Map.merge(
-      %{
-        title: title,
-        version: "1.0.0",
-        family_id: family.id,
-        publisher_id: default_publisher.id,
-        analytics_version: :v2
-      },
-      additional_attrs
-    )
-  end
-
+  @spec update_project(%Project{}, map()) ::
+          {:ok, %Project{}} | {:error, :protected | Ecto.Changeset.t()}
   def update_project(%Project{} = project, attrs) do
-    project
-    |> Project.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Upgrades an active project and all its templates from the legacy learning model to LKT-AOA.
-
-  Only project authors and administrators with project access may upgrade. The
-  conditional update prevents stale requests from changing an already upgraded
-  project. Templates are updated in one bulk query in the same transaction.
-  Existing course sections, content, and learner proficiency remain unchanged.
-  """
-  @spec upgrade_learning_model(%Project{}, %Author{}) ::
-          {:ok, %Project{}} | {:error, :not_authorized | :not_upgradable}
-  def upgrade_learning_model(%Project{} = project, %Author{} = author) do
-    case Accounts.can_access?(author, project) do
-      false ->
-        {:error, :not_authorized}
-
+    case Enum.all?(Map.keys(attrs), &(to_string(&1) in @system_maintained_fields)) do
       true ->
-        query =
-          from p in Project,
-            where:
-              p.id == ^project.id and p.status == :active and p.learning_model_version == :naive,
-            select: p
+        project
+        |> Project.changeset(attrs)
+        |> Repo.update()
 
-        Repo.transaction(fn ->
-          updates = [
-            learning_model_version: :lkt_aoa,
-            updated_at: DateTime.utc_now() |> DateTime.truncate(:second)
-          ]
-
-          case Repo.update_all(query, set: updates) do
-            {1, [updated]} ->
-              from(s in Section,
-                where: s.base_project_id == ^project.id and s.type == :blueprint
-              )
-              |> Repo.update_all(set: updates)
-
-              updated
-
-            {0, []} ->
-              Repo.rollback(:not_upgradable)
-          end
-        end)
+      false ->
+        {:error, :protected}
     end
-  end
-
-  @doc """
-  Updates a project's embedded attributes while preserving fields omitted from
-  the update.
-
-  Use this for focused attribute changes: `Project.changeset/2` treats an
-  `attributes` parameter as a replacement embed and resets omitted fields to
-  their schema defaults.
-  """
-  @spec update_project_attributes(%Project{}, map()) ::
-          {:ok, %Project{}} | {:error, Ecto.Changeset.t()}
-  def update_project_attributes(%Project{} = project, attrs) do
-    attributes = project.attributes || %ProjectAttributes{}
-
-    project
-    |> Ecto.Changeset.change()
-    |> Ecto.Changeset.put_embed(:attributes, ProjectAttributes.changeset(attributes, attrs))
-    |> Repo.update()
   end
 
   @doc """
@@ -1303,21 +1134,6 @@ defmodule Oli.Authoring.Course do
     |> Repo.insert()
   end
 
-  defp default_family(title) do
-    %{
-      title: title,
-      description: "New family from project creation"
-    }
-  end
-
-  defp project_has_survey?(project_id) do
-    Project
-    |> where([p], p.id == ^project_id and not is_nil(p.required_survey_resource_id))
-    |> select([p], p.required_survey_resource_id)
-    |> Repo.one()
-    |> Kernel.!=(nil)
-  end
-
   def get_project_survey(project_id) do
     PublishedResource
     |> join(:inner, [pr], rev in Revision, on: pr.revision_id == rev.id)
@@ -1332,57 +1148,6 @@ defmodule Oli.Authoring.Course do
     )
     |> select([_, rev], rev)
     |> Repo.one()
-  end
-
-  defp update_project_required_survey_resource_id(project_id, resource_id) do
-    Project
-    |> where([p], p.id == ^project_id)
-    |> Repo.one()
-    |> Project.changeset(%{required_survey_resource_id: resource_id})
-    |> Repo.update()
-  end
-
-  def create_project_survey(project, author_id) do
-    case project_has_survey?(project.id) do
-      false -> do_create_project_survey(project, author_id)
-      _ -> {:error, "The project already has a survey"}
-    end
-  end
-
-  defp do_create_project_survey(project, author_id) do
-    {:ok, %{revision: revision}} =
-      create_and_attach_resource(project, %{
-        title: "Course Survey",
-        author_id: author_id,
-        max_attempts: 1,
-        scoring_strategy_id: ScoringStrategy.get_id_by_type("most_recent"),
-        resource_type_id: ResourceType.id_for_page(),
-        content: %{
-          "version" => "0.1.0",
-          "model" => []
-        }
-      })
-
-    update_project_required_survey_resource_id(project.id, revision.resource_id)
-
-    Oli.Publishing.ChangeTracker.track_revision(project.slug, revision)
-
-    revision
-  end
-
-  def delete_project_survey(project) do
-    case project_has_survey?(project.id) do
-      false -> {:error, "The project doesn't have a survey"}
-      _ -> do_delete_project_survey(project)
-    end
-  end
-
-  defp do_delete_project_survey(project) do
-    case get_project_survey(project.id) do
-      revision ->
-        update_project_required_survey_resource_id(project.id, nil)
-        Oli.Publishing.ChangeTracker.track_revision(project.slug, revision, %{deleted: true})
-    end
   end
 
   @doc """
@@ -1468,15 +1233,6 @@ defmodule Oli.Authoring.Course do
       )
 
     Repo.one(query)
-  end
-
-  @doc """
-  Updates the author_project.
-  """
-  def update_author_project(%AuthorProject{} = ap, attrs) do
-    ap
-    |> AuthorProject.changeset(attrs)
-    |> Repo.update()
   end
 
   defp project_search_patterns(nil), do: []

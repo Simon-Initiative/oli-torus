@@ -248,7 +248,8 @@ defmodule Oli.AutomationSetup do
   end
 
   defp publish_project(project, author_id) do
-    Oli.Publishing.publish_project(
+    Oli.Publishing.Audited.publish_project(
+      setup_context(),
       project,
       "Automated test setup",
       author_id
@@ -261,8 +262,11 @@ defmodule Oli.AutomationSetup do
   end
 
   defp create_project(archive_file, author) do
-    Oli.Interop.Ingest.ingest(archive_file, author)
+    Oli.Interop.Ingest.ingest(archive_file, author, setup_context())
   end
+
+  # End-to-end fixture setup is technical work, recorded under the Setup PW system actor.
+  defp setup_context, do: Oli.Auditing.Context.for_system(:playwright_setup, source: :api)
 
   defp create_section(false, _, _, _) do
     {:ok, nil}

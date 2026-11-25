@@ -99,7 +99,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       case Publishing.get_latest_published_publication_by_slug(built_project.project.slug) do
         nil ->
           {:ok, pub} =
-            Publishing.publish_project(
+            Oli.Publishing.Audited.publish_project(
+              Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
               built_project.project,
               "initial",
               state.current_author.id
@@ -161,15 +162,17 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
     title = directive_attrs.title
 
     # Standalone sections still need a backing project/publication for section resources.
-    {:ok, project} =
-      Oli.Authoring.Course.create_project(%{
-        title: "#{title} Project",
-        description: "Auto-generated project for section #{title}",
-        authors: [state.current_author]
-      })
+    {:ok, %{project: project}} =
+      Oli.Authoring.Audited.create_project(
+        Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
+        "#{title} Project",
+        state.current_author,
+        %{description: "Auto-generated project for section #{title}"}
+      )
 
     {:ok, publication} =
-      Publishing.publish_project(
+      Oli.Publishing.Audited.publish_project(
+        Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
         project,
         "initial",
         state.current_author.id

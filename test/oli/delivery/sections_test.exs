@@ -4469,7 +4469,7 @@ defmodule Oli.Delivery.SectionsTest do
       {:ok, _} = Publishing.update_publication(publication, %{published: nil})
 
       {:ok, new_publication} =
-        Publishing.publish_project(project, "deleted objective 2", author.id)
+        Oli.TestHelpers.publish_project_fixture(project, "deleted objective 2", author.id)
 
       # A section created from this publication gets a section resource for the deleted
       # objective, because create_nonstructural_section_resources/3 builds them from the

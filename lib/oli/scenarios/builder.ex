@@ -3,9 +3,7 @@ defmodule Oli.Scenarios.Builder do
   Builds Torus project structures from Scenarios definitions.
   """
   alias Oli.Scenarios.Types.{ProjectSpec, Node, BuiltProject}
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ContainerEditor
-  alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.ResourceType
@@ -65,13 +63,23 @@ defmodule Oli.Scenarios.Builder do
         author,
         _institution
       ) do
-    # Use the standard Oli.Authoring.Course.create_project infrastructure
-    # that the UI uses when creating projects
+    # A slug or visibility from the spec is part of the creation; the slug cannot change later
+    create_attrs =
+      []
+      |> maybe_put(:slug, slug)
+      |> maybe_put(:visibility, visibility)
+      |> Map.new()
+
+    # Use the same audited project creation that the UI uses, with the represented author
     {:ok, project_setup} =
-      Course.create_project_from_archive(
+      Oli.Authoring.Audited.create_project(
+        Oli.Auditing.Context.for_actor(author, source: :scenario),
         title || "Test Project",
         author,
-        learning_model_version || :naive
+        create_attrs,
+        learning_model_version: learning_model_version || :naive,
+        # Archive-style creation left the flag unset; keep that for Scenario projects
+        lo_well_formed: nil
       )
 
     %{
@@ -81,27 +89,13 @@ defmodule Oli.Scenarios.Builder do
       publication: publication
     } = project_setup
 
-    update_attrs =
-      []
-      |> maybe_put(:slug, slug)
-      |> maybe_put(:visibility, visibility)
-
-    project =
-      case update_attrs do
-        [] ->
-          project
-
-        attrs ->
-          {:ok, updated_project} = Course.update_project(project, Map.new(attrs))
-          updated_project
-      end
-
     # Update the root revision title to match the spec
     # The standard infrastructure creates "Curriculum" but we want the title from the spec
     root_title = root_node.title || "root"
 
     {:ok, _} =
-      ContainerEditor.edit_page(
+      Oli.Authoring.Audited.update_page_options(
+        Oli.Auditing.Context.for_actor(author, source: :scenario),
         project,
         root_revision.slug,
         %{"title" => root_title, "author_id" => author.id}
@@ -218,7 +212,12 @@ defmodule Oli.Scenarios.Builder do
     Enum.reduce(objectives, %{}, fn objective, acc ->
       # Create parent objective
       {:ok, %{revision: parent_rev}} =
-        ObjectiveEditor.add_new(%{title: objective.title}, author, project)
+        Oli.Authoring.Audited.create_objective(
+          Oli.Auditing.Context.for_actor(author, source: :scenario),
+          %{title: objective.title},
+          author,
+          project
+        )
 
       # Create sub-objectives if any, attaching each to the parent. Each
       # attachment produces a new parent revision (its `children` list
@@ -232,7 +231,13 @@ defmodule Oli.Scenarios.Builder do
           {child_map, updated_parent_rev} =
             Enum.reduce(children, {%{}, parent_rev}, fn child_title, {child_acc, _parent_rev} ->
               {:ok, %{revision: child_rev, container: updated_parent_rev}} =
-                ObjectiveEditor.add_new(%{title: child_title}, author, project, parent_rev.slug)
+                Oli.Authoring.Audited.create_objective(
+                  Oli.Auditing.Context.for_actor(author, source: :scenario),
+                  %{title: child_title},
+                  author,
+                  project,
+                  parent_rev.slug
+                )
 
               {Map.put(child_acc, child_title, child_rev), updated_parent_rev}
             end)

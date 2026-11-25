@@ -439,7 +439,12 @@ defmodule Oli.Utils.Seeder.Project do
             end
 
           {:ok, published} =
-            Oli.Publishing.publish_project(project, "ensure published", author_id)
+            Oli.Publishing.Audited.publish_project(
+              Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+              project,
+              "ensure published",
+              author_id
+            )
 
           published
 

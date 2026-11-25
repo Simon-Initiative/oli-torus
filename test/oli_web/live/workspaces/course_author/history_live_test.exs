@@ -308,9 +308,38 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
                ~s[href="/workspaces/course_author/#{project.slug}/curriculum/#{container_revision.slug}/history"]
     end
 
+    test "restoring a revision and saving edited JSON record each replacement", %{
+      conn: conn,
+      project: project,
+      admin: admin,
+      page_1_revision: page_1_revision
+    } do
+      {:ok, view, _html} = live(conn, revision_history_route(project.slug, page_1_revision.slug))
+
+      render_click(view, "restore", %{})
+
+      render_click(view, "monaco_editor_get_value", %{
+        "value" => ~s({"model": []}),
+        "meta" => %{"action" => "save"}
+      })
+
+      events =
+        audit_events(:authoring_content_replaced,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert events |> Enum.map(& &1.details["reason"]) |> Enum.sort() ==
+               ["history_restore", "json_edit"]
+
+      assert Enum.all?(events, &(&1.resource_id == page_1_revision.resource_id))
+    end
+
     test "revision details table: can edit 'children' attr", %{
       conn: conn,
       project: project,
+      admin: admin,
       unit_1_revision: unit_1_revision,
       page_1_revision: page_1_revision
     } do
@@ -360,6 +389,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
       # and we see the value updated in the table
       assert element(view, "#revision-table-children-attr td:nth-of-type(2)")
              |> render() =~ "[]"
+
+      event =
+        assert_audited(:authoring_content_replaced,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.details == %{"reason" => "attribute_edit"}
+      assert event.changes["children"]["after"] == []
     end
 
     test "revision details table: can edit 'objectives' attr", %{

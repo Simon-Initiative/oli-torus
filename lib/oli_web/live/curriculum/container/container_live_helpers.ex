@@ -67,6 +67,25 @@ defmodule OliWeb.Curriculum.Container.ContainerLiveHelpers do
   end
 
   @doc """
+  Moves `revision` from `from_container` to `to_container` for the curriculum, container, and
+  pages LiveViews through `Oli.Authoring.Audited.move_curriculum_entry/6`, as `author`. Returns
+  the socket, with an error flash when the move fails.
+  """
+  def move_entry(socket, revision, from_container, to_container, author, project) do
+    case Oli.Authoring.Audited.move_curriculum_entry(
+           Oli.Auditing.Context.for_actor(author, source: :ui),
+           revision,
+           from_container,
+           to_container,
+           author,
+           project
+         ) do
+      {:ok, _} -> socket
+      {:error, _} -> put_flash(socket, :error, "Could not move the item")
+    end
+  end
+
+  @doc """
   Shared handler for save-options event in curriculum, container, and pages LiveViews
   """
   def handle_save_options(socket, revision_params) do
@@ -82,7 +101,14 @@ defmodule OliWeb.Curriculum.Container.ContainerLiveHelpers do
       |> Map.put("author_id", author.id)
       |> decode_revision_params()
 
-    case Oli.Authoring.Editing.ContainerEditor.edit_page(project, revision.slug, revision_params) do
+    context = Oli.Auditing.Context.for_actor(author, source: :ui)
+
+    case Oli.Authoring.Audited.update_page_options(
+           context,
+           project,
+           revision.slug,
+           revision_params
+         ) do
       {:ok, _} ->
         {:noreply,
          socket
@@ -94,6 +120,9 @@ defmodule OliWeb.Curriculum.Container.ContainerLiveHelpers do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Could not save the options")}
     end
   end
 

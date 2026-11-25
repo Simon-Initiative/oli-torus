@@ -5,7 +5,6 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Scheduling
-  alias Oli.Publishing
 
   describe "scheduling operations" do
     setup do
@@ -17,7 +16,8 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       institution: institution,
       author: author
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, initial_pub} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -110,7 +110,8 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       institution: institution,
       author: author
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, "some changes", author.id)
+      {:ok, initial_pub} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # Create a course section using the initial publication
       {:ok, section1} =

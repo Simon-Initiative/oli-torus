@@ -122,7 +122,10 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
 
       # Publishing the project
       {:ok, _publication} = Oli.Publishing.update_publication(publication, %{published: nil})
-      {:ok, publication} = Oli.Publishing.publish_project(project, "some changes", author.id)
+
+      {:ok, publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
+
       Sections.update_section_project_publication(section, project.id, publication.id)
       Sections.rebuild_section_resources(section: section, publication: publication)
       # rebuild_section_resources does not pick up the objectives attached by the republish above
@@ -179,7 +182,10 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       )
 
       {:ok, _publication} = Oli.Publishing.update_publication(publication, %{published: nil})
-      {:ok, publication} = Oli.Publishing.publish_project(project, "some changes", author.id)
+
+      {:ok, publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
+
       Sections.update_section_project_publication(section, project.id, publication.id)
       Sections.rebuild_section_resources(section: section, publication: publication)
       {:ok, _} = Sections.rebuild_contained_objectives(section)

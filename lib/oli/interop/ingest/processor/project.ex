@@ -9,6 +9,7 @@ defmodule Oli.Interop.Ingest.Processor.Project do
         %State{
           project_details: project_details,
           author: author,
+          context: context,
           legacy_to_resource_id_map: legacy_to_resource_id_map
         } = state
       ) do
@@ -39,7 +40,8 @@ defmodule Oli.Interop.Ingest.Processor.Project do
       end
 
     {:ok, %{project: project, publication: publication, resource_revision: root_revision}} =
-      Oli.Authoring.Course.create_project_from_archive(
+      Oli.Authoring.Audited.import_project(
+        context,
         title,
         author,
         learning_model_version,

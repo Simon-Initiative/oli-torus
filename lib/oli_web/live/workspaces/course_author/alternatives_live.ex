@@ -8,7 +8,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
   import OliWeb.Resources.AlternativesEditor.GroupOption
 
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias Oli.Authoring.Editing.{AlternativesOptionEditor, ResourceEditor}
+  alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Publishing
   alias Oli.Resources.{ResourceType, Revision}
   alias OliWeb.Common.Modal.{FormModal, DeleteModal}
@@ -131,15 +131,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
   def handle_event("create_group", %{"params" => %{"name" => name}}, socket) do
     %{project: project, author: author, alternatives: alternatives} = socket.assigns
 
-    {:ok, group} =
-      ResourceEditor.create(
-        project.slug,
-        author,
-        @alternatives_type_id,
-        %{title: name, content: %{"options" => [], "strategy" => "user_section_preference"}}
-      )
+    case Oli.Authoring.Audited.create_alternatives_group(
+           Oli.Auditing.Context.for_actor(author, source: :ui),
+           project.slug,
+           author,
+           %{title: name, content: %{"options" => [], "strategy" => "user_section_preference"}}
+         ) do
+      {:ok, group} ->
+        {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives])}
 
-    {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives])}
+      {:error, _reason} ->
+        show_error(socket)
+    end
   end
 
   def handle_event("show_create_option_modal", params, socket) do
@@ -248,7 +251,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
       ) do
     %{project: project, author: author, alternatives: alternatives} = socket.assigns
 
-    case AlternativesOptionEditor.move_to(
+    case Oli.Authoring.Audited.move_alternatives_option(
+           Oli.Auditing.Context.for_actor(author, source: :ui),
            project.slug,
            author,
            alternatives,
@@ -315,14 +319,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
   def handle_event("delete_group", %{"resource-id" => resource_id}, socket) do
     %{project: project, author: author, alternatives: alternatives} = socket.assigns
 
-    {:ok, deleted} = ResourceEditor.delete(project.slug, resource_id, author)
+    context = Oli.Auditing.Context.for_actor(author, source: :ui)
 
-    alternatives = Enum.filter(alternatives, fn r -> r.resource_id != deleted.resource_id end)
+    case Oli.Authoring.Audited.delete_alternatives_group(
+           context,
+           project.slug,
+           resource_id,
+           author
+         ) do
+      {:ok, deleted} ->
+        alternatives =
+          Enum.filter(alternatives, fn r -> r.resource_id != deleted.resource_id end)
 
-    {:noreply,
-     socket
-     |> hide_modal()
-     |> assign(alternatives: alternatives)}
+        {:noreply,
+         socket
+         |> hide_modal()
+         |> assign(alternatives: alternatives)}
+
+      {:error, _} ->
+        show_error(socket)
+    end
   end
 
   def handle_event(
@@ -604,9 +620,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
          resource_id,
          title
        ) do
-    case ResourceEditor.edit(project_slug, resource_id, author, %{
-           title: title
-         }) do
+    case Oli.Authoring.Audited.edit_alternatives_group(
+           Oli.Auditing.Context.for_actor(author, source: :ui),
+           project_slug,
+           resource_id,
+           author,
+           %{
+             title: title
+           }
+         ) do
       {:ok, updated_group} ->
         # update groups list to reflect latest update
         alternatives =
@@ -633,9 +655,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
          content,
          updated_options
        ) do
-    case ResourceEditor.edit(project_slug, resource_id, author, %{
-           content: %{content | "options" => updated_options}
-         }) do
+    case Oli.Authoring.Audited.edit_alternatives_group(
+           Oli.Auditing.Context.for_actor(author, source: :ui),
+           project_slug,
+           resource_id,
+           author,
+           %{
+             content: %{content | "options" => updated_options}
+           }
+         ) do
       {:ok, updated_group} ->
         # update groups list to reflect latest update
         alternatives =

@@ -49,7 +49,7 @@ columns an event sets; omitted columns are `NULL`, `{}`, or `[]`.
 | --- | --- |
 | Authentication | `user_logged_in`, `author_logged_in`, `user_logged_out`, `author_logged_out`, `session_revoked` |
 | Account | `account_created`, `account_updated`, `account_locked`, `account_unlocked`, `account_linked`, `account_identity_linked`, `account_identity_unlinked`, `account_permissions_changed`, `account_creation_rights_changed`, `account_recovery_requested`, `account_credential_recovered`, `user_deleted`, `author_deleted`, `author_role_changed`, `account_internal_flag_changed` |
-| Project | `project_created`, `project_duplicated`, `project_imported`, `project_deleted`, `project_ownership_changed`, `project_collaborator_changed`, `project_published` |
+| Project | `project_created`, `project_duplicated`, `project_imported`, `project_deleted`, `project_collaborator_changed`, `project_published` |
 | Assessment settings | `assessment_settings_changed`, `assessment_settings_reset`, `assessment_setting_changed` |
 | Student exceptions | `student_exception_created`, `student_exception_updated`, `student_exception_deleted` |
 | DOT and activation points | `dot_settings_changed`, `activation_settings_changed`, `instructor_ai_recommendation_changed` |
@@ -925,15 +925,15 @@ Example:
 
 ### `project_created`
 
-**Project created.** A new authoring project was created.
+**Project created.** A new authoring project was created; its creator is the owner.
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `project` |
 | Required columns | `project_id` |
 | At least one of | none |
-| Affected person | none |
+| Affected person | `author` (required) |
 | Outcomes | `succeeded` |
 | No-op policy | `lifecycle` (written without changes) |
 | Change fields | none |
@@ -956,6 +956,7 @@ Example:
   "entity_type": "project",
   "entity_id": "88",
   "entity_snapshot": {"id":88,"slug":"intro_biology","title":"Intro Biology"},
+  "affected_author_id": 31,
   "project_id": 88,
   "details": {"project_title":"Intro Biology"},
   "source": "ui",
@@ -967,15 +968,15 @@ Example:
 
 ### `project_duplicated`
 
-**Project duplicated.** A project was created as a copy of another project.
+**Project duplicated.** A project was created as a copy of another project; the author who copied it is the owner.
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `project` |
 | Required columns | `project_id` |
 | At least one of | none |
-| Affected person | none |
+| Affected person | `author` (required) |
 | Outcomes | `succeeded` |
 | No-op policy | `lifecycle` (written without changes) |
 | Change fields | none |
@@ -998,6 +999,7 @@ Example:
   "entity_type": "project",
   "entity_id": "93",
   "entity_snapshot": {"id":93,"slug":"copy_intro_biology","title":"Copy of Intro Biology"},
+  "affected_author_id": 31,
   "project_id": 93,
   "refs": [{"id":88,"label":"Intro Biology","role":"source","type":"project"}],
   "details": {"source_project_id":88},
@@ -1010,16 +1012,16 @@ Example:
 
 ### `project_imported`
 
-**Project imported.** A project was created from an imported course archive.
+**Project imported.** A project was created from an imported course archive; the importing author is the owner.
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `project` |
 | Required columns | `project_id` |
 | At least one of | none |
-| Affected person | none |
-| Outcomes | `succeeded`, `partial`, `failed` |
+| Affected person | `author` (required) |
+| Outcomes | `succeeded` |
 | No-op policy | `lifecycle` (written without changes) |
 | Change fields | none |
 | Detail keys | `project_title`, `publication_id`, `version`, `description`, `source_project_id` |
@@ -1034,13 +1036,14 @@ Example:
   "occurred_at": "2026-10-29T14:05:08.123456Z",
   "schema_version": 2,
   "event_type": "project_imported",
-  "outcome": "partial",
+  "outcome": "succeeded",
   "actor_type": "author",
   "author_id": 5,
   "actor_snapshot": {"email":"alan.admin@example.edu","id":5,"name":"Alan Admin"},
   "entity_type": "project",
   "entity_id": "88",
   "entity_snapshot": {"id":88,"slug":"intro_biology","title":"Intro Biology"},
+  "affected_author_id": 31,
   "project_id": 88,
   "details": {"project_title":"Intro Biology"},
   "source": "ui",
@@ -1056,7 +1059,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `project` |
 | Required columns | `project_id` |
 | At least one of | none |
@@ -1091,55 +1094,13 @@ Example:
 }
 ```
 
-### `project_ownership_changed`
-
-**Project ownership changed.** Ownership of a project was transferred to another author.
-
-| Rule | Value |
-| --- | --- |
-| Actors | `user`, `author` |
-| Entity types | `project` |
-| Required columns | `project_id` |
-| At least one of | none |
-| Affected person | `author` (required) |
-| Outcomes | `succeeded` |
-| No-op policy | `lifecycle` (written without changes) |
-| Change fields | none |
-| Detail keys | `project_title`, `publication_id`, `version`, `description`, `source_project_id` |
-| Reference roles | none |
-| Status | active |
-
-Example:
-
-```json
-{
-  "inserted_at": "2026-10-29T14:05:08.123456Z",
-  "occurred_at": "2026-10-29T14:05:08.123456Z",
-  "schema_version": 2,
-  "event_type": "project_ownership_changed",
-  "outcome": "succeeded",
-  "actor_type": "author",
-  "author_id": 5,
-  "actor_snapshot": {"email":"alan.admin@example.edu","id":5,"name":"Alan Admin"},
-  "entity_type": "project",
-  "entity_id": "88",
-  "entity_snapshot": {"id":88,"slug":"intro_biology","title":"Intro Biology"},
-  "affected_author_id": 12,
-  "project_id": 88,
-  "source": "ui",
-  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
-  "event_key": "project:88:ownership_changed:author:12",
-  "search_text": "Alan Admin alan.admin@example.edu Intro Biology intro_biology"
-}
-```
-
 ### `project_collaborator_changed`
 
 **Project collaborator changed.** An author was added, removed, or changed as a project collaborator.
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `project` |
 | Required columns | `project_id` |
 | At least one of | none |
@@ -1182,7 +1143,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `project` |
 | Required columns | `project_id` |
 | At least one of | none |
@@ -1495,7 +1456,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers_enabled` |
+| Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers`, `triggers_enabled` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -1537,7 +1498,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers_enabled` |
+| Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers`, `triggers_enabled` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -1579,7 +1540,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers_enabled` |
+| Change fields | `ai_enabled`, `allow_triggers`, `assistant_enabled`, `instructor_recommendation_prompt_template`, `instructor_recommendations_enabled`, `page_prompt_template`, `service_config_id`, `triggers`, `triggers_enabled` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -1669,8 +1630,8 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded`, `partial`, `failed` |
 | No-op policy | `lifecycle` (written without changes) |
-| Change fields | `deleted`, `revision_id`, `title` |
-| Detail keys | none |
+| Change fields | `children`, `deleted`, `duration_minutes`, `graded`, `max_attempts`, `objectives`, `revision_id`, `scoring_strategy_id`, `title` |
+| Detail keys | `removed_activity_ids` |
 | Reference roles | `previous`, `resulting` |
 | Status | active |
 
@@ -1691,7 +1652,9 @@ Example:
   "entity_snapshot": {"id":4512,"title":"Unit 1 Quiz"},
   "project_id": 88,
   "resource_id": 4512,
+  "refs": [{"id":90311,"label":"Unit 1 Quiz","role":"previous","type":"revision"},{"id":90342,"label":"Unit 1 Quiz","role":"resulting","type":"revision"}],
   "changes": {"deleted":{"after":true,"before":false,"operation":"set"}},
+  "details": {"removed_activity_ids":[5120,5121]},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "resource:4512:removed",
@@ -1712,8 +1675,8 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded`, `partial`, `failed` |
 | No-op policy | `lifecycle` (written without changes) |
-| Change fields | `deleted`, `revision_id`, `title` |
-| Detail keys | none |
+| Change fields | `children`, `deleted`, `duration_minutes`, `graded`, `max_attempts`, `objectives`, `revision_id`, `scoring_strategy_id`, `title` |
+| Detail keys | `reason`, `remapped_activity_count` |
 | Reference roles | `previous`, `resulting` |
 | Status | active |
 
@@ -1734,7 +1697,8 @@ Example:
   "entity_snapshot": {"id":4512,"title":"Unit 1 Quiz"},
   "project_id": 88,
   "resource_id": 4512,
-  "refs": [{"id":99100,"role":"previous","type":"revision"},{"id":99101,"role":"resulting","type":"revision"}],
+  "refs": [{"id":99100,"label":"Unit 1 Quiz","role":"previous","type":"revision"},{"id":99101,"label":"Unit 1 Quiz","role":"resulting","type":"revision"}],
+  "details": {"reason":"repair","remapped_activity_count":2},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "resource:4512:replaced",
@@ -1755,7 +1719,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded`, `partial`, `failed` |
 | No-op policy | `lifecycle` (written without changes) |
-| Change fields | `deleted`, `revision_id`, `title` |
+| Change fields | `children`, `deleted`, `duration_minutes`, `graded`, `max_attempts`, `objectives`, `revision_id`, `scoring_strategy_id`, `title` |
 | Detail keys | none |
 | Reference roles | `previous`, `resulting` |
 | Status | active |
@@ -1777,6 +1741,8 @@ Example:
   "entity_snapshot": {"id":5120,"title":"Cell membrane question"},
   "project_id": 88,
   "resource_id": 5120,
+  "refs": [{"id":90120,"label":"Cell membrane question","role":"previous","type":"revision"},{"id":90343,"label":"Cell membrane question","role":"resulting","type":"revision"}],
+  "changes": {"deleted":{"after":true,"before":false,"operation":"set"}},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "resource:5120:removed",
@@ -1797,7 +1763,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded`, `partial`, `failed` |
 | No-op policy | `lifecycle` (written without changes) |
-| Change fields | `deleted`, `revision_id`, `title` |
+| Change fields | `children`, `deleted`, `duration_minutes`, `graded`, `max_attempts`, `objectives`, `revision_id`, `scoring_strategy_id`, `title` |
 | Detail keys | `file_name`, `mime_type` |
 | Reference roles | `previous`, `resulting` |
 | Status | active |
@@ -1818,6 +1784,7 @@ Example:
   "entity_id": "703",
   "entity_snapshot": {"id":703,"title":"mitosis.png"},
   "project_id": 88,
+  "changes": {"deleted":{"after":true,"before":false,"operation":"set"}},
   "details": {"file_name":"mitosis.png","mime_type":"image/png"},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
@@ -1839,7 +1806,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded`, `partial`, `failed` |
 | No-op policy | `lifecycle` (written without changes) |
-| Change fields | `deleted`, `revision_id`, `title` |
+| Change fields | `children`, `deleted`, `duration_minutes`, `graded`, `max_attempts`, `objectives`, `revision_id`, `scoring_strategy_id`, `title` |
 | Detail keys | `file_id_hash`, `page_revision_id`, `page_resource_id`, `page_title`, `warning_codes`, `warning_count`, `duration_ms`, `duration_bucket`, `download_bytes`, `uploaded_media_count`, `reused_media_count`, `failed_media_count`, `skipped_media_count`, `media_bytes_uploaded` |
 | Reference roles | `previous`, `resulting` |
 | Status | active |
@@ -2230,8 +2197,8 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `allow_duplication`, `allow_ecl_content_type`, `allow_transfer_payment_codes`, `allow_triggers`, `alternatives_enabled`, `analytics_version`, `auto_update_sections`, `calculate_embeddings_on_publish`, `coverage_formative_threshold`, `coverage_summative_threshold`, `custom_license_details`, `customizations`, `description`, `encouraging_subtitle`, `experiments_enabled`, `learning_language`, `learning_model_version`, `license_type`, `publisher_id`, `required_survey_resource_id`, `status`, `title`, `visibility`, `welcome_title` |
-| Detail keys | none |
+| Change fields | `allow_duplication`, `allow_ecl_content_type`, `allow_transfer_payment_codes`, `allow_triggers`, `alternatives_enabled`, `alternatives_groups`, `analytics_version`, `auto_update_sections`, `calculate_embeddings_on_publish`, `coverage_formative_threshold`, `coverage_summative_threshold`, `custom_license_details`, `customizations`, `description`, `enabled_activities`, `encouraging_subtitle`, `experiment_conditions`, `experiment_definition`, `experiment_status`, `experiments_enabled`, `learning_language`, `learning_model_version`, `license_type`, `publisher_id`, `required_survey_resource_id`, `status`, `title`, `visibility`, `visibility_grants`, `welcome_title` |
+| Detail keys | `blueprint_count`, `experiment_id`, `alternatives_group_id` |
 | Reference roles | none |
 | Status | active |
 
@@ -2274,7 +2241,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `assessment_mode`, `batch_scoring`, `children`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `time_limit`, `title` |
+| Change fields | `assessment_mode`, `batch_scoring`, `children`, `deleted`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `selection_rules`, `time_limit`, `title` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -2296,7 +2263,7 @@ Example:
   "entity_snapshot": {"id":4512,"title":"Unit 1 Quiz"},
   "project_id": 88,
   "resource_id": 4512,
-  "changes": {"graded":{"after":true,"before":false,"operation":"set"}},
+  "changes": {"graded":{"after":true,"before":false,"operation":"set"},"selection_rules":{"after":[{"count":3,"id":"s1","logic":{"conditions":null}}],"before":[{"count":2,"id":"s1","logic":{"conditions":null}}],"operation":"set"}},
   "source": "ui",
   "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
   "event_key": "resource:4512:authoring_settings_changed",
@@ -2317,7 +2284,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `assessment_mode`, `batch_scoring`, `children`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `time_limit`, `title` |
+| Change fields | `assessment_mode`, `batch_scoring`, `children`, `deleted`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `selection_rules`, `time_limit`, `title` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -2360,7 +2327,7 @@ Example:
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `assessment_mode`, `batch_scoring`, `children`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `time_limit`, `title` |
+| Change fields | `assessment_mode`, `batch_scoring`, `children`, `deleted`, `duration_minutes`, `explanation_strategy`, `full_progress_pct`, `graded`, `learning_model_parameters`, `max_attempts`, `objectives`, `parent_objective_id`, `purpose`, `recommended_attempts`, `replacement_strategy`, `retake_mode`, `scoring_strategy_id`, `selection_rules`, `time_limit`, `title` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |

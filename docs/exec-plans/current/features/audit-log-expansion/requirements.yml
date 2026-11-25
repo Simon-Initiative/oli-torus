@@ -179,8 +179,8 @@ requirements:
       identity after deletion.
   - id: AC-038
     title: Imports and repairs that replace authoring content identify the replaced scope and pertinent
-      before/after evidence; asynchronous paths use the administrative outcome contract rather than reporting
-      initiation as replacement success.
+      before/after evidence; a partial repair records only its committed targets, and a failed or rolled-back
+      operation records no replacement.
 - id: FR-014
   title: Audit discussion deletion and moderation
   acceptance_criteria:

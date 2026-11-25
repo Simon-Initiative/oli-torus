@@ -14,7 +14,7 @@ defmodule Oli.Auditing.EventCatalogTest do
         account_credential_recovered user_deleted author_deleted author_role_changed
         account_internal_flag_changed)a,
     project: ~w(project_created project_duplicated project_imported project_deleted
-        project_ownership_changed project_collaborator_changed project_published)a,
+        project_collaborator_changed project_published)a,
     assessment_settings:
       ~w(assessment_settings_changed assessment_settings_reset assessment_setting_changed)a,
     student_exceptions:
@@ -81,7 +81,7 @@ defmodule Oli.Auditing.EventCatalogTest do
       end)
 
     assert actual == @expected
-    assert length(EventCatalog.names()) == 110
+    assert length(EventCatalog.names()) == 109
     assert length(EventCatalog.families()) == 25
   end
 

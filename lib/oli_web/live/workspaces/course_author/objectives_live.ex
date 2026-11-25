@@ -9,7 +9,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   require Logger
 
   alias Oli.Accounts
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.ProjectAttributes
   alias Oli.Authoring.ObjectiveCoverage
   alias Oli.Authoring.ObjectiveCoverage.Issues
@@ -969,7 +968,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     project = socket.assigns.project
 
     flash_fn =
-      case ObjectiveEditor.add_new(
+      case Oli.Authoring.Audited.create_objective(
+             audit_context(socket.assigns.author),
              %{title: title},
              socket.assigns.author,
              project,
@@ -1018,7 +1018,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     project = socket.assigns.project
 
     flash_fn =
-      case ObjectiveEditor.edit(
+      case Oli.Authoring.Audited.edit_objective(
+             audit_context(socket.assigns.author),
              slug,
              %{title: title},
              socket.assigns.author,
@@ -1172,7 +1173,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
               MapSet.put(socket.assigns.pending_sub_objective_detaches, operation)
           )
           |> start_async({:detach_sub_objective, slug, parent_slug}, fn ->
-            ObjectiveEditor.remove_sub_objective_from_parent(
+            Oli.Authoring.Audited.unlink_sub_objective(
+              audit_context(author),
               slug,
               author,
               project,
@@ -1208,7 +1210,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           )
           |> hide_modal(modal_assigns: nil)
           |> start_async({:delete_sub_objective, slug}, fn ->
-            ObjectiveEditor.delete_sub_objective(slug, author, project, parent_slug)
+            Oli.Authoring.Audited.delete_sub_objective(
+              audit_context(author),
+              slug,
+              author,
+              project,
+              parent_slug
+            )
           end)
 
         {:noreply, socket}
@@ -1225,7 +1233,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     %{project: project, author: author} = socket.assigns
 
     flash_fn =
-      case ObjectiveEditor.add_new_parent_for_sub_objective(
+      case Oli.Authoring.Audited.link_sub_objective(
+             audit_context(author),
              slug,
              parent_slug,
              project.slug,
@@ -1283,9 +1292,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
          %{resource_id: resource_id, children: []} <-
            AuthoringResolver.from_revision_slug(project.slug, slug),
          [] <- Oli.Publishing.objective_parent_ids(resource_id, publication_id) do
-      ObjectiveEditor.detach_objective(resource_id, project, author)
+      Oli.Authoring.Audited.detach_objective(audit_context(author), resource_id, project, author)
 
-      case ObjectiveEditor.delete(slug, author, project) do
+      case Oli.Authoring.Audited.delete_objective(audit_context(author), slug, author, project) do
         {:ok, _} -> :ok
         {:error, _error} -> :error
       end
@@ -1566,10 +1575,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   defp persist_coverage_thresholds(socket, attrs) do
-    case Course.update_project_attributes(socket.assigns.project, attrs) do
+    %{project: project, current_author: author} = socket.assigns
+    context = Oli.Auditing.Context.for_actor(author, source: :ui)
+
+    case Oli.Authoring.Audited.update_project_settings(
+           context,
+           project.id,
+           %{attributes: attrs},
+           [:attributes]
+         ) do
       {:ok, updated_project} ->
         socket
-        |> assign(project: updated_project)
+        |> assign(project: %{updated_project | required_survey: project.required_survey})
         |> reclassify_coverage_issues()
         |> refresh_table_state()
 
@@ -1787,4 +1804,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       expanded_param -> Map.put(params, "expanded", expanded_param)
     end
   end
+
+  defp audit_context(author), do: Oli.Auditing.Context.for_actor(author, source: :ui)
 end

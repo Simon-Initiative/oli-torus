@@ -5,7 +5,6 @@ defmodule Oli.Scenarios.Directives.CloneHandler do
 
   alias Oli.Scenarios.DirectiveTypes.CloneDirective
   alias Oli.Scenarios.Engine
-  alias Oli.Authoring.Clone
 
   def handle(%CloneDirective{from: from, name: name, title: title}, state) do
     try do
@@ -16,14 +15,23 @@ defmodule Oli.Scenarios.Directives.CloneHandler do
         {:error, "Source project '#{from}' not found for cloning"}
       else
         # Clone the project using Oli's clone functionality
-        # Clone.clone_project always adds " Copy" suffix, so we'll update the title after
-        case Clone.clone_project(source.project.slug, state.current_author) do
+        # Duplication always adds a " Copy" suffix, so the title is updated afterwards
+        case Oli.Authoring.Audited.duplicate_project(
+               Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
+               source.project.slug,
+               state.current_author
+             ) do
           {:ok, cloned_project} ->
             # Update the title if a specific one was requested
             cloned_project =
               if title do
                 {:ok, updated_project} =
-                  Oli.Authoring.Course.update_project(cloned_project, %{title: title})
+                  Oli.Authoring.Audited.update_project_settings(
+                    Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
+                    cloned_project.id,
+                    %{title: title},
+                    [:title]
+                  )
 
                 updated_project
               else

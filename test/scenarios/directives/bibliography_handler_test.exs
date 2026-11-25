@@ -2,7 +2,6 @@ defmodule Oli.Scenarios.Directives.BibliographyHandlerTest do
   use Oli.DataCase, async: true
 
   import Oli.Factory
-  alias Oli.Authoring.Course
 
   alias Oli.Scenarios.Directives.BibliographyHandler
   alias Oli.Scenarios.DirectiveTypes.{BibliographyDirective, ExecutionState}
@@ -22,7 +21,7 @@ defmodule Oli.Scenarios.Directives.BibliographyHandlerTest do
 
   test "adds bibliography entry" do
     author = insert(:author)
-    {:ok, %{project: project}} = Course.create_project("bib test", author)
+    {:ok, %{project: project}} = Oli.TestHelpers.create_project_fixture("bib test", author)
 
     state = %ExecutionState{
       current_author: author,

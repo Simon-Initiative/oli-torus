@@ -3,14 +3,14 @@ defmodule Oli.GoogleDocs.ImportTest do
 
   import Oli.Factory
   import Ecto.Query
+  import ExUnit.CaptureLog
 
   alias Oli.GoogleDocs.Import
   alias Oli.GoogleDocs.MediaIngestor
   alias Oli.GoogleDocsImport.TestHelpers
   alias Oli.Resources.Revision
-  alias Oli.Auditing.LogEvent
+  alias Oli.Auditing.Context
   alias Oli.Publishing.AuthoringResolver
-  alias Oli.Authoring.Course
   alias Oli.Activities
 
   alias __MODULE__.StubClient
@@ -37,7 +37,7 @@ defmodule Oli.GoogleDocs.ImportTest do
     test "imports google doc with youtube and mcq custom elements" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Docs Import Project", author)
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Docs Import Project", author)
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
@@ -49,7 +49,13 @@ defmodule Oli.GoogleDocs.ImportTest do
       )
 
       {:ok, revision, warnings} =
-        Import.import(project.slug, container.slug, "1AbcCustomElementDoc", author)
+        Import.import(
+          Context.for_actor(author, source: :ui),
+          project.slug,
+          container.slug,
+          "1AbcCustomElementDoc",
+          author
+        )
 
       assert Enum.map(warnings, & &1.code) == []
 
@@ -76,13 +82,15 @@ defmodule Oli.GoogleDocs.ImportTest do
       assert activity_reference["activity_id"]
 
       log_event =
-        LogEvent
-        |> order_by(desc: :inserted_at)
-        |> limit(1)
-        |> Repo.one()
+        assert_audited(:google_doc_imported,
+          project_id: project.id,
+          actor: author,
+          source: :ui
+        )
 
-      assert log_event.event_type == :google_doc_imported
-      assert log_event.project_id == project.id
+      assert log_event.resource_id == revision.resource_id
+      assert log_event.details["page_revision_id"] == revision.id
+      refute inspect(log_event) =~ "1AbcCustomElementDoc"
 
       file_hash =
         :crypto.hash(:sha256, "1AbcCustomElementDoc")
@@ -91,17 +99,47 @@ defmodule Oli.GoogleDocs.ImportTest do
       assert log_event.details["file_id_hash"] == file_hash
     end
 
+    test "a page that cannot be recorded is not created" do
+      author = insert(:author)
+
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Rejected Import", author)
+      project = project_info.project
+      container = AuthoringResolver.root_container(project.slug)
+
+      Application.put_env(:oli, :google_docs_import, client: InlineMarkupClient)
+      reject_audit_inserts()
+
+      capture_log(fn ->
+        assert {:error, _reason, _warnings} =
+                 Import.import(
+                   Context.for_actor(author, source: :ui),
+                   project.slug,
+                   container.slug,
+                   "1RejectedDoc",
+                   author
+                 )
+      end)
+
+      assert AuthoringResolver.root_container(project.slug).children == container.children
+    end
+
     test "imports check all that apply and short answer custom elements" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Activities Import", author)
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Activities Import", author)
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
       Application.put_env(:oli, :google_docs_import, client: ActivitiesClient)
 
       {:ok, revision, warnings} =
-        Import.import(project.slug, container.slug, "1ActivityDoc", author)
+        Import.import(
+          Context.for_actor(author, source: :ui),
+          project.slug,
+          container.slug,
+          "1ActivityDoc",
+          author
+        )
 
       assert warnings == []
 
@@ -135,7 +173,7 @@ defmodule Oli.GoogleDocs.ImportTest do
     test "returns error when file guard is already in progress" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Guarded Project", author)
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Guarded Project", author)
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
@@ -148,13 +186,19 @@ defmodule Oli.GoogleDocs.ImportTest do
       Application.put_env(:oli, :google_docs_import, client: StubClient)
 
       assert {:error, :import_in_progress, []} ==
-               Import.import(project.slug, container.slug, file_id, author)
+               Import.import(
+                 Context.for_actor(author, source: :ui),
+                 project.slug,
+                 container.slug,
+                 file_id,
+                 author
+               )
     end
 
     test "falls back to table when MCQ builder fails" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Fallback Project", author)
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Fallback Project", author)
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
@@ -167,7 +211,13 @@ defmodule Oli.GoogleDocs.ImportTest do
       )
 
       {:ok, revision, warnings} =
-        Import.import(project.slug, container.slug, "1FallbackDoc", author)
+        Import.import(
+          Context.for_actor(author, source: :ui),
+          project.slug,
+          container.slug,
+          "1FallbackDoc",
+          author
+        )
 
       assert Enum.any?(warnings, &(&1.code == :mcq_activity_creation_failed))
 
@@ -197,7 +247,7 @@ defmodule Oli.GoogleDocs.ImportTest do
     test "records media upload warnings and retains original URLs on failure" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Media Project", author)
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Media Project", author)
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
@@ -208,7 +258,13 @@ defmodule Oli.GoogleDocs.ImportTest do
       )
 
       {:ok, revision, warnings} =
-        Import.import(project.slug, container.slug, "1MediaDoc", author)
+        Import.import(
+          Context.for_actor(author, source: :ui),
+          project.slug,
+          container.slug,
+          "1MediaDoc",
+          author
+        )
 
       assert Enum.any?(warnings, &(&1.code == :media_upload_failed))
 
@@ -227,14 +283,22 @@ defmodule Oli.GoogleDocs.ImportTest do
     test "preserves inline markup spacing across block types" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Inline Markup Project", author)
+      {:ok, project_info} =
+        Oli.TestHelpers.create_project_fixture("Inline Markup Project", author)
+
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
       Application.put_env(:oli, :google_docs_import, client: InlineMarkupClient)
 
       assert {:ok, revision, warnings} =
-               Import.import(project.slug, container.slug, "1InlineMarkupDoc", author)
+               Import.import(
+                 Context.for_actor(author, source: :ui),
+                 project.slug,
+                 container.slug,
+                 "1InlineMarkupDoc",
+                 author
+               )
 
       assert warnings == []
 
@@ -305,14 +369,20 @@ defmodule Oli.GoogleDocs.ImportTest do
     test "surfaces redirect warning when Google Docs responds with redirect" do
       author = insert(:author)
 
-      {:ok, project_info} = Course.create_project("Redirect Project", author)
+      {:ok, project_info} = Oli.TestHelpers.create_project_fixture("Redirect Project", author)
       project = project_info.project
       container = AuthoringResolver.root_container(project.slug)
 
       Application.put_env(:oli, :google_docs_import, client: RedirectClient)
 
       assert {:error, {:http_redirect, 307, location}, warnings} =
-               Import.import(project.slug, container.slug, "1RedirectDoc", author)
+               Import.import(
+                 Context.for_actor(author, source: :ui),
+                 project.slug,
+                 container.slug,
+                 "1RedirectDoc",
+                 author
+               )
 
       assert location == "https://accounts.google.com"
       assert [%{code: :download_redirect}] = warnings
@@ -478,5 +548,20 @@ defmodule Oli.GoogleDocs.ImportTest do
       :undefined -> :ok
       _ -> :ets.delete(:google_docs_import_guard)
     end
+  end
+
+  defp reject_audit_inserts do
+    Repo.query!("""
+    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'audit insert rejected by test';
+    END;
+    $$ LANGUAGE plpgsql
+    """)
+
+    Repo.query!("""
+    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
+      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
+    """)
   end
 end

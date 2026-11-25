@@ -6,7 +6,6 @@ defmodule OliWeb.Products.UsageViewTest do
 
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Accounts.SystemRole
-  alias Oli.Publishing
   alias Oli.Resources.ResourceType
 
   defp usage_route(product_slug, params \\ %{}),
@@ -124,7 +123,9 @@ defmodule OliWeb.Products.UsageViewTest do
   end
 
   defp publish_project(ctx) do
-    {:ok, _publication} = Publishing.publish_project(ctx.project, "Datashop test", ctx.author.id)
+    {:ok, _publication} =
+      Oli.TestHelpers.publish_project_fixture(ctx.project, "Datashop test", ctx.author.id)
+
     ctx
   end
 

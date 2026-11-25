@@ -34,6 +34,8 @@ defmodule Oli.Interop.Ingest.State do
     :publication,
     :root_revision,
     :author,
+    # Audit context of the person (or system) running the ingest
+    :context,
     :slug_prefix,
     :resource_id_pool,
     :legacy_to_resource_id_map,

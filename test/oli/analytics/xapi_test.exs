@@ -7,6 +7,7 @@ defmodule Oli.Analytics.XAPITest do
   alias Oli.Analytics.XAPI.StatementBundle
   alias Oli.Analytics.Summary.AttemptGroup
   alias Oli.Experiments
+  alias Oli.Experiments.Audited, as: ExperimentsAudited
   alias Oli.Experiments.{LifecycleRequest, Scope}
 
   alias Oli.Experiments.Schemas.{
@@ -356,7 +357,12 @@ defmodule Oli.Analytics.XAPITest do
       } = setup_video_experiment_context()
 
       assert {:ok, _completed} =
-               Experiments.complete_experiment(experiment.id, %LifecycleRequest{scope: scope})
+               ExperimentsAudited.transition_experiment(
+                 author_audit_context(),
+                 experiment.id,
+                 :complete,
+                 %LifecycleRequest{scope: scope}
+               )
 
       {:ok, %StatementBundle{} = bundle} =
         XAPI.construct_bundle(

@@ -96,9 +96,9 @@ defmodule OliWeb.DeliveryControllerTest do
       author: author,
       institution: institution
     } do
-      Publishing.publish_project(project, "some changes", author.id)
+      Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
-      Oli.Authoring.Course.update_project(project, %{status: :deleted})
+      Oli.TestHelpers.update_project_fixture(project, %{status: :deleted})
 
       available_publications = Publishing.available_publications(author, institution)
       assert available_publications == []
@@ -839,7 +839,10 @@ defmodule OliWeb.DeliveryControllerTest do
       )
 
       {:ok, _publication} = Publishing.update_publication(publication, %{published: nil})
-      {:ok, publication} = Publishing.publish_project(project, "some changes", author.id)
+
+      {:ok, publication} =
+        Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
+
       Sections.update_section_project_publication(section, project.id, publication.id)
       Sections.rebuild_section_resources(section: section, publication: publication)
       {:ok, _} = Sections.rebuild_contained_objectives(section)

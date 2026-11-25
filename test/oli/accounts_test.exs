@@ -1452,6 +1452,12 @@ defmodule Oli.AccountsTest do
                  author_id: author_project.author_id,
                  project_id: author_project.project_id
                ).status == :pending_confirmation
+
+        assert Repo.all(
+                 from(e in Oli.Auditing.LogEvent,
+                   where: e.event_type == :project_collaborator_changed
+                 )
+               ) == []
       end
     end
   end

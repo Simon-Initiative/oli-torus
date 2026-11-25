@@ -17,26 +17,6 @@ defmodule Oli.Lti.PlatformInstancesTest do
       redirect_uris: "some redirect_uris",
       target_link_uri: "some target_link_uri"
     }
-    @update_attrs %{
-      client_id: "some updated client_id",
-      custom_params: "some updated custom_params",
-      description: "some updated description",
-      keyset_url: "some updated keyset_url",
-      login_url: "some updated login_url",
-      name: "some updated name",
-      redirect_uris: "some updated redirect_uris",
-      target_link_uri: "some updated target_link_uri"
-    }
-    @invalid_attrs %{
-      client_id: nil,
-      custom_params: nil,
-      description: nil,
-      keyset_url: nil,
-      login_url: nil,
-      name: nil,
-      redirect_uris: nil,
-      target_link_uri: nil
-    }
 
     def platform_instance_fixture(attrs \\ %{}) do
       {:ok, platform_instance} =

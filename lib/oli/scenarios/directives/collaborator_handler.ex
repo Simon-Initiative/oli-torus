@@ -5,7 +5,6 @@ defmodule Oli.Scenarios.Directives.CollaboratorHandler do
 
   alias Oli.Scenarios.DirectiveTypes.CollaboratorDirective
   alias Oli.Scenarios.Engine
-  alias Oli.Authoring.Collaborators
   alias Oli.Accounts.Author
   alias Oli.Accounts
   alias Oli.Repo
@@ -39,7 +38,11 @@ defmodule Oli.Scenarios.Directives.CollaboratorHandler do
         Engine.get_project(state, project_name) ||
           raise "Project '#{project_name}' not found in scenario state"
 
-      case Collaborators.add_collaborator(author, built_project.project) do
+      case Oli.Authoring.Audited.add_collaborator(
+             Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
+             author,
+             built_project.project
+           ) do
         {:ok, _author_project} ->
           {:ok, state}
 

@@ -3,7 +3,6 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
   Handles authoring-time learning objective operations for scenario projects.
   """
 
-  alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, ObjectivesDirective}
 
@@ -50,7 +49,12 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
   defp apply_ops(_built_project, _author, _ops), do: {:error, "ops must be a list"}
 
   defp apply_op(built_project, author, %{"create" => %{"title" => title}}) do
-    case ObjectiveEditor.add_new(%{title: title}, author, built_project.project) do
+    case Oli.Authoring.Audited.create_objective(
+           Oli.Auditing.Context.for_actor(author, source: :scenario),
+           %{title: title},
+           author,
+           built_project.project
+         ) do
       {:ok, %{revision: revision}} ->
         {:ok, put_objective(built_project, title, revision)}
 
@@ -66,7 +70,13 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
        ) do
     with {:ok, parent} <- get_objective(built_project, parent_title),
          {:ok, %{revision: child, container: updated_parent}} <-
-           ObjectiveEditor.add_new(%{title: title}, author, built_project.project, parent.slug) do
+           Oli.Authoring.Audited.create_objective(
+             Oli.Auditing.Context.for_actor(author, source: :scenario),
+             %{title: title},
+             author,
+             built_project.project,
+             parent.slug
+           ) do
       {:ok,
        built_project
        |> put_objective(parent_title, updated_parent)
@@ -103,13 +113,25 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
   end
 
   defp remove_sub_objective(child, parent, author, project) do
-    case ObjectiveEditor.remove_sub_objective_from_parent(child.slug, author, project, parent) do
+    case Oli.Authoring.Audited.unlink_sub_objective(
+           Oli.Auditing.Context.for_actor(author, source: :scenario),
+           child.slug,
+           author,
+           project,
+           parent
+         ) do
       {:ok, updated_parent} ->
         {:ok, updated_parent, child}
 
       {:error, :last_association} ->
         with {:ok, deleted_child} <-
-               ObjectiveEditor.delete_sub_objective(child.slug, author, project, parent.slug) do
+               Oli.Authoring.Audited.delete_sub_objective(
+                 Oli.Auditing.Context.for_actor(author, source: :scenario),
+                 child.slug,
+                 author,
+                 project,
+                 parent.slug
+               ) do
           updated_parent = AuthoringResolver.from_resource_id(project.slug, parent.resource_id)
           {:ok, updated_parent, deleted_child}
         end

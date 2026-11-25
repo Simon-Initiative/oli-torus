@@ -61,7 +61,8 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
         nil ->
           # If no published publication exists, publish one
           {:ok, pub} =
-            Publishing.publish_project(
+            Oli.Publishing.Audited.publish_project(
+              Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
               source_project.project,
               "Auto-published for remix",
               state.current_author.id

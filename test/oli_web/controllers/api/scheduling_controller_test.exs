@@ -4,7 +4,6 @@ defmodule OliWeb.SchedulingControllerTest do
 
   alias Oli.Seeder
   alias Oli.Delivery.Sections
-  alias Oli.Publishing
   alias OliWeb.Router.Helpers, as: Routes
 
   defp again(conn, user) do
@@ -192,7 +191,8 @@ defmodule OliWeb.SchedulingControllerTest do
       )
       |> Seeder.add_user(%{}, :someone_else)
 
-    {:ok, initial_pub} = Publishing.publish_project(map.project, "some changes", map.author.id)
+    {:ok, initial_pub} =
+      Oli.TestHelpers.publish_project_fixture(map.project, "some changes", map.author.id)
 
     {:ok, section} =
       Sections.create_section(%{

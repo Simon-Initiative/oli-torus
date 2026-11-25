@@ -197,9 +197,14 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
         # the already logged in author is the one being invited
         # we can just mark the author_project as :accepted
         # and redirect to the project
-        Course.update_author_project(author_project, %{status: :accepted})
+        case respond_to_invitation(author, author_project, :accepted) do
+          {:ok, _} ->
+            {:noreply,
+             redirect(socket, to: ~p"/workspaces/course_author/#{project.slug}/overview")}
 
-        {:noreply, redirect(socket, to: ~p"/workspaces/course_author/#{project.slug}/overview")}
+          {:error, _} ->
+            {:noreply, put_flash(socket, :error, "We couldn't accept the invitation.")}
+        end
 
       {false, false} ->
         # the existing invited author is not logged in
@@ -212,12 +217,16 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
   end
 
   def handle_event("reject_invitation", _, socket) do
-    Course.update_author_project(socket.assigns.author_project, %{status: :rejected})
+    case respond_to_invitation(socket.assigns.author, socket.assigns.author_project, :rejected) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Your invitation has been rejected.")
+         |> redirect(to: ~p"/authors/log_in")}
 
-    {:noreply,
-     socket
-     |> put_flash(:info, "Your invitation has been rejected.")
-     |> redirect(to: ~p"/authors/log_in")}
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "We couldn't reject the invitation.")}
+    end
   end
 
   def handle_event("validate", %{"author" => author_params}, socket) do
@@ -286,10 +295,22 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
         {:noreply, put_flash(socket, :error, "Invalid email or password")}
 
       _author ->
-        Course.update_author_project(author_project, %{status: :accepted})
+        case respond_to_invitation(author, author_project, :accepted) do
+          {:ok, _} ->
+            {:noreply, assign(socket, trigger_submit: true)}
 
-        {:noreply, assign(socket, trigger_submit: true)}
+          {:error, _} ->
+            {:noreply, put_flash(socket, :error, "We couldn't accept the invitation.")}
+        end
     end
+  end
+
+  # The invited author answers their own invitation.
+  defp respond_to_invitation(author, author_project, status) do
+    Oli.Authoring.Audited.respond_to_invitation(
+      Oli.Auditing.Context.for_actor(author, source: :ui),
+      {author_project.author_id, author_project.project_id, status}
+    )
   end
 
   defp maybe_add_email_error(changeset, email, email_param) do

@@ -103,16 +103,22 @@ defmodule Oli.Auditing.EventCatalog.Fields do
   def dot_activation do
     values(~w(assistant_enabled triggers_enabled instructor_recommendations_enabled
       instructor_recommendation_prompt_template page_prompt_template ai_enabled allow_triggers
-      service_config_id)a)
+      service_config_id triggers)a)
   end
 
   @doc "Curriculum entry fields rewritten by a saved remix."
   @spec remix() :: policy()
   def remix, do: values(~w(parent position hidden numbering_index source_publication_id)a)
 
-  @doc "Revision-level fields changed by destructive authoring operations."
+  @doc """
+  Revision-level fields changed by destructive authoring operations and content replacements.
+  A replacement records the settings it changed, never the content.
+  """
   @spec authoring_content() :: policy()
-  def authoring_content, do: values(~w(deleted title revision_id)a)
+  def authoring_content do
+    values(~w(deleted title revision_id objectives children graded max_attempts
+      scoring_strategy_id duration_minutes)a)
+  end
 
   @doc "Discussion moderation state."
   @spec discussion() :: policy()
@@ -130,16 +136,20 @@ defmodule Oli.Auditing.EventCatalog.Fields do
       required_survey_resource_id allow_transfer_payment_codes welcome_title encouraging_subtitle
       auto_update_sections learning_model_version customizations learning_language
       calculate_embeddings_on_publish coverage_formative_threshold coverage_summative_threshold
-      license_type custom_license_details)a)
+      license_type custom_license_details visibility_grants enabled_activities alternatives_groups
+      experiment_status experiment_conditions experiment_definition)a)
   end
 
-  @doc "Authoring configuration: page settings, objectives, and curriculum structure."
+  @doc """
+  Authoring configuration: page settings, objectives, and curriculum structure. `deleted` records
+  the deletion of a learning objective.
+  """
   @spec authoring_configuration() :: policy()
   def authoring_configuration do
     values(~w(title graded purpose max_attempts recommended_attempts time_limit
       scoring_strategy_id retake_mode assessment_mode batch_scoring replacement_strategy
       explanation_strategy full_progress_pct duration_minutes learning_model_parameters
-      objectives children parent_objective_id)a)
+      objectives children parent_objective_id selection_rules deleted)a)
   end
 
   @doc "Section, product, and blueprint settings (`Oli.Delivery.Sections.Section`)."
@@ -402,7 +412,16 @@ defmodule Oli.Auditing.EventCatalog.Fields do
             project_id: "source project of a duplicate; recorded by project_duplicated",
             family_id: "project family link, fixed at creation",
             attributes: "recorded through its subfields (see ProjectAttributes)"
-          })
+          }),
+        pseudo_keys: %{
+          visibility_grants: "authors and institutions granted access through ProjectVisibility",
+          enabled_activities: "activities and tools enabled through ActivityRegistrationProject",
+          alternatives_groups: "alternatives group definitions, stored as revisions",
+          experiment_status: "lifecycle state of an experiment definition",
+          experiment_conditions: "conditions of an experiment definition",
+          experiment_definition:
+            "other settings of an experiment definition, with its interventions, assessment bindings, and sections"
+        }
       ),
       source(Oli.Authoring.Course.ProjectAttributes, [:project_settings],
         excluded: %{license: "recorded through license_type and custom_license_details"},
@@ -444,7 +463,10 @@ defmodule Oli.Auditing.EventCatalog.Fields do
           }),
         pseudo_keys: %{
           revision_id: "revision replaced or created by a destructive operation",
-          parent_objective_id: "objective that contains a sub-objective"
+          parent_objective_id: "objective that contains a sub-objective",
+          selection_rules:
+            "activity bank selections of the page content (ID, count, and logic), by ID",
+          triggers: "DOT activation points of the content, projected by Oli.Auditing.DotPolicy"
         }
       ),
       source(Oli.Delivery.Attempts.Core.ResourceAttempt, [:learner_record],

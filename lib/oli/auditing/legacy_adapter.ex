@@ -12,10 +12,9 @@ defmodule Oli.Auditing.LegacyAdapter do
   # event inside the same transaction as the domain change (`Oli.Auditing.append/3` in an
   # `Ecto.Multi`), which means reshaping each domain's transaction. Each later coverage
   # sub-task does that for its own events, so each call site changes only once. Account
-  # deletion, author roles, the internal flag, and the feature flag and rollout events already
-  # moved to their audited facades; these remain:
+  # deletion, author roles, the internal flag, the feature flag and rollout events, project
+  # publication, and Google Doc imports already moved to their audited facades; these remain:
   #
-  #   * authoring and projects: `project_published`, `google_doc_imported`
   #   * delivery and configuration: `section_created`
   #   * learner administration and operations: `resource_attempt_deleted`,
   #     `clickhouse_admin_operation_initiated`
@@ -31,11 +30,9 @@ defmodule Oli.Auditing.LegacyAdapter do
 
   alias Oli.Accounts.{Author, User}
   alias Oli.Auditing.{Context, EventCatalog}
-  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
 
-  @events ~w(project_published section_created google_doc_imported
-    clickhouse_admin_operation_initiated resource_attempt_deleted)a
+  @events ~w(section_created clickhouse_admin_operation_initiated resource_attempt_deleted)a
 
   @doc false
   def events, do: @events
@@ -75,40 +72,6 @@ defmodule Oli.Auditing.LegacyAdapter do
     {:ok, details |> Jason.encode!() |> Jason.decode!()}
   rescue
     _ in [Jason.EncodeError, Protocol.UndefinedError] -> {:error, :invalid_event}
-  end
-
-  defp proposal(:project_published, %Project{id: id} = project, details) do
-    refs =
-      case details["publication_id"] do
-        publication_id when is_integer(publication_id) ->
-          [ref(:resulting, :publication, publication_id, details["version"])]
-
-        _ ->
-          []
-      end
-
-    {:ok,
-     %{
-       entity: {:project, id, project},
-       scope: %{project_id: id},
-       refs: refs,
-       event_key: "project:#{id}:published"
-     }}
-  end
-
-  defp proposal(:google_doc_imported, %Project{id: id} = project, details) do
-    scope =
-      case details["page_resource_id"] do
-        resource_id when is_integer(resource_id) -> %{project_id: id, resource_id: resource_id}
-        _ -> %{project_id: id}
-      end
-
-    {:ok,
-     %{
-       entity: {:project, id, project},
-       scope: scope,
-       event_key: "project:#{id}:google_doc_imported"
-     }}
   end
 
   defp proposal(:section_created, %Section{id: id} = section, details) do
@@ -154,9 +117,6 @@ defmodule Oli.Auditing.LegacyAdapter do
   end
 
   defp proposal(_event, _resource, _details), do: {:error, :invalid_event}
-
-  defp ref(role, type, id, nil), do: %{role: role, type: type, id: id}
-  defp ref(role, type, id, label), do: %{role: role, type: type, id: id, label: label}
 
   # Event key segments only allow lowercase letters, digits, underscores, and hyphens.
   defp key_segment(value),
