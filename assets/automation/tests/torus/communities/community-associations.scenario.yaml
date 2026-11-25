@@ -1,0 +1,52 @@
+# Disposable data for the community associations test. Names follow what automation teardown
+# accepts ("Test ..." accounts, "Automation test section", "Automation test community" prefix).
+# The community starts empty: the test associates the project and template through the UI.
+
+- user:
+    name: 'community_assoc_admin'
+    type: 'author'
+    system_role: 'system_admin'
+    email: 'community-admin${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Author'
+    password: '${COMMUNITY_PASSWORD}'
+
+- user:
+    name: 'community_assoc_instructor'
+    type: 'instructor'
+    email: 'community-instructor${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Educator'
+    password: '${COMMUNITY_PASSWORD}'
+
+- user:
+    name: 'community_assoc_learner'
+    type: 'student'
+    email: 'community-learner${RUN_ID}@example.com'
+    given_name: 'Test'
+    family_name: 'Learner'
+    password: '${COMMUNITY_PASSWORD}'
+
+- project:
+    name: 'Community Assoc Project${RUN_ID}'
+    title: 'Community Assoc Project${RUN_ID}'
+    root:
+      children:
+        - page: 'Community Assoc Page'
+
+- publish:
+    to: 'Community Assoc Project${RUN_ID}'
+    description: 'Community associations test publication'
+
+- section:
+    name: 'community_assoc_section${RUN_ID}'
+    title: 'Automation test section'
+    from: 'Community Assoc Project${RUN_ID}'
+
+- product:
+    name: 'Community Assoc Template${RUN_ID}'
+    title: 'Community Assoc Template${RUN_ID}'
+    from: 'Community Assoc Project${RUN_ID}'
+
+- community:
+    name: 'Automation test community${RUN_ID}'

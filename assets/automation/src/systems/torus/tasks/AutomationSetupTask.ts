@@ -19,6 +19,7 @@ export type AutomationSetupResponse = {
   project: { slug: string; title: string };
   section: { slug: string };
   additionalAuthors?: { email: string; password: string }[];
+  community?: { name: string };
 };
 
 type AutomationOptions = {
@@ -143,6 +144,7 @@ export async function teardownAutomationCourse(
         section_slug: seeded.section.slug,
         project_slug: seeded.project.slug,
         ...(additionalAuthors.length > 0 && { additional_authors: additionalAuthors }),
+        ...(seeded.community && { community_name: seeded.community.name }),
       },
       timeout: automationTeardownTimeoutMs(teardownTimeoutMs),
     });
@@ -183,6 +185,7 @@ export async function teardownAutomationCourse(
     'learner_deleted',
     'section_deleted',
     'project_deleted',
+    ...(seeded.community ? ['community_deleted'] : []),
   ];
   const failures = entityResults.flatMap((entity) => {
     const result = (payload as Record<string, unknown>)[entity];
