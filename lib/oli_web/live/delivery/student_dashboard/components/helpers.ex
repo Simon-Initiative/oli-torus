@@ -140,6 +140,9 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
     end
   end
 
+  @doc """
+  Renders the student report header with account and Tech Support controls.
+  """
   attr(:ctx, SessionContext)
   attr(:student, User)
   attr(:section, Section)
@@ -173,9 +176,10 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
         <div class="flex items-center border-l border-slate-300 my-2">
           <.tech_support_link
             id="tech_support_top_navbar_student_reports"
-            class="btn rounded ml-4 no-underline text-slate-100 hover:no-underline hover:bg-delivery-instructor-dashboard-header-700 active:bg-delivery-instructor-dashboard-header-600"
+            aria_label={gettext("Tech Support")}
+            class="btn rounded ml-4 no-underline text-slate-100 hover:no-underline hover:bg-delivery-instructor-dashboard-header-700 active:bg-delivery-instructor-dashboard-header-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
-            <i class="fa-regular fa-circle-question fa-lg"></i>
+            <i class="fa-regular fa-circle-question fa-lg" aria-hidden="true"></i>
           </.tech_support_link>
         </div>
       </div>

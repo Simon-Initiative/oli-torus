@@ -118,6 +118,30 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
              |> has_element?(".bg-delivery-instructor-dashboard-header.sticky.top-0")
     end
 
+    test "Insights headers expose a named Tech Support button", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      unit_one_revision: unit
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      for path <- [
+            ~p"/sections/#{section.slug}/instructor_dashboard/insights/content",
+            ~p"/sections/#{section.slug}/instructor_dashboard/insights/content?container_id=#{unit.resource_id}",
+            ~p"/sections/#{section.slug}/instructor_dashboard/insights/learning_objectives",
+            ~p"/sections/#{section.slug}/instructor_dashboard/insights/scored_pages"
+          ] do
+        {:ok, view, _html} =
+          live(conn, path)
+
+        assert has_element?(
+                 view,
+                 "button#tech_support_top_navbar[type='button'][aria-label='Tech Support']:not([disabled])"
+               )
+      end
+    end
+
     test "if enrolled, can access the overview page with the course content tab as the default tab",
          %{
            instructor: instructor,

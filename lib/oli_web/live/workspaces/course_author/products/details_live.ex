@@ -159,6 +159,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             For information regarding paywall settings,
             <.tech_support_link
               id="tech_support_paywall_settings"
+              inline
               class="text-Text-text-button hover:text-Text-text-button-hover hover:underline font-semibold cursor-pointer"
             >
               contact our support team.

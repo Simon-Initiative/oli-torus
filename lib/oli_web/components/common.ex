@@ -1463,19 +1463,35 @@ defmodule OliWeb.Components.Common do
     """
   end
 
+  @doc """
+  Renders a native button that opens Tech Support and saves focus for dismissal.
+
+  Set `inline` for a text-style button within prose. Both variants retain native
+  Enter and Space activation. On narrow screens, the button may reflow as a single
+  control rather than wrapping across lines with the surrounding sentence.
+  Set `aria_label` when the slot contains only an icon.
+  """
   attr :id, :string, required: true
   attr :class, :string, default: ""
+  attr :aria_label, :string, default: nil
+  attr :inline, :boolean, default: false
   slot :inner_block, required: true
 
   def tech_support_link(assigns) do
     ~H"""
-    <span
+    <button
       id={@id}
+      type="button"
+      aria-label={@aria_label}
       phx-click={JS.push_focus() |> JS.dispatch("click", to: "#trigger-tech-support-modal")}
-      class={@class}
+      class={[
+        "text-start",
+        @inline && "p-0 border-0 bg-transparent align-baseline max-w-full whitespace-normal",
+        @class
+      ]}
     >
       {render_slot(@inner_block)}
-    </span>
+    </button>
     """
   end
 

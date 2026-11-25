@@ -1,0 +1,37 @@
+- user:
+    name: 'support_author'
+    type: 'author'
+    email: 'support-author${RUN_ID}@example.com'
+    password: 'changeme123456'
+
+- project:
+    name: 'support_project'
+    title: 'MER-6147 Tech Support ${RUN_ID}'
+    root:
+      children:
+        - container: 'Support Unit'
+          children:
+            - page: 'Support Page'
+
+- publish:
+    to: 'support_project'
+
+- section:
+    name: 'support_section'
+    title: 'MER-6147 Tech Support ${RUN_ID}'
+    from: 'support_project'
+    type: 'enrollable'
+    open_and_free: true
+
+- user:
+    name: 'support_instructor'
+    type: 'instructor'
+    email: 'support-instructor${RUN_ID}@example.com'
+    given_name: 'Support'
+    family_name: 'Instructor'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'support_instructor'
+    section: 'support_section'
+    role: 'instructor'
