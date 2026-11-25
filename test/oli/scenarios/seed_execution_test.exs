@@ -108,7 +108,7 @@ defmodule Oli.Scenarios.SeedExecutionTest do
       )
 
     {:ok, institution} =
-      Oli.Institutions.create_institution(%{
+      Oli.Institutions.Audited.create_institution(Oli.TestHelpers.audit_context(), %{
         name: "Configured Institution",
         country_code: "US",
         institution_email: "configured@example.edu",

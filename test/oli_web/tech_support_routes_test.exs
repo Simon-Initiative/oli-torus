@@ -44,7 +44,7 @@ defmodule OliWeb.TechSupportRoutesTest do
 
     test "instructor workspace", %{conn: conn} do
       [user] = Oli.Repo.all(Oli.Accounts.User)
-      _instructor = Oli.Accounts.update_user(user, %{can_create_sections: true})
+      _instructor = Oli.TestHelpers.update_account_fixture(user, %{can_create_sections: true})
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       assert view

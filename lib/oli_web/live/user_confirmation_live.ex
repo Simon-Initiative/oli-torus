@@ -53,7 +53,7 @@ defmodule OliWeb.UserConfirmationLive do
   # Do not log in the user after confirmation to avoid a
   # leaked token giving the user access to the account.
   def handle_event("confirm_account", %{"user" => %{"token" => token} = user_params}, socket) do
-    case Accounts.confirm_user(token) do
+    case Accounts.Audited.confirm_email(:user, token) do
       {:ok, _} ->
         {:noreply,
          socket

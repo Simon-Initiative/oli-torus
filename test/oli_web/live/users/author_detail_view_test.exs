@@ -9,6 +9,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
   alias Oli.Authoring.Authors.ProjectRole
   alias Oli.Accounts.SystemRole
   alias Oli.Auditing
+  alias Oli.Auditing.Context
 
   defp authors_detail_view(author_id) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, author_id)
@@ -520,10 +521,20 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
     test "unchanged roles and failed updates produce no role audit", %{admin: admin} do
       author = insert(:author)
-      assert {:ok, _} = Accounts.admin_update_author(author, %{given_name: "Changed"}, admin)
+
+      assert {:ok, _} =
+               Accounts.Audited.admin_update_author(
+                 Context.for_actor(admin, source: :ui),
+                 author.id,
+                 %{given_name: "Changed"}
+               )
 
       assert {:error, _} =
-               Accounts.admin_update_author(author, %{email: "invalid", system_role_id: 2}, admin)
+               Accounts.Audited.admin_update_author(
+                 Context.for_actor(admin, source: :ui),
+                 author.id,
+                 %{email: "invalid", system_role_id: 2}
+               )
 
       assert Accounts.get_author!(author.id).system_role_id == author.system_role_id
       assert Auditing.list_events(event_type: :author_role_changed) == []
@@ -531,8 +542,20 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
     test "uses the persisted previous role when the editor has stale data", %{admin: admin} do
       author = insert(:author)
-      assert {:ok, _} = Accounts.admin_update_author(author, %{system_role_id: 2}, admin)
-      assert {:ok, _} = Accounts.admin_update_author(author, %{system_role_id: 3}, admin)
+
+      assert {:ok, _} =
+               Accounts.Audited.admin_update_author(
+                 Context.for_actor(admin, source: :ui),
+                 author.id,
+                 %{system_role_id: 2}
+               )
+
+      assert {:ok, _} =
+               Accounts.Audited.admin_update_author(
+                 Context.for_actor(admin, source: :ui),
+                 author.id,
+                 %{system_role_id: 3}
+               )
 
       [event] =
         Auditing.list_events(event_type: :author_role_changed, order_by: [desc: :id], limit: 1)
@@ -546,10 +569,20 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       admin: admin
     } do
       author = insert(:author)
-      assert {:ok, _} = Accounts.admin_update_author(author, %{system_role_id: 4}, admin)
 
       assert {:ok, _} =
-               Accounts.admin_update_author(author, %{email: "changed@example.com"}, admin)
+               Accounts.Audited.admin_update_author(
+                 Context.for_actor(admin, source: :ui),
+                 author.id,
+                 %{system_role_id: 4}
+               )
+
+      assert {:ok, _} =
+               Accounts.Audited.admin_update_author(
+                 Context.for_actor(admin, source: :ui),
+                 author.id,
+                 %{email: "changed@example.com"}
+               )
 
       {:ok, view, _} = live(conn, ~p"/admin/audit_log?event_type=author_role_changed")
       assert has_element?(view, ".audit-log-table", admin.name)

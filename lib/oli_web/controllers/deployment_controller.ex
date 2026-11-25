@@ -1,6 +1,7 @@
 defmodule OliWeb.DeploymentController do
   use OliWeb, :controller
 
+  alias Oli.Auditing.Context
   alias Oli.Institutions
   alias Oli.Lti.Tool.Deployment
   alias OliWeb.Common.{Breadcrumb}
@@ -54,7 +55,10 @@ defmodule OliWeb.DeploymentController do
       deployment_params
       |> Map.put("registration_id", registration_id)
 
-    case Institutions.create_deployment(deployment_params) do
+    case Institutions.Audited.create_deployment(
+           Context.for_actor(conn.assigns.current_author, source: :ui),
+           deployment_params
+         ) do
       {:ok, _deployment} ->
         conn
         |> put_flash(:info, "Deployment created successfully.")
@@ -95,7 +99,11 @@ defmodule OliWeb.DeploymentController do
       }) do
     deployment = Institutions.get_deployment!(id)
 
-    case Institutions.update_deployment(deployment, deployment_params) do
+    case Institutions.Audited.update_deployment(
+           Context.for_actor(conn.assigns.current_author, source: :ui),
+           deployment.id,
+           deployment_params
+         ) do
       {:ok, _deployment} ->
         conn
         |> put_flash(:info, "Deployment updated successfully.")
@@ -118,7 +126,12 @@ defmodule OliWeb.DeploymentController do
         "id" => id
       }) do
     deployment = Institutions.get_deployment!(id)
-    {:ok, _deployment} = Institutions.delete_deployment(deployment)
+
+    {:ok, _deployment} =
+      Institutions.Audited.delete_deployment(
+        Context.for_actor(conn.assigns.current_author, source: :ui),
+        deployment.id
+      )
 
     conn
     |> put_flash(:info, "Deployment deleted successfully.")

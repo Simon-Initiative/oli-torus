@@ -350,7 +350,7 @@ defmodule Oli.Seeding.CLITest do
     author = Oli.Utils.Seeder.AccountsFixtures.author_fixture()
 
     {:ok, institution} =
-      Oli.Institutions.create_institution(%{
+      Oli.Institutions.Audited.create_institution(Oli.TestHelpers.audit_context(), %{
         name: "Release CLI Institution",
         country_code: "US",
         institution_email: "release-cli@example.edu",
@@ -407,7 +407,7 @@ defmodule Oli.Seeding.CLITest do
     author = Oli.Utils.Seeder.AccountsFixtures.author_fixture()
 
     {:ok, institution} =
-      Oli.Institutions.create_institution(%{
+      Oli.Institutions.Audited.create_institution(Oli.TestHelpers.audit_context(), %{
         name: "Composed Release Institution",
         country_code: "US",
         institution_email: "composed-release@example.edu",
@@ -442,7 +442,7 @@ defmodule Oli.Seeding.CLITest do
     author = Oli.Utils.Seeder.AccountsFixtures.author_fixture()
 
     {:ok, institution} =
-      Oli.Institutions.create_institution(%{
+      Oli.Institutions.Audited.create_institution(Oli.TestHelpers.audit_context(), %{
         name: "Safe Hook Institution",
         country_code: "US",
         institution_email: "safe-hook@example.edu",

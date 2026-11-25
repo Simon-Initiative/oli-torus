@@ -8,37 +8,12 @@ defmodule Oli.AuditingTest do
   alias Oli.Authoring.Course.Project
 
   describe "capture/4" do
-    test "records a deleted user as the entity and the affected person" do
-      admin = insert(:author)
-      user = insert(:user)
-
-      assert {:ok, %LogEvent{} = event} =
-               Auditing.capture(admin, :user_deleted, user, %{
-                 "email" => user.email,
-                 "name" => user.name,
-                 "deleted_by" => admin.email
-               })
-
-      assert event.schema_version == 2
-      assert event.author_id == admin.id
-      assert event.user_id == nil
-      assert event.actor_type == :author
-      assert event.event_type == :user_deleted
-      assert event.entity_type == :user
-      assert event.entity_id == Integer.to_string(user.id)
-      assert event.affected_user_id == user.id
-      assert event.entity_snapshot["email"] == user.email
-      assert event.details["email"] == user.email
-      assert event.source == :application
-      assert event.outcome == :succeeded
-    end
-
     test "records a user actor" do
       admin = insert(:user)
-      deleted = insert(:user)
+      section = insert(:section)
 
       assert {:ok, %LogEvent{} = event} =
-               Auditing.capture(admin, :user_deleted, deleted, %{"email" => deleted.email})
+               Auditing.capture(admin, :section_created, section, %{})
 
       assert event.user_id == admin.id
       assert event.author_id == nil
@@ -250,7 +225,7 @@ defmodule Oli.AuditingTest do
       project = insert(:project, authors: [author])
       section = insert(:section)
 
-      {:ok, event1} = Auditing.capture(admin, :user_deleted, insert(:user), %{})
+      {:ok, event1} = user_deleted_event(admin, insert(:user))
       {:ok, event2} = Auditing.capture(author, :project_published, project, %{})
       {:ok, event3} = Auditing.capture(user, :section_created, section, %{})
 
@@ -296,7 +271,7 @@ defmodule Oli.AuditingTest do
       admin = insert(:author)
 
       for _ <- 1..10 do
-        Auditing.capture(admin, :user_deleted, insert(:user), %{})
+        user_deleted_event(admin, insert(:user))
       end
 
       assert length(Auditing.list_events(limit: 5)) == 5
@@ -338,7 +313,7 @@ defmodule Oli.AuditingTest do
   describe "get_event!/2" do
     test "returns the event with given id" do
       admin = insert(:user)
-      {:ok, event} = Auditing.capture(admin, :user_deleted, insert(:user), %{})
+      {:ok, event} = user_deleted_event(admin, insert(:user))
 
       fetched_event = Auditing.get_event!(event.id, event.inserted_at)
       assert fetched_event.id == event.id
@@ -354,7 +329,7 @@ defmodule Oli.AuditingTest do
 
     test "preloads associations" do
       admin = insert(:user)
-      {:ok, event} = Auditing.capture(admin, :user_deleted, insert(:user), %{})
+      {:ok, event} = user_deleted_event(admin, insert(:user))
 
       fetched_event = Auditing.get_event!(event.id, event.inserted_at)
       assert fetched_event.actor.id == admin.id
@@ -385,7 +360,7 @@ defmodule Oli.AuditingTest do
 
     test "uses the stored snapshot when the account is not loaded" do
       user = insert(:user, name: "Stored Name")
-      {:ok, event} = Auditing.capture(user, :user_deleted, insert(:user), %{})
+      {:ok, event} = user_deleted_event(user, insert(:user))
 
       event = Repo.get_by!(LogEvent, id: event.id)
       assert event.actor == nil
@@ -442,7 +417,21 @@ defmodule Oli.AuditingTest do
   end
 
   defp captured_by(actor) do
-    {:ok, event} = Auditing.capture(actor, :user_deleted, insert(:user), %{})
+    {:ok, event} = user_deleted_event(actor, insert(:user))
     Auditing.get_event!(event.id, event.inserted_at)
+  end
+
+  # User deletions are recorded by `Oli.Accounts.Audited`; this builds the same event row.
+  defp user_deleted_event(actor, deleted) do
+    {:ok, changeset} =
+      Auditing.build(Context.for_actor(actor, source: :ui), %{
+        event_type: :user_deleted,
+        entity: {:user, deleted.id, deleted},
+        affected: {:user, deleted.id},
+        event_key: "account:primary:deleted",
+        details: %{"email" => deleted.email, "name" => deleted.name}
+      })
+
+    Auditing.insert(changeset)
   end
 end

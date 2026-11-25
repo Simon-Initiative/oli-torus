@@ -1,6 +1,7 @@
 defmodule OliWeb.PublisherLive.NewView do
   use OliWeb, :live_view
 
+  alias Oli.Auditing.Context
   alias Oli.Inventories
   alias Oli.Inventories.Publisher
   alias OliWeb.Common.{Breadcrumb, FormContainer, Params}
@@ -43,7 +44,10 @@ defmodule OliWeb.PublisherLive.NewView do
   def handle_event("save", %{"publisher" => params}, socket) do
     socket = clear_flash(socket)
 
-    case Inventories.create_publisher(Params.trim(params)) do
+    case Inventories.Audited.create_publisher(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           Params.trim(params)
+         ) do
       {:ok, _publisher} ->
         {:noreply,
          socket

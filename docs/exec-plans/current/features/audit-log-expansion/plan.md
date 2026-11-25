@@ -46,7 +46,7 @@ Every domain PR below inherits these tasks and gates; they are not deferred to f
 5. Migrate each affected Scenario directive in its owning domain PR. Use the build_scenario skill for actual scenario authoring and extend_scenario only if required capability is missing. Setup PW is the explicit bootstrap actor; publishing/section/enrollment use the represented author/instructor. Do not create a global Scenario bypass. Changes to shared test support/configuration require the full clean-output suite.
 6. Add meaningful success/failure/authorization/no-op/audit-failure rollback and duplicate/retry tests at application and supported transport boundaries, not just mocks of `capture`. Record tested revision and commands. Force Boundary checks, format, and run targeted tests before broader risk-driven checks. Full integration QA remains additive.
 7. Follow repository review policy before merge: security/performance reviews always, Elixir for backend, UI where relevant, requirements when PRD changes. Dedicated reviewer orchestration is governed by `docs/CODEREVIEW.md`; no formal implementation review has been performed during planning.
-8. Merge only after developer review and required CI into integration using a merge commit. Keep source/field inventory and actual proof references current. `verified_plan` records planned coverage, not implementation proof or owner acceptance; `proofs` stay empty until evidence exists.
+8. Merge only after developer review and required CI into integration using a merge commit. Keep source/field inventory and actual proof references current. `requirements.yml` holds no status; add a criterion's `evidence` entries only when real evidence exists, never invented.
 
 ### Command safety and verification conventions
 
@@ -165,7 +165,7 @@ All Mix commands require scoped escalated permissions on the first attempt under
 - [ ] Classify every generic account write by persisted field. Extract audited creation/profile/link operations while preserving provider, invitation and verification behavior.
 - [ ] Make technical provisioning/Setup PW attribution explicit; subsequent represented actions retain their actual human actor. Migrate supported Scenario and provider entry points, including bootstrap helpers.
 - [ ] Preserve domain validation and safe response shapes; do not serialize password/email-verification inputs as arbitrary audit details.
-- [ ] Map every session entry point, including the lower-level create/install helpers and Playwright session setup, to one semantic issuance/revocation boundary.
+- [ ] Map every password, SSO/OAuth and LTI login, logout and session-invalidating password path, including the lower-level create/install helpers, to one semantic issuance/revocation boundary.
 - [ ] Compose account linking and necessary profile/preferences writes without recapturing login. Define token persistence versus cookie delivery and server-side revocation semantics.
 - [ ] Audit recovery lifecycle without storing tokens or credential hashes; document retry behavior (a reused one-time token fails and records no new success) and secret-bearing response limits.
 - [ ] Introduce typed organization scopes and migrate settings/association writers, including bulk community membership and publisher defaults.
@@ -278,6 +278,7 @@ All Mix commands require scoped escalated permissions on the first attempt under
 ### Tasks
 
 - [ ] Move single/bulk/reset writes into audited composition; derive diffs from locked persisted values and preserve secure-delivery/adaptive/already-started rules.
+- [ ] Close the roster and grade-passback fields of `Sections.update_section/2` (`nrps_enabled`, `grade_passback_enabled`, `line_items_service_url`, `nrps_context_memberships_url`): `OliWeb.Sections.EditView` passes form params that the section changeset casts. Reject them from the generic path or route them to `roster_settings_changed` and `grade_passback_settings_changed` (both now require `section_id`). Handed over from PR-03.
 - [ ] Keep auto-submit changes in the transaction and cache invalidation after commit. Replace historical writes and test readers with central events.
 - [ ] Migrate safe source rows with provenance/new IDs and explicit unknowns; sanitize password history, verify external consumers and rollback redaction, then retire settings_changes in this slice.
 - [ ] Introduce the audited exception boundary and migrate direct and bulk callers, including Scenarios.

@@ -5,7 +5,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
   import Oli.Factory
 
   alias Oli.Authoring.Course
-  alias Oli.Lti.PlatformExternalTools
   alias Oli.Repo
   alias Oli.Tags
 
@@ -452,10 +451,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       }
 
       {:ok, {_platform_instance_1, activity_registration_1, deployment_1}} =
-        PlatformExternalTools.register_lti_external_tool_activity(external_tool_1_params)
+        Oli.Lti.Audited.register_external_tool(
+          Oli.TestHelpers.audit_context(),
+          external_tool_1_params
+        )
 
       {:ok, {_platform_instance_2, activity_registration_2, deployment_2}} =
-        PlatformExternalTools.register_lti_external_tool_activity(external_tool_2_params)
+        Oli.Lti.Audited.register_external_tool(
+          Oli.TestHelpers.audit_context(),
+          external_tool_2_params
+        )
 
       # Add activities to project
       insert(:activity_registration_project, %{
@@ -499,11 +504,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       }
 
       {:ok, {_platform_instance_1, activity_registration_1, deployment_1}} =
-        PlatformExternalTools.register_lti_external_tool_activity(external_tool_1_params)
+        Oli.Lti.Audited.register_external_tool(
+          Oli.TestHelpers.audit_context(),
+          external_tool_1_params
+        )
 
       # Disable the tool
-      PlatformExternalTools.update_lti_external_tool_activity_deployment(
-        deployment_1,
+      Oli.Lti.Audited.update_external_tool_deployment(
+        Oli.TestHelpers.audit_context(),
+        deployment_1.deployment_id,
         %{"status" => :disabled}
       )
 
@@ -514,8 +523,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       refute has_element?(view, "div", activity_registration_1.title)
 
       # Soft delete the tool
-      PlatformExternalTools.update_lti_external_tool_activity_deployment(
-        deployment_1,
+      Oli.Lti.Audited.update_external_tool_deployment(
+        Oli.TestHelpers.audit_context(),
+        deployment_1.deployment_id,
         %{"status" => :deleted}
       )
 

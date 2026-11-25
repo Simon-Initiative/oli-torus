@@ -19,11 +19,15 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponentTest do
       community3 = insert(:community, name: "Gamma Community")
 
       # Associate community1 directly with user
-      {:ok, _} = Groups.create_community_account(%{user_id: user.id, community_id: community1.id})
+      {:ok, _} =
+        Groups.create_community_account(Oli.TestHelpers.audit_context(), %{
+          user_id: user.id,
+          community_id: community1.id
+        })
 
       # Associate community2 with institution
       {:ok, _} =
-        Groups.create_community_institution(%{
+        Groups.create_community_institution(Oli.TestHelpers.audit_context(), %{
           institution_id: institution.id,
           community_id: community2.id
         })
@@ -209,7 +213,10 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponentTest do
 
       # Add old community first
       {:ok, ca_old} =
-        Groups.create_community_account(%{user_id: user.id, community_id: community_old.id})
+        Groups.create_community_account(Oli.TestHelpers.audit_context(), %{
+          user_id: user.id,
+          community_id: community_old.id
+        })
 
       # Update to make it older
       Oli.Repo.update_all(
@@ -219,7 +226,10 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponentTest do
 
       # Add new community
       {:ok, _} =
-        Groups.create_community_account(%{user_id: user.id, community_id: community_new.id})
+        Groups.create_community_account(Oli.TestHelpers.audit_context(), %{
+          user_id: user.id,
+          community_id: community_new.id
+        })
 
       {:ok, _component, html} =
         live_component_isolated(conn, CommunitiesSelectComponent, %{

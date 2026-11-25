@@ -199,7 +199,8 @@ defmodule OliWeb.ProductsController do
             {:ok, {user, _token}} ->
               conn
               |> put_template_preview_session(section_slug, template_preview_return_to(product))
-              |> UserAuth.log_in_user(user, %{"request_path" => ~p"/sections/#{section_slug}"})
+              |> UserAuth.create_session(user)
+              |> redirect(to: ~p"/sections/#{section_slug}")
 
             _ ->
               conn

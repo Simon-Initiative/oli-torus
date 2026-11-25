@@ -1592,7 +1592,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       enroll_as_student(%{section: section, user: enrolled_user})
       enroll_as_student(%{section: section, user: another_user})
 
-      {:ok, _} = Oli.Accounts.delete_author(author)
+      Oli.Repo.delete!(author)
       admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().account_admin)
       context = Oli.Auditing.Context.for_actor(admin, source: :ui)
       {:ok, _} = Oli.Accounts.Audited.delete_user(context, another_user.id)

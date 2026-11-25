@@ -25,7 +25,11 @@ defmodule OliWeb.AuthorConfirmationLiveTest do
     test "confirms the given token once", %{conn: conn, author: author} do
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_author_confirmation_instructions(author, url)
+          Accounts.deliver_author_confirmation_instructions(
+            Oli.Auditing.Context.for_system(:unauthenticated_request, source: :ui),
+            author,
+            url
+          )
         end)
 
       {:ok, lv, _html} = live(conn, ~p"/authors/confirm/#{token}")

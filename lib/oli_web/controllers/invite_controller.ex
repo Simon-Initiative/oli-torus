@@ -6,6 +6,7 @@ defmodule OliWeb.InviteController do
   alias Oli.Accounts
   alias Oli.Accounts.AuthorToken
   alias Oli.Accounts.UserToken
+  alias Oli.Auditing.Context
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.InvitePartitioner
   alias Oli.{Email, Mailer}
@@ -119,15 +120,11 @@ defmodule OliWeb.InviteController do
       if inviter == "author", do: conn.assigns.current_author, else: conn.assigns.current_user
 
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:new_users, fn _repo, _changes ->
-      case Accounts.bulk_create_invited_users(non_existing_users_emails, inviter_struct) do
-        {:error, reason} ->
-          {:error, reason}
-
-        {count, new_users} ->
-          {:ok, {count, new_users}}
-      end
-    end)
+    |> Accounts.Audited.invite_users_multi(
+      :new_users,
+      Context.for_actor(inviter_struct, source: :ui),
+      non_existing_users_emails
+    )
     |> Ecto.Multi.run(:not_enrolled_users, fn _repo, _changes ->
       {:ok, Accounts.get_users_by_email(not_enrolled_users_emails)}
     end)
@@ -268,7 +265,9 @@ defmodule OliWeb.InviteController do
   end
 
   defp invite_author(conn, email) do
-    with {:ok, author} <- Accounts.create_invited_author(email),
+    context = Context.for_actor(conn.assigns.current_author, source: :ui)
+
+    with {:ok, author} <- Accounts.Audited.invite_author(context, email),
          {:ok, email_data} <- create_author_invitation_token(author),
          {:ok, _mail} <-
            deliver_author_invitation_email(email_data, conn.assigns.current_author.name) do

@@ -6,7 +6,6 @@ defmodule OliWeb.Workspaces.InstructorTest do
   import Oli.Factory
 
   alias Lti_1p3.Roles.ContextRoles
-  alias Oli.Accounts
   alias Oli.Delivery.Sections
 
   describe "user logged in as student" do
@@ -263,7 +262,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
       conn: conn,
       user: user
     } do
-      Accounts.update_user(user, %{can_create_sections: true})
+      Oli.TestHelpers.update_account_fixture(user, %{can_create_sections: true})
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
@@ -292,7 +291,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
       conn: conn,
       user: user
     } do
-      Accounts.update_user(user, %{can_create_sections: true})
+      Oli.TestHelpers.update_account_fixture(user, %{can_create_sections: true})
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor?sidebar_expanded=true")
 
@@ -349,7 +348,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
 
     test "sees linked account email on user menu", %{conn: conn, instructor: instructor} do
       author = insert(:author)
-      Accounts.link_user_author_account(instructor, author)
+      Oli.TestHelpers.update_account_fixture(instructor, %{author_id: author.id})
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 

@@ -33,9 +33,9 @@ defmodule OliWeb.Api.ActivityRegistrationControllerTest do
   defp create_key(attrs) do
     code = UUID.uuid4()
 
-    case Oli.Interop.create_key(code, "there is no hint") do
+    case Oli.Interop.Audited.create_key(Oli.TestHelpers.audit_context(), code, "there is no hint") do
       {:ok, key} ->
-        case Oli.Interop.update_key(key, attrs) do
+        case Oli.TestHelpers.update_api_key_fixture(key, attrs) do
           {:ok, _} -> {:ok, code}
           e -> e
         end

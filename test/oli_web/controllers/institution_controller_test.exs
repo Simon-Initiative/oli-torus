@@ -180,7 +180,9 @@ defmodule OliWeb.InstitutionControllerTest do
       })
 
     create_attrs = Map.put(@create_attrs, :author_id, author.id)
-    {:ok, institution} = create_attrs |> Institutions.create_institution()
+
+    {:ok, institution} =
+      Institutions.Audited.create_institution(Oli.TestHelpers.audit_context(), create_attrs)
 
     conn =
       log_in_author(conn, author)

@@ -8,7 +8,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, SystemRole}
-  alias Oli.Auditing
+  alias Oli.Auditing.Context
   alias Oli.Repo
   alias OliWeb.Users.DetailViewHelpers
 
@@ -270,13 +270,17 @@ defmodule OliWeb.Users.AuthorsDetailView do
   def handle_event("generate_reset_password_link", %{"id" => id}, socket) do
     author = Accounts.get_author!(id)
 
-    encoded_token = Accounts.generate_author_reset_password_token(author)
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
 
-    password_reset_link =
-      url(~p"/authors/reset_password/#{encoded_token}")
+    case Accounts.Audited.request_recovery(context, {:author, author}, :admin_reset_link) do
+      {:ok, encoded_token} ->
+        password_reset_link = url(~p"/authors/reset_password/#{encoded_token}")
+        {:noreply, assign(socket, password_reset_link: password_reset_link)}
 
-    socket = assign(socket, password_reset_link: password_reset_link)
-    {:noreply, socket}
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(socket, :error, "We couldn't generate the reset link. Please try again.")}
+    end
   end
 
   def handle_event("show_confirm_email_modal", _, socket) do
@@ -298,7 +302,9 @@ defmodule OliWeb.Users.AuthorsDetailView do
         _,
         socket
       ) do
-    case Accounts.admin_confirm_author(socket.assigns.author) do
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
+
+    case Accounts.Audited.admin_confirm_email(context, {:author, socket.assigns.author.id}) do
       {:ok, author} ->
         {:noreply,
          socket
@@ -314,6 +320,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
     author = Accounts.get_author!(id)
 
     case Accounts.deliver_author_confirmation_instructions(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
            author,
            &url(~p"/authors/confirm/#{&1}")
          ) do
@@ -322,6 +329,9 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
       {:error, :already_confirmed} ->
         {:noreply, put_flash(socket, :info, "Email is already confirmed.")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Error sending confirmation link.")}
     end
   end
 
@@ -329,14 +339,15 @@ defmodule OliWeb.Users.AuthorsDetailView do
     author = Accounts.get_author!(id)
 
     case Accounts.deliver_author_reset_password_instructions(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
            author,
            &url(~p"/authors/reset_password/#{&1}")
          ) do
       {:ok, _} ->
         {:noreply, put_flash(socket, :info, "Password reset link sent.")}
 
-      {:error, error} ->
-        {:noreply, put_flash(socket, :error, "Error sending password reset link: #{error}")}
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Error sending password reset link.")}
     end
   end
 
@@ -359,9 +370,9 @@ defmodule OliWeb.Users.AuthorsDetailView do
         %{"id" => id},
         socket
       ) do
-    author = Accounts.get_author!(id)
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
 
-    case Accounts.lock_author(author) do
+    case Accounts.Audited.lock_account(context, :author, String.to_integer(id)) do
       {:ok, _} ->
         {:noreply,
          socket
@@ -394,9 +405,9 @@ defmodule OliWeb.Users.AuthorsDetailView do
         %{"id" => id},
         socket
       ) do
-    author = Accounts.get_author!(id)
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
 
-    case Accounts.unlock_author(author) do
+    case Accounts.Audited.unlock_account(context, :author, String.to_integer(id)) do
       {:ok, _} ->
         {:noreply,
          socket
@@ -429,23 +440,10 @@ defmodule OliWeb.Users.AuthorsDetailView do
         %{"id" => id},
         socket
       ) do
-    author = Accounts.get_author!(id)
-    admin = socket.assigns.current_author
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
 
-    case Accounts.delete_author(author) do
-      {:ok, deleted_author} ->
-        # Log the deletion
-        Oli.Auditing.log_admin_action(
-          admin,
-          :author_deleted,
-          deleted_author,
-          %{
-            "email" => deleted_author.email,
-            "name" => deleted_author.name,
-            "deleted_by" => admin.email
-          }
-        )
-
+    case Accounts.Audited.delete_author(context, String.to_integer(id)) do
+      {:ok, _result} ->
         {:noreply,
          socket
          |> hide_modal(modal_assigns: nil)
@@ -475,23 +473,18 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   def handle_event("submit", %{"author" => params}, socket) do
     admin? = Accounts.is_system_admin?(socket.assigns.current_author)
-    filtered_params = if admin?, do: params, else: Map.delete(params, "is_internal")
-    previous_author = socket.assigns.author
 
-    case Accounts.admin_update_author(
-           previous_author,
-           filtered_params,
-           socket.assigns.current_author
-         ) do
+    filtered_params =
+      case admin? do
+        true -> params
+        false -> Map.drop(params, ["is_internal", "system_role_id"])
+      end
+
+    context = Context.for_actor(socket.assigns.current_author, source: :ui)
+
+    case Accounts.Audited.admin_update_author(context, socket.assigns.author.id, filtered_params) do
       {:ok, author} ->
         updated_form = author_form(author, params)
-
-        maybe_audit_internal_toggle(
-          socket.assigns.current_author,
-          :author,
-          previous_author,
-          author
-        )
 
         {:noreply,
          socket
@@ -504,7 +497,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
            author_header_name: combined_header_name_from_form(updated_form, author)
          )}
 
-      {:error, error} ->
+      {:error, %Ecto.Changeset{} = error} ->
         form = to_form(error)
 
         {:noreply,
@@ -512,6 +505,9 @@ defmodule OliWeb.Users.AuthorsDetailView do
          |> assign(form: form)
          |> assign(disabled_submit: !Enum.empty?(form.errors))
          |> put_flash(:error, "Author couldn't be updated.")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Author couldn't be updated.")}
     end
   end
 
@@ -525,31 +521,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
     # that don't need handling (like dropdown toggles)
     Logger.warning("Unhandled event in AuthorDetailView: #{inspect(event)}, #{inspect(params)}")
     {:noreply, socket}
-  end
-
-  defp maybe_audit_internal_toggle(admin, :author, %Author{} = previous, %Author{} = updated) do
-    cond do
-      is_nil(admin) ->
-        :ok
-
-      previous.is_internal == updated.is_internal ->
-        :ok
-
-      true ->
-        Auditing.capture(
-          admin,
-          :account_internal_flag_changed,
-          updated,
-          %{
-            "account_type" => "author",
-            "author_id" => updated.id,
-            "previous" => previous.is_internal,
-            "is_internal" => updated.is_internal
-          }
-        )
-
-        :ok
-    end
   end
 
   defp combined_name_from_form(form, fallback_author) do

@@ -4,7 +4,6 @@ defmodule Oli.ScopedFeatureFlags.CanAccessTest do
   import Oli.Factory
 
   alias Oli.ScopedFeatureFlags
-  alias Oli.ScopedFeatureFlags.Rollouts
 
   @feature :canary_test_feature
 
@@ -30,7 +29,12 @@ defmodule Oli.ScopedFeatureFlags.CanAccessTest do
 
       refute ScopedFeatureFlags.can_access?(:mcp_authoring, author, project)
 
-      {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          :mcp_authoring,
+          project
+        )
 
       assert ScopedFeatureFlags.can_access?(:mcp_authoring, author, project)
 
@@ -46,7 +50,12 @@ defmodule Oli.ScopedFeatureFlags.CanAccessTest do
 
   describe "canary features" do
     setup %{project: project, author: author} do
-      {:ok, _} = ScopedFeatureFlags.enable_feature(@feature, project, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          project
+        )
 
       {:ok, internal_author: insert(:author, is_internal: true)}
     end
@@ -59,7 +68,13 @@ defmodule Oli.ScopedFeatureFlags.CanAccessTest do
       handler = attach_decision_telemetry()
 
       {:ok, _} =
-        Rollouts.upsert_rollout(@feature, :project, project.id, :internal_only, author)
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          :project,
+          project.id,
+          :internal_only
+        )
 
       refute ScopedFeatureFlags.can_access?(@feature, author, project)
       assert ScopedFeatureFlags.can_access?(@feature, internal_author, project)
@@ -78,17 +93,34 @@ defmodule Oli.ScopedFeatureFlags.CanAccessTest do
       author: author
     } do
       {:ok, _} =
-        Rollouts.upsert_rollout(@feature, :project, project.id, :five_percent, author)
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          :project,
+          project.id,
+          :five_percent
+        )
 
       student = insert(:user, is_internal: false)
 
       {:ok, _} =
-        Rollouts.upsert_exemption(@feature, project.publisher_id, :force_enable, author)
+        Oli.ScopedFeatureFlags.Audited.upsert_exemption(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          project.publisher_id,
+          :force_enable
+        )
 
       assert ScopedFeatureFlags.can_access?(@feature, student, project)
 
       {:ok, _} =
-        Rollouts.upsert_rollout(@feature, :project, project.id, :off, author)
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          :project,
+          project.id,
+          :off
+        )
 
       refute ScopedFeatureFlags.can_access?(@feature, student, project)
     end
@@ -98,12 +130,23 @@ defmodule Oli.ScopedFeatureFlags.CanAccessTest do
       author: author
     } do
       {:ok, _} =
-        Rollouts.upsert_rollout(@feature, :project, project.id, :full, author)
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          :project,
+          project.id,
+          :full
+        )
 
       student = insert(:user, is_internal: false)
 
       {:ok, _} =
-        Rollouts.upsert_exemption(@feature, project.publisher_id, :deny, author)
+        Oli.ScopedFeatureFlags.Audited.upsert_exemption(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          project.publisher_id,
+          :deny
+        )
 
       refute ScopedFeatureFlags.can_access?(@feature, student, project)
     end
@@ -113,7 +156,13 @@ defmodule Oli.ScopedFeatureFlags.CanAccessTest do
       author: author
     } do
       {:ok, _} =
-        Rollouts.upsert_rollout(@feature, :project, project.id, :fifty_percent, author)
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          :project,
+          project.id,
+          :fifty_percent
+        )
 
       student = insert(:user, is_internal: false)
 
@@ -145,7 +194,13 @@ defmodule Oli.ScopedFeatureFlags.CanAccessTest do
       author: author
     } do
       {:ok, _} =
-        Rollouts.upsert_rollout(@feature, :project, project.id, :fifty_percent, author)
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          :project,
+          project.id,
+          :fifty_percent
+        )
 
       student = insert(:user, is_internal: false)
 
@@ -163,10 +218,20 @@ defmodule Oli.ScopedFeatureFlags.CanAccessTest do
       project: project
     } do
       {:ok, _} =
-        ScopedFeatureFlags.enable_feature(@feature, section, author)
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          section
+        )
 
       {:ok, _} =
-        Rollouts.upsert_rollout(@feature, :project, project.id, :full, author)
+        Oli.ScopedFeatureFlags.Audited.upsert_rollout(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          @feature,
+          :project,
+          project.id,
+          :full
+        )
 
       student = insert(:user, is_internal: false)
 

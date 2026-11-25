@@ -6,6 +6,7 @@ defmodule OliWeb.AuthorSettingsLive do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.AssentAuth.AuthorAssentAuth
+  alias Oli.Auditing.Context
   alias OliWeb.Common.Properties.{Groups, Group}
 
   def render(assigns) do
@@ -174,7 +175,11 @@ defmodule OliWeb.AuthorSettingsLive do
 
   def mount(%{"token" => token}, _session, socket) do
     socket =
-      case Accounts.update_author_email(socket.assigns.current_author, token) do
+      case Accounts.Audited.confirm_email_change(
+             Context.for_actor(socket.assigns.current_author, source: :ui),
+             socket.assigns.current_author,
+             token
+           ) do
         :ok ->
           put_flash(socket, :info, "Email changed successfully.")
 
@@ -232,7 +237,9 @@ defmodule OliWeb.AuthorSettingsLive do
     %{"author" => author_params} = params
     author = socket.assigns.current_author
 
-    case Accounts.update_author(author, author_params) do
+    context = Context.for_actor(author, source: :ui)
+
+    case Accounts.Audited.update_own_profile(context, author, author_params) do
       {:ok, author} ->
         author_form =
           author
@@ -244,8 +251,11 @@ defmodule OliWeb.AuthorSettingsLive do
          |> put_flash(:info, "Account details successfully updated.")
          |> assign(author_form: author_form)}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, author_form: to_form(changeset))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Account details couldn't be updated.")}
     end
   end
 
@@ -301,7 +311,12 @@ defmodule OliWeb.AuthorSettingsLive do
     # this handles the case where the author has a password already
     author = socket.assigns.current_author
 
-    case Accounts.update_author_password(author, current_password, author_params) do
+    case Accounts.Audited.change_password(
+           Context.for_actor(author, source: :ui),
+           author,
+           current_password,
+           author_params
+         ) do
       {:ok, author} ->
         password_form =
           author
@@ -310,8 +325,12 @@ defmodule OliWeb.AuthorSettingsLive do
 
         {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
+
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(socket, :error, "We couldn't update your password. Please try again.")}
     end
   end
 
@@ -319,7 +338,11 @@ defmodule OliWeb.AuthorSettingsLive do
     # this handles the case where the author has no password yet
     author = socket.assigns.current_author
 
-    case Accounts.create_author_password(author, author_params) do
+    case Accounts.Audited.create_password(
+           Context.for_actor(author, source: :ui),
+           author,
+           author_params
+         ) do
       {:ok, author} ->
         password_form =
           author
@@ -329,8 +352,12 @@ defmodule OliWeb.AuthorSettingsLive do
         {:noreply,
          assign(socket, trigger_submit: true, password_form: password_form, has_password: true)}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
+
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(socket, :error, "We couldn't update your password. Please try again.")}
     end
   end
 

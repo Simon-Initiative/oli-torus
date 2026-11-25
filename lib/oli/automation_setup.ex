@@ -311,7 +311,7 @@ defmodule Oli.AutomationSetup do
     password = random_password()
 
     {:ok, user} =
-      Oli.Accounts.register_independent_user(%{
+      insert_fixture_user(%{
         email: generate_email("learner"),
         given_name: "Test",
         family_name: "Learner",
@@ -343,7 +343,7 @@ defmodule Oli.AutomationSetup do
     password = random_password()
 
     {:ok, user} =
-      Oli.Accounts.register_independent_user(%{
+      insert_fixture_user(%{
         email: generate_email("educator"),
         given_name: "Test",
         family_name: "Educator",
@@ -360,6 +360,24 @@ defmodule Oli.AutomationSetup do
     {:ok, user} = confirm_user_email(user)
 
     {:ok, {user, password}}
+  end
+
+  # These accounts are E2E fixtures created and torn down by the automation API, not by a
+  # person, so they are inserted directly and not audited, like their teardown.
+  defp insert_fixture_user(attrs) do
+    %User{independent_learner: true, guest: false}
+    |> User.registration_changeset(attrs,
+      email_verification_required: Oli.Accounts.user_email_verification_required?()
+    )
+    |> Repo.insert()
+  end
+
+  defp insert_fixture_author(attrs) do
+    %Oli.Accounts.Author{}
+    |> Oli.Accounts.Author.registration_changeset(attrs,
+      email_verification_required: Oli.Accounts.author_email_verification_required?()
+    )
+    |> Repo.insert()
   end
 
   # User.registration_changeset does not cast email confirmation attrs, so
@@ -382,7 +400,7 @@ defmodule Oli.AutomationSetup do
     password = random_password()
 
     {:ok, user} =
-      Oli.Accounts.register_author(%{
+      insert_fixture_author(%{
         email: generate_email("author"),
         given_name: "Test",
         family_name: "Author",

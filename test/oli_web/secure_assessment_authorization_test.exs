@@ -348,7 +348,7 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
     assert {:error, :secure_resource_mismatch} =
              Boundary.check(c.secure, OliWeb.PageDeliveryController, :index, %{})
 
-    Accounts.delete_user_session_token(c.secure_token)
+    Oli.TestHelpers.delete_user_session_token_fixture(c.secure_token)
     assert {:ok, %{scope: nil}} = Accounts.get_user_session(c.normal_token)
     assert {:error, :unauthenticated} = Accounts.get_user_session_by_id(c.secure.token_id)
   end
@@ -632,7 +632,7 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
     }
 
     assert :ok = OliWeb.LiveSessionPlugs.SecureAssessment.authorize(socket, params)
-    Accounts.delete_user_session_token(c.secure_token)
+    Oli.TestHelpers.delete_user_session_token_fixture(c.secure_token)
 
     assert {:error, :unauthenticated} =
              OliWeb.LiveSessionPlugs.SecureAssessment.authorize(socket, params)
@@ -665,7 +665,7 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
     assert {:error, :secure_launch_required} =
              OliWeb.LiveSessionPlugs.SecureAssessment.authorize(socket, params)
 
-    Accounts.delete_user_session_token(c.normal_token)
+    Oli.TestHelpers.delete_user_session_token_fixture(c.normal_token)
 
     assert {:error, :unauthenticated} =
              OliWeb.LiveSessionPlugs.SecureAssessment.authorize(socket, params)
@@ -693,7 +693,7 @@ defmodule OliWeb.SecureAssessmentAuthorizationTest do
                socket
              )
 
-    Accounts.delete_user_session_token(c.secure_token)
+    Oli.TestHelpers.delete_user_session_token_fixture(c.secure_token)
 
     assert {:noreply, %{redirected: {:redirect, %{to: "/secure-assessment/restricted"}}}} =
              component.handle_event("select_question", %{"question_number" => 1}, socket)

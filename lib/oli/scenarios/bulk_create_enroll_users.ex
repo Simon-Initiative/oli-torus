@@ -91,7 +91,13 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
       |> Enum.map(&insert_attrs/1)
       |> Enum.chunk_every(@insert_batch_size)
       |> Enum.reduce(0, fn batch, count ->
-        {inserted, _} = Repo.insert_all(User, batch)
+        {:ok, inserted} =
+          Oli.Accounts.Audited.bulk_create_users(
+            Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+            batch,
+            "scenario"
+          )
+
         count + inserted
       end)
       |> case do

@@ -4,12 +4,13 @@ defmodule Oli.Auditing.EventCatalogTest do
   alias Oli.Auditing.{EventCatalog, Sensitive}
   alias Oli.Auditing.EventCatalog.{Contract, Fields}
 
-  # Mirrors the family contract table of the approved PR-01 design.
+  # Mirrors the family contract table of the approved PR-01 design, plus the events later
+  # coverage designs add.
   @expected %{
     authentication:
       ~w(user_logged_in author_logged_in user_logged_out author_logged_out session_revoked)a,
     account: ~w(account_created account_updated account_locked account_unlocked account_linked
-        account_permissions_changed account_creation_rights_changed account_recovery_requested
+        account_identity_linked account_identity_unlinked account_permissions_changed account_creation_rights_changed account_recovery_requested
         account_credential_recovered user_deleted author_deleted author_role_changed
         account_internal_flag_changed)a,
     project: ~w(project_created project_duplicated project_imported project_deleted
@@ -48,7 +49,8 @@ defmodule Oli.Auditing.EventCatalogTest do
     organizations:
       ~w(institution_settings_changed community_settings_changed publisher_settings_changed
         research_consent_settings_changed)a,
-    integrations: ~w(lms_settings_changed sso_settings_changed lti_settings_changed
+    integrations:
+      ~w(lms_settings_changed lms_registration_declined sso_settings_changed lti_settings_changed
         external_tool_settings_changed roster_settings_changed grade_passback_settings_changed)a,
     ai_credentials: ~w(ai_service_settings_changed credential_lifecycle_changed)a,
     feature_flags: ~w(feature_flag_enabled feature_flag_disabled feature_flag_removed
@@ -79,7 +81,7 @@ defmodule Oli.Auditing.EventCatalogTest do
       end)
 
     assert actual == @expected
-    assert length(EventCatalog.names()) == 107
+    assert length(EventCatalog.names()) == 110
     assert length(EventCatalog.families()) == 25
   end
 

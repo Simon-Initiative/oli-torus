@@ -18,7 +18,7 @@ columns an event sets; omitted columns are `NULL`, `{}`, or `[]`.
 | `event_type` | What happened. One of the catalog names below. |
 | `outcome` | Result: `succeeded`, `initiated`, `failed`, `canceled`, `partial`, `unknown`. |
 | `actor_type` | Who acted: `user`, `author`, `system`; `unknown` only on migrated rows without an actor. |
-| `actor_key` | System actor key when `actor_type` is `system`: `playwright_setup`, `provider_provisioning`, `scheduled_maintenance`. |
+| `actor_key` | System actor key when `actor_type` is `system`: `playwright_setup`, `provider_provisioning`, `scheduled_maintenance`, `unauthenticated_request`. |
 | `user_id` | Acting user, when the actor is a user. |
 | `author_id` | Acting author, when the actor is an author. |
 | `actor_snapshot` | Actor identity at the time: `id`, `name`, `email` for accounts; `key`, `label` for system actors. |
@@ -48,7 +48,7 @@ columns an event sets; omitted columns are `NULL`, `{}`, or `[]`.
 | Family | Events |
 | --- | --- |
 | Authentication | `user_logged_in`, `author_logged_in`, `user_logged_out`, `author_logged_out`, `session_revoked` |
-| Account | `account_created`, `account_updated`, `account_locked`, `account_unlocked`, `account_linked`, `account_permissions_changed`, `account_creation_rights_changed`, `account_recovery_requested`, `account_credential_recovered`, `user_deleted`, `author_deleted`, `author_role_changed`, `account_internal_flag_changed` |
+| Account | `account_created`, `account_updated`, `account_locked`, `account_unlocked`, `account_linked`, `account_identity_linked`, `account_identity_unlinked`, `account_permissions_changed`, `account_creation_rights_changed`, `account_recovery_requested`, `account_credential_recovered`, `user_deleted`, `author_deleted`, `author_role_changed`, `account_internal_flag_changed` |
 | Project | `project_created`, `project_duplicated`, `project_imported`, `project_deleted`, `project_ownership_changed`, `project_collaborator_changed`, `project_published` |
 | Assessment settings | `assessment_settings_changed`, `assessment_settings_reset`, `assessment_setting_changed` |
 | Student exceptions | `student_exception_created`, `student_exception_updated`, `student_exception_deleted` |
@@ -67,7 +67,7 @@ columns an event sets; omitted columns are `NULL`, `{}`, or `[]`.
 | Payments | `payment_settings_changed`, `pricing_changed`, `discount_changed`, `payment_code_administered`, `entitlement_changed` |
 | Certificates | `certificate_settings_changed`, `certificate_granted`, `certificate_revoked` |
 | Organizations | `institution_settings_changed`, `community_settings_changed`, `publisher_settings_changed`, `research_consent_settings_changed` |
-| Integrations | `lms_settings_changed`, `sso_settings_changed`, `lti_settings_changed`, `external_tool_settings_changed`, `roster_settings_changed`, `grade_passback_settings_changed` |
+| Integrations | `lms_settings_changed`, `lms_registration_declined`, `sso_settings_changed`, `lti_settings_changed`, `external_tool_settings_changed`, `roster_settings_changed`, `grade_passback_settings_changed` |
 | AI and credentials | `ai_service_settings_changed`, `credential_lifecycle_changed` |
 | Feature flags | `feature_flag_enabled`, `feature_flag_disabled`, `feature_flag_removed`, `feature_rollout_stage_changed`, `feature_rollout_stage_deleted`, `feature_rollout_exemption_upserted`, `feature_rollout_exemption_deleted` |
 | Administrative operations | `administrative_operation`, `clickhouse_admin_operation_initiated`, `clickhouse_admin_operation_outcome` |
@@ -300,7 +300,7 @@ Example:
 | Affected person | `user`, `author` (required; equals the entity) |
 | Outcomes | `succeeded` |
 | No-op policy | `lifecycle` (written without changes) |
-| Change fields | `age_verified`, `author_id`, `can_create_sections`, `email`, `email_confirmation` (secret), `email_confirmed_at`, `family_name`, `given_name`, `guest`, `hidden`, `independent_learner`, `invitation_accepted_at`, `is_internal`, `locale`, `locked_at`, `lti_institution_id`, `middle_name`, `name`, `nickname`, `password` (secret), `picture`, `preferred_username`, `research_opt_out`, `system_role_id` |
+| Change fields | `age_verified`, `author_id`, `can_create_sections`, `email`, `email_confirmation` (secret), `email_confirmed_at`, `family_name`, `given_name`, `guest`, `hidden`, `independent_learner`, `invitation_accepted_at`, `is_internal`, `locale`, `locked_at`, `lti_institution_id`, `middle_name`, `name`, `nickname`, `password` (secret), `picture`, `platform_roles`, `preferred_username`, `research_opt_out`, `system_role_id` |
 | Detail keys | `creation_source` |
 | Reference roles | none |
 | Status | active |
@@ -336,14 +336,14 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `user`, `author` |
 | Required columns | none |
 | At least one of | none |
 | Affected person | `user`, `author` (required; equals the entity) |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `age_verified`, `author_id`, `can_create_sections`, `email`, `email_confirmation` (secret), `email_confirmed_at`, `family_name`, `given_name`, `guest`, `hidden`, `independent_learner`, `invitation_accepted_at`, `is_internal`, `locale`, `locked_at`, `lti_institution_id`, `middle_name`, `name`, `nickname`, `password` (secret), `picture`, `preferred_username`, `research_opt_out`, `system_role_id` |
+| Change fields | `age_verified`, `author_id`, `can_create_sections`, `email`, `email_confirmation` (secret), `email_confirmed_at`, `family_name`, `given_name`, `guest`, `hidden`, `independent_learner`, `invitation_accepted_at`, `is_internal`, `locale`, `locked_at`, `lti_institution_id`, `middle_name`, `name`, `nickname`, `password` (secret), `picture`, `platform_roles`, `preferred_username`, `research_opt_out`, `system_role_id` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -462,7 +462,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `user`, `author` |
 | Required columns | none |
 | At least one of | none |
@@ -499,9 +499,9 @@ Example:
 }
 ```
 
-### `account_permissions_changed`
+### `account_identity_linked`
 
-**Account permissions changed.** Access flags of an account, such as independent learner or hidden, were changed.
+**Login provider connected.** A login provider (for example Google) was connected to an account, so it can sign in through that provider; the provider account identifier is not recorded.
 
 | Rule | Value |
 | --- | --- |
@@ -511,8 +511,92 @@ Example:
 | At least one of | none |
 | Affected person | `user`, `author` (required; equals the entity) |
 | Outcomes | `succeeded` |
+| No-op policy | `lifecycle` (written without changes) |
+| Change fields | none |
+| Detail keys | `provider` |
+| Reference roles | none |
+| Status | active |
+
+Example:
+
+```json
+{
+  "inserted_at": "2026-10-29T14:05:08.123456Z",
+  "occurred_at": "2026-10-29T14:05:08.123456Z",
+  "schema_version": 2,
+  "event_type": "account_identity_linked",
+  "outcome": "succeeded",
+  "actor_type": "user",
+  "user_id": 77,
+  "actor_snapshot": {"email":"ada.student@example.edu","id":77,"name":"Ada Student"},
+  "entity_type": "user",
+  "entity_id": "77",
+  "entity_snapshot": {"email":"ada.student@example.edu","id":77,"name":"Ada Student"},
+  "affected_user_id": 77,
+  "details": {"provider":"google"},
+  "source": "ui",
+  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
+  "event_key": "account:primary:account_identity_linked:google",
+  "search_text": "Ada Student ada.student@example.edu"
+}
+```
+
+### `account_identity_unlinked`
+
+**Login provider disconnected.** A login provider was disconnected from an account.
+
+| Rule | Value |
+| --- | --- |
+| Actors | `user`, `author` |
+| Entity types | `user`, `author` |
+| Required columns | none |
+| At least one of | none |
+| Affected person | `user`, `author` (required; equals the entity) |
+| Outcomes | `succeeded` |
+| No-op policy | `lifecycle` (written without changes) |
+| Change fields | none |
+| Detail keys | `provider` |
+| Reference roles | none |
+| Status | active |
+
+Example:
+
+```json
+{
+  "inserted_at": "2026-10-29T14:05:08.123456Z",
+  "occurred_at": "2026-10-29T14:05:08.123456Z",
+  "schema_version": 2,
+  "event_type": "account_identity_unlinked",
+  "outcome": "succeeded",
+  "actor_type": "user",
+  "user_id": 77,
+  "actor_snapshot": {"email":"ada.student@example.edu","id":77,"name":"Ada Student"},
+  "entity_type": "user",
+  "entity_id": "77",
+  "entity_snapshot": {"email":"ada.student@example.edu","id":77,"name":"Ada Student"},
+  "affected_user_id": 77,
+  "details": {"provider":"google"},
+  "source": "ui",
+  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
+  "event_key": "account:primary:account_identity_unlinked:google",
+  "search_text": "Ada Student ada.student@example.edu"
+}
+```
+
+### `account_permissions_changed`
+
+**Account permissions changed.** Access flags or institution roles of an account, such as independent learner or hidden, were changed.
+
+| Rule | Value |
+| --- | --- |
+| Actors | `user`, `author`, `system` |
+| Entity types | `user`, `author` |
+| Required columns | none |
+| At least one of | none |
+| Affected person | `user`, `author` (required; equals the entity) |
+| Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `age_verified`, `author_id`, `can_create_sections`, `email`, `email_confirmation` (secret), `email_confirmed_at`, `family_name`, `given_name`, `guest`, `hidden`, `independent_learner`, `invitation_accepted_at`, `is_internal`, `locale`, `locked_at`, `lti_institution_id`, `middle_name`, `name`, `nickname`, `password` (secret), `picture`, `preferred_username`, `research_opt_out`, `system_role_id` |
+| Change fields | `age_verified`, `author_id`, `can_create_sections`, `email`, `email_confirmation` (secret), `email_confirmed_at`, `family_name`, `given_name`, `guest`, `hidden`, `independent_learner`, `invitation_accepted_at`, `is_internal`, `locale`, `locked_at`, `lti_institution_id`, `middle_name`, `name`, `nickname`, `password` (secret), `picture`, `platform_roles`, `preferred_username`, `research_opt_out`, `system_role_id` |
 | Detail keys | none |
 | Reference roles | none |
 | Status | active |
@@ -547,7 +631,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `user`, `author` |
 | Required columns | none |
 | At least one of | none |
@@ -3684,7 +3768,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `institution`, `community`, `publisher` |
 | Required columns | `institution_id` |
 | At least one of | none |
@@ -3726,7 +3810,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `institution`, `community`, `publisher` |
 | Required columns | none |
 | At least one of | none |
@@ -3768,7 +3852,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `institution`, `community`, `publisher` |
 | Required columns | none |
 | At least one of | none |
@@ -3809,7 +3893,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `research_consent` |
 | Required columns | none |
 | At least one of | none |
@@ -3854,11 +3938,11 @@ Example:
 | Actors | `user`, `author` |
 | Entity types | `registration`, `deployment`, `external_tool`, `institution`, `section` |
 | Required columns | none |
-| At least one of | `institution_id`, `section_id` |
+| At least one of | none |
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `auth_login_url`, `auth_server`, `auth_token_url`, `client_id`, `custom_params`, `deep_linking_enabled`, `deployment_id`, `description`, `grade_passback_enabled`, `institution_id`, `issuer`, `key_set_url`, `keyset_url`, `line_items_service_domain`, `line_items_service_url`, `login_url`, `name`, `nrps_context_memberships_url`, `nrps_enabled`, `private_key` (secret), `redirect_uris`, `status`, `target_link_uri`, `tool_jwk_id` |
+| Change fields | `auth_login_url`, `auth_server`, `auth_token_url`, `client_id`, `custom` (secret), `custom_params` (secret), `deep_linking_enabled`, `deployment_id`, `description`, `grade_passback_enabled`, `institution_id`, `issuer`, `key_set_url`, `keyset_url`, `line_items_service_domain`, `line_items_service_url`, `login_url`, `name`, `nrps_context_memberships_url`, `nrps_enabled`, `private_key` (secret), `redirect_uris`, `status`, `target_link_uri`, `text`, `title`, `tool_jwk_id`, `url` |
 | Detail keys | none |
 | Reference roles | `provider` |
 | Status | active |
@@ -3887,6 +3971,47 @@ Example:
 }
 ```
 
+### `lms_registration_declined`
+
+**LMS registration request declined.** An administrator declined an institution's LTI registration request; the request's identifying fields are kept, never its contact email.
+
+| Rule | Value |
+| --- | --- |
+| Actors | `user`, `author` |
+| Entity types | `pending_registration` |
+| Required columns | none |
+| At least one of | none |
+| Affected person | none |
+| Outcomes | `succeeded` |
+| No-op policy | `lifecycle` (written without changes) |
+| Change fields | none |
+| Detail keys | `institution_url`, `country_code`, `issuer`, `client_id`, `deployment_id` |
+| Reference roles | `provider` |
+| Status | active |
+
+Example:
+
+```json
+{
+  "inserted_at": "2026-10-29T14:05:08.123456Z",
+  "occurred_at": "2026-10-29T14:05:08.123456Z",
+  "schema_version": 2,
+  "event_type": "lms_registration_declined",
+  "outcome": "succeeded",
+  "actor_type": "author",
+  "author_id": 5,
+  "actor_snapshot": {"email":"alan.admin@example.edu","id":5,"name":"Alan Admin"},
+  "entity_type": "pending_registration",
+  "entity_id": "23",
+  "entity_snapshot": {"id":23,"name":"Example State University"},
+  "details": {"client_id":"10000000000042","country_code":"US","deployment_id":"1:abc","institution_url":"https://example.edu","issuer":"https://lms.example.edu"},
+  "source": "ui",
+  "operation_id": "6f1c2a9e-4b7d-4c1e-9a53-2d8e7f0b1c34",
+  "event_key": "pending_registration:23:declined",
+  "search_text": "Alan Admin alan.admin@example.edu Example State University"
+}
+```
+
 ### `sso_settings_changed`
 
 **SSO settings changed.** Single sign-on configuration was changed; keys are never recorded.
@@ -3896,11 +4021,11 @@ Example:
 | Actors | `user`, `author` |
 | Entity types | `registration`, `deployment`, `external_tool`, `institution`, `section` |
 | Required columns | none |
-| At least one of | `institution_id`, `section_id` |
+| At least one of | none |
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `auth_login_url`, `auth_server`, `auth_token_url`, `client_id`, `custom_params`, `deep_linking_enabled`, `deployment_id`, `description`, `grade_passback_enabled`, `institution_id`, `issuer`, `key_set_url`, `keyset_url`, `line_items_service_domain`, `line_items_service_url`, `login_url`, `name`, `nrps_context_memberships_url`, `nrps_enabled`, `private_key` (secret), `redirect_uris`, `status`, `target_link_uri`, `tool_jwk_id` |
+| Change fields | `auth_login_url`, `auth_server`, `auth_token_url`, `client_id`, `custom` (secret), `custom_params` (secret), `deep_linking_enabled`, `deployment_id`, `description`, `grade_passback_enabled`, `institution_id`, `issuer`, `key_set_url`, `keyset_url`, `line_items_service_domain`, `line_items_service_url`, `login_url`, `name`, `nrps_context_memberships_url`, `nrps_enabled`, `private_key` (secret), `redirect_uris`, `status`, `target_link_uri`, `text`, `title`, `tool_jwk_id`, `url` |
 | Detail keys | none |
 | Reference roles | `provider` |
 | Status | active |
@@ -3939,11 +4064,11 @@ Example:
 | Actors | `user`, `author` |
 | Entity types | `registration`, `deployment`, `external_tool`, `institution`, `section` |
 | Required columns | none |
-| At least one of | `institution_id`, `section_id` |
+| At least one of | none |
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `auth_login_url`, `auth_server`, `auth_token_url`, `client_id`, `custom_params`, `deep_linking_enabled`, `deployment_id`, `description`, `grade_passback_enabled`, `institution_id`, `issuer`, `key_set_url`, `keyset_url`, `line_items_service_domain`, `line_items_service_url`, `login_url`, `name`, `nrps_context_memberships_url`, `nrps_enabled`, `private_key` (secret), `redirect_uris`, `status`, `target_link_uri`, `tool_jwk_id` |
+| Change fields | `auth_login_url`, `auth_server`, `auth_token_url`, `client_id`, `custom` (secret), `custom_params` (secret), `deep_linking_enabled`, `deployment_id`, `description`, `grade_passback_enabled`, `institution_id`, `issuer`, `key_set_url`, `keyset_url`, `line_items_service_domain`, `line_items_service_url`, `login_url`, `name`, `nrps_context_memberships_url`, `nrps_enabled`, `private_key` (secret), `redirect_uris`, `status`, `target_link_uri`, `text`, `title`, `tool_jwk_id`, `url` |
 | Detail keys | none |
 | Reference roles | `provider` |
 | Status | active |
@@ -3981,11 +4106,11 @@ Example:
 | Actors | `user`, `author` |
 | Entity types | `registration`, `deployment`, `external_tool`, `institution`, `section` |
 | Required columns | none |
-| At least one of | `institution_id`, `section_id` |
+| At least one of | none |
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `auth_login_url`, `auth_server`, `auth_token_url`, `client_id`, `custom_params`, `deep_linking_enabled`, `deployment_id`, `description`, `grade_passback_enabled`, `institution_id`, `issuer`, `key_set_url`, `keyset_url`, `line_items_service_domain`, `line_items_service_url`, `login_url`, `name`, `nrps_context_memberships_url`, `nrps_enabled`, `private_key` (secret), `redirect_uris`, `status`, `target_link_uri`, `tool_jwk_id` |
+| Change fields | `auth_login_url`, `auth_server`, `auth_token_url`, `client_id`, `custom` (secret), `custom_params` (secret), `deep_linking_enabled`, `deployment_id`, `description`, `grade_passback_enabled`, `institution_id`, `issuer`, `key_set_url`, `keyset_url`, `line_items_service_domain`, `line_items_service_url`, `login_url`, `name`, `nrps_context_memberships_url`, `nrps_enabled`, `private_key` (secret), `redirect_uris`, `status`, `target_link_uri`, `text`, `title`, `tool_jwk_id`, `url` |
 | Detail keys | none |
 | Reference roles | `provider` |
 | Status | active |
@@ -4022,12 +4147,12 @@ Example:
 | --- | --- |
 | Actors | `user`, `author` |
 | Entity types | `registration`, `deployment`, `external_tool`, `institution`, `section` |
-| Required columns | none |
-| At least one of | `institution_id`, `section_id` |
+| Required columns | `section_id` |
+| At least one of | none |
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `auth_login_url`, `auth_server`, `auth_token_url`, `client_id`, `custom_params`, `deep_linking_enabled`, `deployment_id`, `description`, `grade_passback_enabled`, `institution_id`, `issuer`, `key_set_url`, `keyset_url`, `line_items_service_domain`, `line_items_service_url`, `login_url`, `name`, `nrps_context_memberships_url`, `nrps_enabled`, `private_key` (secret), `redirect_uris`, `status`, `target_link_uri`, `tool_jwk_id` |
+| Change fields | `auth_login_url`, `auth_server`, `auth_token_url`, `client_id`, `custom` (secret), `custom_params` (secret), `deep_linking_enabled`, `deployment_id`, `description`, `grade_passback_enabled`, `institution_id`, `issuer`, `key_set_url`, `keyset_url`, `line_items_service_domain`, `line_items_service_url`, `login_url`, `name`, `nrps_context_memberships_url`, `nrps_enabled`, `private_key` (secret), `redirect_uris`, `status`, `target_link_uri`, `text`, `title`, `tool_jwk_id`, `url` |
 | Detail keys | none |
 | Reference roles | `provider` |
 | Status | active |
@@ -4064,12 +4189,12 @@ Example:
 | --- | --- |
 | Actors | `user`, `author` |
 | Entity types | `registration`, `deployment`, `external_tool`, `institution`, `section` |
-| Required columns | none |
-| At least one of | `institution_id`, `section_id` |
+| Required columns | `section_id` |
+| At least one of | none |
 | Affected person | none |
 | Outcomes | `succeeded` |
 | No-op policy | `skip` (an event with no changes is not written) |
-| Change fields | `auth_login_url`, `auth_server`, `auth_token_url`, `client_id`, `custom_params`, `deep_linking_enabled`, `deployment_id`, `description`, `grade_passback_enabled`, `institution_id`, `issuer`, `key_set_url`, `keyset_url`, `line_items_service_domain`, `line_items_service_url`, `login_url`, `name`, `nrps_context_memberships_url`, `nrps_enabled`, `private_key` (secret), `redirect_uris`, `status`, `target_link_uri`, `tool_jwk_id` |
+| Change fields | `auth_login_url`, `auth_server`, `auth_token_url`, `client_id`, `custom` (secret), `custom_params` (secret), `deep_linking_enabled`, `deployment_id`, `description`, `grade_passback_enabled`, `institution_id`, `issuer`, `key_set_url`, `keyset_url`, `line_items_service_domain`, `line_items_service_url`, `login_url`, `name`, `nrps_context_memberships_url`, `nrps_enabled`, `private_key` (secret), `redirect_uris`, `status`, `target_link_uri`, `text`, `title`, `tool_jwk_id`, `url` |
 | Detail keys | none |
 | Reference roles | `provider` |
 | Status | active |
@@ -4106,7 +4231,7 @@ Example:
 
 | Rule | Value |
 | --- | --- |
-| Actors | `user`, `author` |
+| Actors | `user`, `author`, `system` |
 | Entity types | `ai_service` |
 | Required columns | none |
 | At least one of | none |

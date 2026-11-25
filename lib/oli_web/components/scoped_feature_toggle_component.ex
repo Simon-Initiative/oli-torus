@@ -142,16 +142,16 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponent do
         {:noreply, socket}
       else
         resource = socket.assigns.source
-        actor = Map.get(socket.assigns, :current_author)
+        context = Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui)
         enable? = enabled_str == "true"
         feature_allowed? = scoped_feature_allowed?(feature_atom, socket.assigns.source_type)
 
         if feature_allowed? do
           result =
             if enable? do
-              ScopedFeatureFlags.enable_feature(feature_atom, resource, actor)
+              Oli.ScopedFeatureFlags.Audited.enable_feature(context, feature_atom, resource)
             else
-              ScopedFeatureFlags.disable_feature(feature_atom, resource, actor)
+              Oli.ScopedFeatureFlags.Audited.disable_feature(context, feature_atom, resource)
             end
 
           case result do

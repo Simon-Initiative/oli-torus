@@ -121,34 +121,6 @@ defmodule Oli.Institutions do
   def get_institution_by!(clauses), do: Repo.get_by(Institution, clauses)
 
   @doc """
-  Creates a institution.
-  ## Examples
-      iex> create_institution(%{field: value})
-      {:ok, %Institution{}}
-      iex> create_institution(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def create_institution(attrs \\ %{}) do
-    %Institution{}
-    |> Institution.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates a institution.
-  ## Examples
-      iex> update_institution(institution, %{field: new_value})
-      {:ok, %Institution{}}
-      iex> update_institution(institution, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def update_institution(%Institution{} = institution, attrs) do
-    institution
-    |> Institution.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
   Returns an `%Ecto.Changeset{}` for tracking institution changes.
   ## Examples
       iex> change_institution(institution)
@@ -204,80 +176,6 @@ defmodule Oli.Institutions do
       preload: [deployments: d]
     )
     |> Repo.one!()
-  end
-
-  @doc """
-  Creates a registration.
-
-  ## Examples
-
-      iex> create_registration(%{field: value})
-      {:ok, %Registration{}}
-
-      iex> create_registration(%{field: bad_value})
-      {:error, ...}
-
-  """
-  def create_registration(attrs \\ %{}) do
-    %Registration{}
-    |> Registration.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Returns a registration if one exists with the given params, otherwise creates a new one.
-
-  ## Examples
-
-      iex> find_or_create_registration(%{field: value})
-      {:ok, %Registration{}}
-  """
-  def find_or_create_registration(%{issuer: issuer, client_id: client_id} = registration_attrs) do
-    case Repo.one(
-           from(r in Registration,
-             where:
-               r.issuer == ^issuer and
-                 r.client_id == ^client_id,
-             select: r
-           )
-         ) do
-      nil -> create_registration(registration_attrs)
-      registration -> {:ok, registration}
-    end
-  end
-
-  @doc """
-  Updates a registration.
-
-  ## Examples
-
-      iex> update_registration(registration, %{field: new_value})
-      {:ok, %Registration{}}
-
-      iex> update_registration(registration, %{field: bad_value})
-      {:error, ...}
-
-  """
-  def update_registration(%Registration{} = registration, attrs) do
-    registration
-    |> Registration.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a Registration.
-
-  ## Examples
-
-      iex> delete_registration(registration)
-      {:ok, %Registration{}}
-
-      iex> delete_registration(registration)
-      {:error, ...}
-
-  """
-  def delete_registration(%Registration{} = registration) do
-    Repo.delete(registration)
   end
 
   @doc """
@@ -394,61 +292,6 @@ defmodule Oli.Institutions do
   end
 
   @doc """
-  Creates a deployment.
-
-  ## Examples
-
-      iex> create_deployment(%{field: value})
-      {:ok, %Deployment{}}
-
-      iex> create_deployment(%{field: bad_value})
-      {:error, ...}
-
-  """
-  def create_deployment(attrs \\ %{}) do
-    %Deployment{}
-    |> Deployment.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def maybe_create_deployment(%{deployment_id: nil}), do: {:ok, nil}
-  def maybe_create_deployment(%{deployment_id: _} = attrs), do: create_deployment(attrs)
-
-  @doc """
-  Updates a deployment.
-
-  ## Examples
-
-      iex> update_deployment(deployment, %{field: new_value})
-      {:ok, %Deployment{}}
-
-      iex> update_deployment(deployment, %{field: bad_value})
-      {:error, ...}
-
-  """
-  def update_deployment(%Deployment{} = deployment, attrs) do
-    deployment
-    |> Deployment.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a Deployment.
-
-  ## Examples
-
-      iex> delete_deployment(deployment)
-      {:ok, %Deployment{}}
-
-      iex> delete_deployment(deployment)
-      {:error, ...}
-
-  """
-  def delete_deployment(%Deployment{} = deployment) do
-    Repo.delete(deployment)
-  end
-
-  @doc """
   Returns a data structure for tracking deployment changes.
 
   ## Examples
@@ -559,18 +402,6 @@ defmodule Oli.Institutions do
   end
 
   @doc """
-  Deletes a pending_registration.
-  ## Examples
-      iex> delete_pending_registration(pending_registration)
-      {:ok, %PendingRegistration{}}
-      iex> delete_pending_registration(pending_registration)
-      {:error, %Ecto.Changeset{}}
-  """
-  def delete_pending_registration(%PendingRegistration{} = pending_registration) do
-    Repo.delete(pending_registration)
-  end
-
-  @doc """
   Returns an `%Ecto.Changeset{}` for tracking pending_registration changes.
   ## Examples
       iex> change_pending_registration(pending_registration)
@@ -580,178 +411,24 @@ defmodule Oli.Institutions do
     PendingRegistration.changeset(pending_registration, %{})
   end
 
-  @doc false
-  # Returns the institution that has a similar (normalized) url. If no institutions a similar url
-  # exist, then a new one is created. If more than one institution with a similar url exist, then
-  # the first institution in the result is returned.
-  #
-  # ## Examples
-  #     iex> find_or_create_institution_by_normalized_url(institution_attrs)
-  #     {:ok, %Institution{}}
-  def find_or_create_institution_by_normalized_url(institution_attrs) do
+  @doc """
+  Returns the first active institution whose URL matches `institution_url` after normalizing
+  case, scheme, and trailing slash, or `nil` when none does.
+  """
+  def find_active_institution_by_normalized_url(institution_url) do
     normalized_url =
-      institution_attrs[:institution_url]
+      institution_url
       |> String.downcase()
       |> String.replace(~r/^https?\:\/\//i, "")
       |> String.replace_trailing("/", "")
 
-    case Repo.all(
-           from(i in Institution,
-             where:
-               ilike(i.institution_url, ^normalized_url) and
-                 i.status != :deleted,
-             select: i,
-             order_by: i.id
-           )
-         ) do
-      [] -> create_institution(institution_attrs)
-      [institution] -> {:ok, institution}
-      [institution | _] -> {:ok, institution}
-    end
-  end
-
-  @doc """
-  Approves a pending registration request. If successful, a new deployment will be created and attached
-  to a new or existing institution if one with a similar url already exists.
-
-  The operation guarantees all actions or none are performed.
-
-  ## Examples
-      iex> approve_pending_registration(pending_registration)
-      {:ok, {%Institution{}, %Registration{}}}
-      iex> approve_pending_registration(pending_registration)
-      {:error, reason}
-  """
-  def approve_pending_registration(%PendingRegistration{} = pending_registration) do
-    Repo.transaction(fn ->
-      with {:ok, institution} <-
-             find_or_create_institution_by_normalized_url(
-               PendingRegistration.institution_attrs(pending_registration)
-             ),
-           {:ok, active_jwk} = Lti_1p3.get_active_jwk(),
-           registration_attrs =
-             Map.merge(PendingRegistration.registration_attrs(pending_registration), %{
-               institution_id: institution.id,
-               tool_jwk_id: active_jwk.id
-             }),
-           {:ok, registration} <- find_or_create_registration(registration_attrs),
-           deployment_attrs =
-             Map.merge(PendingRegistration.deployment_attrs(pending_registration), %{
-               institution_id: institution.id,
-               registration_id: registration.id
-             }),
-           {:ok, deployment} <- maybe_create_deployment(deployment_attrs),
-           {:ok, _pending_registration} <- delete_pending_registration(pending_registration) do
-        {institution, registration, deployment}
-      else
-        {:error, reason} -> Repo.rollback(reason)
-        other -> Repo.rollback(other)
-      end
-    end)
-  end
-
-  @doc """
-  Approves a pending registration request using a specific existing institution.
-
-  The operation guarantees all actions or none are performed.
-
-  ## Examples
-      iex> approve_pending_registration(pending_registration, institution_id)
-      {:ok, {%Institution{}, %Registration{}, %Deployment{}}}
-      iex> approve_pending_registration(pending_registration, institution_id)
-      {:error, reason}
-  """
-  def approve_pending_registration(
-        %PendingRegistration{} = pending_registration,
-        institution_id
-      ) do
-    Repo.transaction(fn ->
-      with {:ok, institution} <- fetch_active_institution(institution_id),
-           {:ok, active_jwk} <- Lti_1p3.get_active_jwk(),
-           registration_attrs =
-             Map.merge(PendingRegistration.registration_attrs(pending_registration), %{
-               institution_id: institution.id,
-               tool_jwk_id: active_jwk.id
-             }),
-           {:ok, registration} <- find_or_create_registration(registration_attrs),
-           deployment_attrs =
-             Map.merge(PendingRegistration.deployment_attrs(pending_registration), %{
-               institution_id: institution.id,
-               registration_id: registration.id
-             }),
-           {:ok, deployment} <- maybe_create_deployment(deployment_attrs),
-           {:ok, _pending_registration} <- delete_pending_registration(pending_registration) do
-        {institution, registration, deployment}
-      else
-        error -> Repo.rollback(error)
-      end
-    end)
-  end
-
-  defp fetch_active_institution(institution_id) do
-    case parse_institution_id(institution_id) do
-      {:ok, parsed_id} ->
-        case Repo.get(Institution, parsed_id) do
-          nil -> {:error, :institution_not_found}
-          %Institution{status: :deleted} -> {:error, :institution_deleted}
-          institution -> {:ok, institution}
-        end
-
-      {:error, :invalid_institution_id} ->
-        {:error, :invalid_institution_id}
-    end
-  end
-
-  defp parse_institution_id(institution_id) when is_binary(institution_id) do
-    case Integer.parse(institution_id) do
-      {parsed_id, ""} -> {:ok, parsed_id}
-      _ -> {:error, :invalid_institution_id}
-    end
-  end
-
-  defp parse_institution_id(institution_id) when is_integer(institution_id),
-    do: {:ok, institution_id}
-
-  defp parse_institution_id(_), do: {:error, :invalid_institution_id}
-
-  @doc """
-  Approves a pending registration request. If successful, a new deployment will be created and attached
-  to a the required new institution.
-
-  The operation guarantees all actions or none are performed.
-
-  ## Examples
-      iex> approve_pending_registration_as_new_institution(pending_registration)
-      {:ok, {%Institution{}, %Registration{}, %Deployment{}}}
-      iex> approve_pending_registration_as_new_institution(pending_registration)
-      {:error, reason}
-  """
-
-  def approve_pending_registration_as_new_institution(
-        %PendingRegistration{} = pending_registration
-      ) do
-    Repo.transaction(fn ->
-      with {:ok, institution} <-
-             create_institution(PendingRegistration.institution_attrs(pending_registration)),
-           {:ok, active_jwk} <- Lti_1p3.get_active_jwk(),
-           registration_attrs =
-             Map.merge(PendingRegistration.registration_attrs(pending_registration), %{
-               institution_id: institution.id,
-               tool_jwk_id: active_jwk.id
-             }),
-           {:ok, registration} <- find_or_create_registration(registration_attrs),
-           deployment_attrs =
-             Map.merge(PendingRegistration.deployment_attrs(pending_registration), %{
-               institution_id: institution.id,
-               registration_id: registration.id
-             }),
-           {:ok, deployment} <- create_deployment(deployment_attrs),
-           {:ok, _pending_registration} <- delete_pending_registration(pending_registration) do
-        {institution, registration, deployment}
-      else
-        error -> Repo.rollback(error)
-      end
-    end)
+    Repo.one(
+      from(i in Institution,
+        where: ilike(i.institution_url, ^normalized_url) and i.status != :deleted,
+        order_by: i.id,
+        limit: 1
+      )
+    )
   end
 
   @doc """

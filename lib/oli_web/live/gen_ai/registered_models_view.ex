@@ -1,6 +1,8 @@
 defmodule OliWeb.GenAI.RegisteredModelsView do
   use OliWeb, :live_view
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   require Logger
 
   alias Oli.GenAI.Completions
@@ -389,7 +391,11 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
       item ->
         socket = clear_flash(socket)
 
-        case GenAI.delete_registered_model(item) do
+        case Oli.GenAI.Audited.delete(
+               Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+               :registered_model,
+               item.id
+             ) do
           {:ok, _} ->
             all = all()
             selected = Enum.at(all, 0)
@@ -405,7 +411,7 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
 
           {:error, reason} ->
             socket =
-              put_flash(socket, :error, "Couldn't delete registered model: #{inspect(reason)}")
+              put_flash(socket, :error, delete_error_message(reason))
 
             {:noreply,
              assign_form(socket, RegisteredModel.changeset(socket.assigns.selected, %{}))}
@@ -424,7 +430,12 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
         {:noreply, assign_form(socket, RegisteredModel.changeset(socket.assigns.selected, %{}))}
 
       selected ->
-        case GenAI.update_registered_model(selected, params) do
+        case Oli.GenAI.Audited.update(
+               Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+               :registered_model,
+               selected.id,
+               params
+             ) do
           {:ok, registered_model} ->
             all = all()
 
@@ -440,21 +451,28 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
           {:error, %Ecto.Changeset{} = changeset} ->
             socket = put_flash(socket, :error, "Couldn't update registered model")
             {:noreply, assign_form(socket, changeset)}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, "Couldn't update registered model")}
         end
     end
   end
 
   def handle_event("new_model", _, socket) do
-    case GenAI.create_registered_model(%{
-           name: "New Model",
-           provider: :open_ai,
-           model: "model-name",
-           url_template: "https://api.openai.com",
-           api_key: "dummy",
-           secondary_api_key: "dummy",
-           timeout: 8000,
-           recv_timeout: 60000
-         }) do
+    case Oli.GenAI.Audited.create(
+           Oli.Auditing.Context.for_actor(socket.assigns.current_author, source: :ui),
+           :registered_model,
+           %{
+             name: "New Model",
+             provider: :open_ai,
+             model: "model-name",
+             url_template: "https://api.openai.com",
+             api_key: "dummy",
+             secondary_api_key: "dummy",
+             timeout: 8000,
+             recv_timeout: 60000
+           }
+         ) do
       {:ok, registered_model} ->
         all = all()
         selected = Enum.find(all, &(&1.id == registered_model.id))
@@ -531,4 +549,9 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
   defp max_pool_size do
     Application.get_env(:oli, :genai_hackney_pool_max_size, 1000)
   end
+
+  defp delete_error_message(:delete_failed),
+    do: "This registered model is still in use and can't be deleted."
+
+  defp delete_error_message(_reason), do: "Couldn't delete registered model."
 end

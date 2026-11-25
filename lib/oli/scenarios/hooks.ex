@@ -121,14 +121,20 @@ defmodule Oli.Scenarios.Hooks do
 
     users =
       for i <- 1..5 do
-        {:ok, user} =
-          Oli.Accounts.create_guest_user(%{
+        changeset =
+          Oli.Accounts.User.noauth_changeset(%Oli.Accounts.User{}, %{
             guest: false,
             email: "bulk_user_#{i}@test.edu",
             given_name: "Bulk",
             family_name: "User#{i}",
             sub: "bulk_user_#{i}_#{System.unique_integer([:positive])}"
           })
+
+        {:ok, user} =
+          Oli.Accounts.Audited.provision_account(
+            Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+            {:user, nil, changeset, "scenario"}
+          )
 
         {"bulk_user_#{i}", user}
       end

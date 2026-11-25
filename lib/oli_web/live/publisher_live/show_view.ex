@@ -4,6 +4,7 @@ defmodule OliWeb.PublisherLive.ShowView do
 
   import OliWeb.ErrorHelpers
 
+  alias Oli.Auditing.Context
   alias Oli.Inventories
   alias OliWeb.Common.{Breadcrumb, Confirm, DeleteModal, Params, ShowSection}
   alias OliWeb.PublisherLive.{Form, IndexView}
@@ -120,7 +121,11 @@ defmodule OliWeb.PublisherLive.ShowView do
   def handle_event("save", %{"publisher" => params}, socket) do
     socket = clear_flash(socket)
 
-    case Inventories.update_publisher(socket.assigns.publisher, Params.trim(params)) do
+    case Inventories.Audited.update_publisher(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           socket.assigns.publisher.id,
+           Params.trim(params)
+         ) do
       {:ok, publisher} ->
         socket = put_flash(socket, :info, "Publisher successfully updated.")
 
@@ -143,7 +148,10 @@ defmodule OliWeb.PublisherLive.ShowView do
     socket = clear_flash(socket)
 
     socket =
-      case Inventories.delete_publisher(socket.assigns.publisher) do
+      case Inventories.Audited.delete_publisher(
+             Context.for_actor(socket.assigns.current_author, source: :ui),
+             socket.assigns.publisher.id
+           ) do
         {:ok, _publisher} ->
           socket
           |> put_flash(:info, "Publisher successfully deleted.")
@@ -203,7 +211,10 @@ defmodule OliWeb.PublisherLive.ShowView do
   def handle_event("set_default", _, socket) do
     socket = assign(socket, show_confirm_default: false)
 
-    case Inventories.set_default_publisher(socket.assigns.publisher) do
+    case Inventories.Audited.set_default_publisher(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           socket.assigns.publisher.id
+         ) do
       {:ok, default} ->
         socket = put_flash(socket, :info, "Publisher successfully set as the default.")
 

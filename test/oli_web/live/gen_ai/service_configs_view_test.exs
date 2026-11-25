@@ -3,7 +3,6 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
 
   import Phoenix.LiveViewTest
 
-  alias Oli.GenAI
   alias Oli.GenAI.Completions.{RegisteredModel, ServiceConfig}
   alias Oli.Repo
 
@@ -71,7 +70,7 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
       })
 
     {:ok, service_config} =
-      GenAI.create_service_config(%{
+      Oli.GenAI.Audited.create(Oli.TestHelpers.audit_context(), :service_config, %{
         name: "Test Service Config",
         primary_model_id: model.id,
         secondary_model_id: secondary_model.id,

@@ -295,7 +295,7 @@ defmodule OliWeb.UserAuthTest do
     end
 
     test "requires user to confirm email", %{conn: conn, user: user} do
-      {:ok, user} = Accounts.update_user(user, %{email_confirmed_at: nil})
+      {:ok, user} = Oli.TestHelpers.update_account_fixture(user, %{email_confirmed_at: nil})
 
       conn =
         conn
@@ -326,7 +326,7 @@ defmodule OliWeb.UserAuthTest do
 
     test "does not required user to confirm email when skip_email_verification set",
          %{conn: conn, user: user} do
-      {:ok, user} = Accounts.update_user(user, %{email_confirmed_at: nil})
+      {:ok, user} = Oli.TestHelpers.update_account_fixture(user, %{email_confirmed_at: nil})
 
       conn =
         conn

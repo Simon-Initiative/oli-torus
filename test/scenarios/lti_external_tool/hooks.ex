@@ -6,9 +6,7 @@ defmodule Oli.Scenarios.LtiExternalTool.Hooks do
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
   alias Oli.Activities
   alias Oli.Activities.ActivityRegistrationProject
-  alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
-  alias Oli.Lti.PlatformInstances
   alias Oli.Repo
   alias Oli.Scenarios.DirectiveTypes.ExecutionState
 
@@ -65,8 +63,11 @@ defmodule Oli.Scenarios.LtiExternalTool.Hooks do
 
   defp upsert_platform_instance(%{client_id: client_id} = attrs) do
     case active_platform_instance(client_id) do
-      nil -> PlatformExternalTools.create_platform_instance(attrs)
-      platform_instance -> PlatformInstances.update_platform_instance(platform_instance, attrs)
+      nil ->
+        Oli.TestHelpers.create_platform_instance_fixture(attrs)
+
+      platform_instance ->
+        Oli.TestHelpers.update_platform_instance_fixture(platform_instance, attrs)
     end
   end
 
@@ -79,7 +80,7 @@ defmodule Oli.Scenarios.LtiExternalTool.Hooks do
   defp upsert_deployment(platform_instance, activity_registration) do
     case deployment_for(platform_instance, activity_registration) do
       nil ->
-        PlatformExternalTools.create_lti_external_tool_activity_deployment(%{
+        Oli.TestHelpers.create_tool_deployment_fixture(%{
           platform_instance_id: platform_instance.id,
           activity_registration_id: activity_registration.id,
           status: :enabled,
@@ -87,12 +88,16 @@ defmodule Oli.Scenarios.LtiExternalTool.Hooks do
         })
 
       deployment ->
-        PlatformExternalTools.update_lti_external_tool_activity_deployment(deployment, %{
-          platform_instance_id: platform_instance.id,
-          activity_registration_id: activity_registration.id,
-          status: :enabled,
-          deep_linking_enabled: false
-        })
+        Oli.Lti.Audited.update_external_tool_deployment(
+          Oli.TestHelpers.audit_context(),
+          deployment.deployment_id,
+          %{
+            platform_instance_id: platform_instance.id,
+            activity_registration_id: activity_registration.id,
+            status: :enabled,
+            deep_linking_enabled: false
+          }
+        )
     end
   end
 

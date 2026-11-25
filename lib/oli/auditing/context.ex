@@ -14,10 +14,15 @@ defmodule Oli.Auditing.Context do
   alias Oli.Accounts.{Author, User}
   alias Oli.Auditing.Snapshot
 
+  # `unauthenticated_request` is the actor of requests made without signing in, where nobody
+  # can be named: for example, someone types an email on the "forgot password" page and a reset
+  # link is sent to that account. The account cannot be the actor, because whoever typed the
+  # email may not own it.
   @system_actors %{
     playwright_setup: "Playwright setup",
     provider_provisioning: "Identity provider provisioning",
-    scheduled_maintenance: "Scheduled maintenance"
+    scheduled_maintenance: "Scheduled maintenance",
+    unauthenticated_request: "Unauthenticated request"
   }
 
   @account_sources [:ui, :api, :mcp, :job, :scenario, :application]
@@ -36,7 +41,11 @@ defmodule Oli.Auditing.Context do
   ]
 
   @type source :: :ui | :api | :mcp | :job | :scenario | :system | :application
-  @type system_key :: :playwright_setup | :provider_provisioning | :scheduled_maintenance
+  @type system_key ::
+          :playwright_setup
+          | :provider_provisioning
+          | :scheduled_maintenance
+          | :unauthenticated_request
 
   @type t :: %__MODULE__{
           actor_type: :user | :author | :system,

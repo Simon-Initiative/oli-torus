@@ -5,26 +5,33 @@ defmodule OliWeb.CognitoController do
   import OliWeb.ViewHelpers, only: [redirect_with_error: 3]
   import Oli.Utils
 
+  alias Ecto.Multi
   alias Oli.{Repo, Sections, Accounts}
+  alias Oli.Auditing.Context
   alias Oli.Authoring.{Clone, Course}
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias OliWeb.{UserAuth, AuthorAuth}
 
+  @sign_in_failed "Unable to sign in. Please try again."
+
   def index(
         conn,
         %{"id_token" => _jwt, "error_url" => _error_url, "community_id" => community_id} = params
       ) do
-    case Accounts.setup_sso_user(conn.assigns.claims, community_id) do
-      {:ok, user, author} ->
-        conn
-        |> UserAuth.create_session(user)
-        |> AuthorAuth.create_session(author)
-        |> redirect(to: ~p"/workspaces/instructor")
-
+    with {:ok, user, author} <- Accounts.setup_sso_user(conn.assigns.claims, community_id),
+         {:ok, conn} <- create_sessions(conn, user, author) do
+      redirect(conn, to: ~p"/workspaces/instructor")
+    else
       {:error, %Ecto.Changeset{}} ->
         redirect_with_error(conn, get_error_url(params), "Invalid parameters")
+
+      {:error, :session_not_issued} ->
+        redirect_with_error(conn, get_error_url(params), @sign_in_failed)
+
+      {:error, _reason} ->
+        redirect_with_error(conn, get_error_url(params), @sign_in_failed)
     end
   end
 
@@ -37,17 +44,21 @@ defmodule OliWeb.CognitoController do
         %{"id_token" => _jwt, "error_url" => _error_url, "community_id" => community_id} = params
       ) do
     with anchor when not is_nil(anchor) <- fetch_product_or_project(params),
-         {:ok, user, author} <- Accounts.setup_sso_user(conn.assigns.claims, community_id) do
-      conn
-      |> UserAuth.create_session(user)
-      |> AuthorAuth.create_session(author)
-      |> create_or_prompt(user, anchor)
+         {:ok, user, author} <- Accounts.setup_sso_user(conn.assigns.claims, community_id),
+         {:ok, conn} <- create_sessions(conn, user, author) do
+      create_or_prompt(conn, user, anchor)
     else
       nil ->
         redirect_with_error(conn, get_error_url(params), "Invalid template or project")
 
       {:error, %Ecto.Changeset{}} ->
         redirect_with_error(conn, get_error_url(params), "Invalid parameters")
+
+      {:error, :session_not_issued} ->
+        redirect_with_error(conn, get_error_url(params), @sign_in_failed)
+
+      {:error, _reason} ->
+        redirect_with_error(conn, get_error_url(params), @sign_in_failed)
     end
   end
 
@@ -64,16 +75,21 @@ defmodule OliWeb.CognitoController do
         } = params
       ) do
     with anchor when not is_nil(anchor) <- fetch_product_or_project(params),
-         {:ok, author} <- Accounts.setup_sso_author(conn.assigns.claims, community_id) do
-      conn
-      |> AuthorAuth.create_session(author)
-      |> clone_or_prompt(author, anchor, get_error_url(params))
+         {:ok, author} <- Accounts.setup_sso_author(conn.assigns.claims, community_id),
+         {:ok, conn} <- AuthorAuth.create_session(conn, author, :cognito) do
+      clone_or_prompt(conn, author, anchor, get_error_url(params))
     else
       nil ->
         redirect_with_error(conn, get_error_url(params), "Invalid template or project")
 
       {:error, %Ecto.Changeset{}} ->
         redirect_with_error(conn, get_error_url(params), "Invalid parameters")
+
+      {:error, :session_not_issued} ->
+        redirect_with_error(conn, get_error_url(params), @sign_in_failed)
+
+      {:error, _reason} ->
+        redirect_with_error(conn, get_error_url(params), @sign_in_failed)
     end
   end
 
@@ -191,6 +207,33 @@ defmodule OliWeb.CognitoController do
 
       {:error, error} ->
         redirect_with_error(conn, error_url, snake_case_to_friendly(error))
+    end
+  end
+
+  # Issues the user and author sessions, with their login events, in one transaction, so either
+  # both are issued or neither is.
+  defp create_sessions(conn, user, author) do
+    Multi.new()
+    |> Accounts.Audited.issue_session_multi(
+      :user_session,
+      Context.for_actor(user, source: :ui),
+      {user, :cognito, []}
+    )
+    |> Accounts.Audited.issue_session_multi(
+      :author_session,
+      Context.for_actor(author, source: :ui),
+      {author, :cognito, []}
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user_session: %{token: user_token}, author_session: %{token: author_token}}} ->
+        {:ok,
+         conn
+         |> UserAuth.install_session(user, user_token)
+         |> AuthorAuth.install_session(author, author_token)}
+
+      {:error, _step, _reason, _changes} ->
+        {:error, :session_not_issued}
     end
   end
 end

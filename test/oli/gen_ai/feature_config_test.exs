@@ -19,7 +19,7 @@ defmodule Oli.GenAI.FeatureConfigTest do
   describe "Ecto.Enum on :feature accepts :instructor_email" do
     setup do
       {:ok, model} =
-        Oli.GenAI.create_registered_model(%{
+        Oli.GenAI.Audited.create(Oli.TestHelpers.audit_context(), :registered_model, %{
           name: "instructor-email-test-model",
           provider: :open_ai,
           model: "gpt-test",

@@ -6,7 +6,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveImportTest do
 
   alias Oli.Authoring.Authors.ProjectRole
   alias Oli.Resources.Revision
-  alias Oli.ScopedFeatureFlags
   alias Oli.Seeder
   alias OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive
 
@@ -78,7 +77,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveImportTest do
     } do
       Application.put_env(:oli, :google_docs_import, importer: __MODULE__.SuccessImporter)
 
-      {:ok, _} = ScopedFeatureFlags.enable_feature(:google_docs_import, project, author)
+      {:ok, _} =
+        Oli.ScopedFeatureFlags.Audited.enable_feature(
+          Oli.Auditing.Context.for_actor(author, source: :ui),
+          :google_docs_import,
+          project
+        )
 
       conn =
         conn
