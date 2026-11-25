@@ -5,7 +5,9 @@ defmodule OliWeb.CognitoController do
   import OliWeb.ViewHelpers, only: [redirect_with_error: 3]
   import Oli.Utils
 
+  alias Ecto.Multi
   alias Oli.{Repo, Sections, Accounts}
+  alias Oli.Auditing.Context
   alias Oli.Authoring.{Clone, Course}
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
@@ -208,11 +210,30 @@ defmodule OliWeb.CognitoController do
     end
   end
 
-  # Issues the user session and then the author session; the author session is not issued when
-  # the user session fails.
+  # Issues the user and author sessions, with their login events, in one transaction, so either
+  # both are issued or neither is.
   defp create_sessions(conn, user, author) do
-    with {:ok, conn} <- UserAuth.create_session(conn, user, :cognito) do
-      AuthorAuth.create_session(conn, author, :cognito)
+    Multi.new()
+    |> Accounts.Audited.issue_session_multi(
+      :user_session,
+      Context.for_actor(user, source: :ui),
+      {user, :cognito, []}
+    )
+    |> Accounts.Audited.issue_session_multi(
+      :author_session,
+      Context.for_actor(author, source: :ui),
+      {author, :cognito, []}
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user_session: %{token: user_token}, author_session: %{token: author_token}}} ->
+        {:ok,
+         conn
+         |> UserAuth.install_session(user, user_token)
+         |> AuthorAuth.install_session(author, author_token)}
+
+      {:error, _step, _reason, _changes} ->
+        {:error, :session_not_issued}
     end
   end
 end
