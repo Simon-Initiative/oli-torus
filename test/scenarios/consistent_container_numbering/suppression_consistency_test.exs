@@ -63,7 +63,7 @@ defmodule Oli.Scenarios.ConsistentContainerNumbering.SuppressionConsistencyTest 
     foundations_id = project.id_by_title["Foundations"]
     data_analysis_id = project.id_by_title["Data Analysis"]
 
-    {:ok, section} = Sections.update_section(section, %{unnumbered_unit_ids: [foundations_id]})
+    {:ok, section} = put_section_fields(section, %{unnumbered_unit_ids: [foundations_id]})
 
     # Learn: "Foundations" is suppressed (absent from the map); "Data Analysis" is
     # renumbered to display index 1, since "Foundations" no longer consumes a slot.

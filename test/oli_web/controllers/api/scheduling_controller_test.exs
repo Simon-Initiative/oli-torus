@@ -49,6 +49,15 @@ defmodule OliWeb.SchedulingControllerTest do
       assert length(resources) == 3
 
       Enum.each(resources, fn sr -> assert sr["end_date"] == "2024-01-02" end)
+
+      # One event per scheduled resource, as the instructor through the API
+      events = audit_events(:curriculum_schedule_changed, section_id: map.section.id)
+      assert length(events) == 3
+
+      for event <- events do
+        assert {event.actor_type, event.user_id, event.source} == {:user, user.id, :api}
+        assert event.changes["end_date"]["after"] =~ "2024-01-02"
+      end
     end
 
     test "can access and clear scheduled resources", %{
@@ -113,6 +122,82 @@ defmodule OliWeb.SchedulingControllerTest do
       assert sr2["end_date"] == nil
       assert sr3["start_date"] == nil
       assert sr3["end_date"] == nil
+
+      # Three events set the dates and three clear them, all as the instructor
+      events = audit_events(:curriculum_schedule_changed, section_id: map.section.id, actor: user)
+      assert length(events) == 6
+
+      cleared = Enum.filter(events, &(&1.changes["end_date"]["after"] == nil))
+      assert length(cleared) == 3
+      assert Enum.all?(cleared, &(&1.source == :api))
+    end
+
+    test "an admin's schedule update is recorded as the admin, not the hidden instructor", %{
+      map: map
+    } do
+      admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
+
+      conn =
+        build_conn()
+        |> Plug.Test.init_test_session(%{})
+        |> log_in_author(admin)
+        |> get(Routes.scheduling_path(build_conn(), :index, map.section.slug))
+
+      assert %{"result" => "success", "resources" => resources} = json_response(conn, 200)
+      updates = Enum.map(resources, &Map.put(&1, "end_date", "2024-02-02"))
+
+      conn =
+        conn
+        |> recycle()
+        |> log_in_author(admin)
+        |> put(Routes.scheduling_path(conn, :update, map.section.slug), %{"updates" => updates})
+
+      assert %{"result" => "success"} = json_response(conn, 200)
+
+      events = audit_events(:curriculum_schedule_changed, section_id: map.section.id)
+      assert length(events) == 3
+      assert Enum.all?(events, &({&1.actor_type, &1.author_id} == {:author, admin.id}))
+    end
+
+    test "updating the agenda records the change", %{conn: conn, map: map} do
+      user = map.teacher
+
+      conn =
+        again(conn, user)
+        |> put(Routes.scheduling_path(conn, :update_agenda, map.section.slug), %{
+          "agenda" => false
+        })
+
+      assert %{"result" => "success", "agenda" => false} = json_response(conn, 200)
+      refute Sections.get_section!(map.section.id).agenda
+
+      event =
+        assert_audited(:section_settings_changed,
+          section_id: map.section.id,
+          actor: user,
+          source: :api
+        )
+
+      assert event.changes["agenda"] == %{
+               "operation" => "set",
+               "before" => true,
+               "after" => false
+             }
+    end
+
+    test "a user without access to the section cannot update its agenda", %{
+      conn: conn,
+      map: map
+    } do
+      conn =
+        again(conn, map.someone_else)
+        |> put(Routes.scheduling_path(conn, :update_agenda, map.section.slug), %{
+          "agenda" => false
+        })
+
+      assert response(conn, 401)
+      assert Sections.get_section!(map.section.id).agenda
+      assert audit_events(:section_settings_changed, section_id: map.section.id) == []
     end
 
     test "can catch unauthorized user access", %{
@@ -137,7 +222,7 @@ defmodule OliWeb.SchedulingControllerTest do
       map: map
     } do
       {:ok, _section} =
-        Sections.update_section(map.section, %{unnumbered_unit_ids: [map.unit1_resource.id]})
+        put_section_fields(map.section, %{unnumbered_unit_ids: [map.unit1_resource.id]})
 
       conn = get(conn, Routes.scheduling_path(conn, :index, map.section.slug))
 

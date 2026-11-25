@@ -65,7 +65,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       {:ok, event1} = user_deleted_event(user1, insert(:user))
 
       {:ok, event2} =
-        Auditing.capture(user2, :section_created, section, %{"section_title" => section.title})
+        section_created_event(user2, section)
 
       {:ok, event3} =
         published_event(author1, project, "1.0")
@@ -252,6 +252,51 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       refute html =~ "schema_version"
     end
 
+    test "renders converted assessment settings history, with passwords redacted", %{
+      conn: conn
+    } do
+      Repo.insert_all(LogEvent, [
+        %{
+          inserted_at: DateTime.utc_now(),
+          schema_version: 1,
+          event_type: :assessment_setting_changed,
+          actor_type: :author,
+          author_id: 1,
+          entity_type: :resource,
+          entity_id: "4512",
+          section_id: 301,
+          resource_id: 4512,
+          legacy_source: :settings_changes,
+          legacy_id: 3,
+          changes: %{
+            "password" => %{"operation" => "set", "redacted" => true, "changed" => true}
+          }
+        },
+        %{
+          inserted_at: DateTime.utc_now(),
+          schema_version: 1,
+          event_type: :assessment_setting_changed,
+          actor_type: :unknown,
+          section_id: 301,
+          resource_id: 4512,
+          legacy_source: :settings_changes,
+          legacy_id: 4,
+          changes: %{"max_attempts" => %{"operation" => "set", "before" => "1", "after" => "3"}},
+          details: %{"legacy_user_id" => 55, "legacy_user_type" => nil}
+        }
+      ])
+
+      {:ok, view, html} = live(conn, ~p"/admin/audit_log")
+
+      assert html =~ "assessment_setting_changed"
+
+      html =
+        render_change(view, "change_event_type", %{"event_type" => "assessment_setting_changed"})
+
+      assert html =~ "assessment_setting_changed"
+      refute html =~ "schema_version"
+    end
+
     test "renders a migrated role change without an affected author as plain text", %{
       conn: conn
     } do
@@ -295,7 +340,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
 
     test "shows links to sections", %{conn: conn, admin: admin} do
       section = insert(:section, title: "My Section")
-      {:ok, _event} = Auditing.capture(admin, :section_created, section, %{})
+      {:ok, _event} = section_created_event(admin, section)
 
       {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
 
@@ -336,6 +381,19 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
         scope: %{project_id: project.id},
         event_key: "project:#{project.id}:published",
         details: %{"project_title" => project.title, "version" => version}
+      })
+
+    Auditing.insert(changeset)
+  end
+
+  defp section_created_event(actor, section) do
+    {:ok, changeset} =
+      Auditing.build(Oli.Auditing.Context.for_actor(actor, source: :ui), %{
+        event_type: :section_created,
+        entity: {:section, section.id, section},
+        scope: %{section_id: section.id},
+        event_key: "section:#{section.id}:created",
+        details: %{"section_title" => section.title}
       })
 
     Auditing.insert(changeset)

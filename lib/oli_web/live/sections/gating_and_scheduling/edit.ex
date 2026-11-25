@@ -20,30 +20,34 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {user_type, _user, section} ->
-        id = String.to_integer(gating_condition_id)
+      {user_type, actor, section} ->
+        socket = assign(socket, actor: actor)
 
-        {parent_gate_id, title} =
-          case Gating.get_gating_condition!(id) do
-            %{parent_id: nil} -> {nil, "Edit Gating Condition"}
-            %{parent_id: parent_id} -> {parent_id, "Edit Student Exception"}
-          end
+        # Only a gate of this section can be edited from its page
+        case Gating.get_section_gating_condition(section.id, gating_condition_id) do
+          nil ->
+            Mount.handle_error(socket, {:error, :not_found})
 
-        ctx = socket.assigns.ctx
-        product_path_base = product_path_base(section, params)
+          gate ->
+            title =
+              case gate.parent_id do
+                nil -> "Edit Gating Condition"
+                _parent_id -> "Edit Student Exception"
+              end
 
-        {:ok,
-         GatingConditionStore.init(
-           socket,
-           __MODULE__,
-           section,
-           ctx,
-           title,
-           parent_gate_id,
-           user_type,
-           id,
-           product_path_base
-         )}
+            {:ok,
+             GatingConditionStore.init(
+               socket,
+               __MODULE__,
+               section,
+               socket.assigns.ctx,
+               title,
+               gate.parent_id,
+               user_type,
+               gate.id,
+               product_path_base(section, params)
+             )}
+        end
     end
   end
 

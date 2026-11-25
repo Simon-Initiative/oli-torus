@@ -66,6 +66,22 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
         title: Product
         from: product_source
 
+    - discussion_config:
+        section: product
+        enabled: true
+        anonymous_posting: false
+
+    - manipulate:
+        to: product
+        ops:
+          - change:
+              apply_major_updates: true
+
+    - section:
+        name: from_product
+        title: From Product
+        from: product
+
     - project:
         name: remix_source
         title: Remix Source
@@ -82,6 +98,41 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
         resource: "Remixed"
         section: standalone
         to: root
+
+    # The customize directive changes the curriculum as a saved remix
+    - customize:
+        to: standalone
+        ops:
+          - remove:
+              from: "Remixed"
+
+    # Hiding a page is a curriculum change, saved as a remix; its scheduling type is a schedule
+    # update
+    - manipulate:
+        to: from_project
+        ops:
+          - revise:
+              target: "Page"
+              set:
+                hidden: true
+                scheduling_type: "@atom(due_by)"
+
+    # A schedule gate on the section
+    - gate:
+        name: page_gate
+        section: from_project
+        target: "Page"
+        type: "schedule"
+        start: "2099-01-11T12:00:00Z"
+
+    # A second publication of the section's project, applied to it
+    - publish:
+        to: section_source
+        description: "Second publication"
+
+    - update:
+        from: section_source
+        to: from_project
 
     # An author user becomes the represented author, so it comes last.
     - user:
@@ -144,13 +195,178 @@ defmodule Oli.Scenarios.AuditedDirectivesTest do
 
     # Publish, section, product, and remix directives publish their source when it has no
     # publication yet.
-    for name <- ["published", "section_source", "product_source", "remix_source"] do
+    for name <- ["published", "product_source", "remix_source"] do
       assert_audited(:project_published, [project_id: project_id.(name)] ++ scenario)
     end
+
+    # The section's project is published again for the update directive
+    assert length(
+             audit_events(
+               :project_published,
+               [project_id: project_id.("section_source")] ++ scenario
+             )
+           ) == 2
 
     # A standalone section creates and publishes its own backing project.
     backing = Repo.get_by!(Oli.Authoring.Course.Project, title: "Standalone Project")
     assert_audited(:project_created, [project_id: backing.id] ++ scenario)
     assert_audited(:project_published, [project_id: backing.id] ++ scenario)
+
+    # Sections from a project, from a product, and standalone, and the product itself.
+    section_id = fn name -> Engine.get_section(state, name).id end
+
+    for name <- ["from_project", "standalone"] do
+      assert_audited(:section_created, [section_id: section_id.(name)] ++ scenario)
+    end
+
+    product = Engine.get_product(state, "product")
+
+    from_product =
+      assert_audited(:section_created, [section_id: section_id.("from_product")] ++ scenario)
+
+    assert from_product.details["blueprint_id"] == product.id
+
+    assert_audited(
+      :product_created,
+      [section_id: product.id, project_id: project_id.("product_source")] ++ scenario
+    )
+
+    # Template settings: course discussions and the publication update policy
+    discussions =
+      assert_audited(:discussion_settings_changed, [section_id: product.id] ++ scenario)
+
+    assert discussions.changes["status"]["after"] == "enabled"
+    assert discussions.changes["anonymous_posting"]["after"] == false
+
+    assert_audited(:publication_update_policy_changed, [section_id: product.id] ++ scenario)
+
+    # The update and remix directives
+    assert_audited(
+      :publication_applied,
+      [section_id: section_id.("from_project"), project_id: project_id.("section_source")] ++
+        scenario
+    )
+
+    assert [_ | _] =
+             audit_events(
+               :section_remix_saved,
+               [section_id: section_id.("standalone")] ++ scenario
+             )
+
+    # The remixed page was added, then removed by the customize directive
+    remixed =
+      :section_remix_saved
+      |> audit_events([section_id: section_id.("standalone")] ++ scenario)
+      |> Enum.filter(&(&1.entity_snapshot["title"] == "Remixed"))
+
+    assert [added, removed] = remixed
+    refute Map.has_key?(added.changes["position"], "before")
+    refute Map.has_key?(removed.changes["position"], "after")
+
+    hidden =
+      assert_audited(:section_remix_saved, [section_id: section_id.("from_project")] ++ scenario)
+
+    assert hidden.changes["hidden"] == %{"operation" => "set", "before" => false, "after" => true}
+
+    scheduled =
+      assert_audited(
+        :curriculum_schedule_changed,
+        [section_id: section_id.("from_project")] ++ scenario
+      )
+
+    assert scheduled.changes["scheduling_type"]["after"] == "due_by"
+
+    gate =
+      assert_audited(:gating_changed, [section_id: section_id.("from_project")] ++ scenario)
+
+    assert gate.changes["type"] == %{"operation" => "set", "after" => "schedule"}
+  end
+
+  test "assessment settings and student exception directives record their events" do
+    author = Oli.Utils.Seeder.AccountsFixtures.author_fixture()
+
+    yaml = """
+    - project:
+        name: source
+        title: Source
+        root:
+          children:
+            - page: "Quiz Page"
+
+    - edit_page:
+        project: source
+        page: "Quiz Page"
+        content: |
+          title: "Quiz Page"
+          graded: true
+          blocks: []
+
+    - publish:
+        to: source
+        description: "Graded page"
+
+    - section:
+        name: course
+        title: Course
+        from: source
+
+    - user:
+        name: student_1
+        type: student
+        email: audited_directive_student@test.edu
+
+    - enroll:
+        user: student_1
+        section: course
+        role: student
+
+    - manipulate:
+        to: course
+        ops:
+          - revise:
+              target: "Quiz Page"
+              set:
+                max_attempts: 4
+
+    - student_exception:
+        action: "set"
+        student: student_1
+        section: course
+        page: "Quiz Page"
+        set:
+          max_attempts: 6
+
+    - student_exception:
+        action: "remove"
+        student: student_1
+        section: course
+        page: "Quiz Page"
+    """
+
+    %ExecutionResult{errors: errors, state: state} =
+      yaml
+      |> Oli.Scenarios.DirectiveParser.parse_yaml!()
+      |> Oli.Scenarios.execute(author: author)
+
+    assert errors == []
+
+    section = Engine.get_section(state, "course")
+    student = state.users["student_1"]
+
+    # The settings change acts as the section's hidden instructor, which passes the
+    # secure-delivery editor check.
+    settings =
+      assert_audited(:assessment_settings_changed, section_id: section.id, source: :scenario)
+
+    assert settings.changes["max_attempts"]["after"] == 4
+
+    for event <- [:student_exception_created, :student_exception_deleted] do
+      assert_audited(event,
+        section_id: section.id,
+        affected_user_id: student.id,
+        actor: author,
+        source: :scenario
+      )
+    end
   end
 end

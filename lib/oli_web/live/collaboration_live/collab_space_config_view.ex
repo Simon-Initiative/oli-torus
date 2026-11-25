@@ -2,8 +2,11 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   alias Oli.Rendering.Group
   use OliWeb, :live_view
 
+  alias Oli.Auditing.Context
+  alias Oli.Authoring.Audited, as: AuthoringAudited
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
   alias Oli.Resources
   alias Oli.Resources.Collaboration
@@ -14,6 +17,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   alias Phoenix.PubSub
   alias OliWeb.Components.Modal
   alias Phoenix.LiveView.JS
+
+  # The signed-in accounts, so changes are recorded as the account that made them.
+  on_mount {OliWeb.UserAuth, :mount_current_user}
+  on_mount {OliWeb.AuthorAuth, :mount_current_author}
 
   def mount(
         _params,
@@ -65,7 +72,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     {:ok,
      assign(socket,
        is_delivery: is_delivery,
-       author_id: Map.get(session, "current_author_id"),
        user_id: Map.get(session, "current_user_id"),
        collab_space_config: collab_space_config,
        collab_space_status: get_status(collab_space_config),
@@ -349,87 +355,100 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   end
 
   def handle_event("disable_all_page_collab_spaces", _params, socket) do
-    if socket.assigns.is_delivery do
-      Collaboration.disable_all_page_collab_spaces_for_section(socket.assigns.slug)
-    else
-      Collaboration.disable_all_page_collab_spaces_for_project(socket.assigns.slug)
+    set_all_page_collab_spaces(socket, :disabled)
+  end
+
+  def handle_event(
+        "enable_all_page_collab_spaces",
+        %{"section_resource" => %{"collab_space_config" => collab_space_config}},
+        socket
+      ) do
+    set_all_page_collab_spaces(socket, enabled_config(collab_space_config))
+  end
+
+  def handle_event(
+        "enable_all_page_collab_spaces",
+        %{"revision" => %{"collab_space_config" => collab_space_config}},
+        socket
+      ) do
+    set_all_page_collab_spaces(socket, enabled_config(collab_space_config))
+  end
+
+  defp enabled_config(collab_space_config) do
+    %CollabSpaceConfig{
+      status: :enabled,
+      threaded: Oli.Utils.string_to_boolean(collab_space_config["threaded"]),
+      auto_accept: Oli.Utils.string_to_boolean(collab_space_config["auto_accept"]),
+      show_full_history: Oli.Utils.string_to_boolean(collab_space_config["show_full_history"]),
+      anonymous_posting: Oli.Utils.string_to_boolean(collab_space_config["anonymous_posting"]),
+      participation_min_replies:
+        String.to_integer(collab_space_config["participation_min_replies"]),
+      participation_min_posts: String.to_integer(collab_space_config["participation_min_posts"])
+    }
+  end
+
+  defp set_all_page_collab_spaces(socket, config) do
+    result =
+      case socket.assigns.is_delivery do
+        true ->
+          SectionsAudited.set_section_notes(
+            audit_context(socket),
+            socket.assigns.parent_entity,
+            config
+          )
+
+        false ->
+          AuthoringAudited.set_project_discussions(
+            audit_context(socket),
+            socket.assigns.parent_entity,
+            config
+          )
+      end
+
+    case {result, config} do
+      {{:ok, _count}, :disabled} ->
+        {:noreply, assign(socket, collab_space_pages_count: 0)}
+
+      {{:ok, count}, _config} ->
+        {:noreply, assign(socket, collab_space_pages_count: count)}
+
+      {{:error, _reason}, _config} ->
+        {:noreply, put_flash(socket, :error, "Notes couldn't be updated.")}
     end
-
-    {:noreply, assign(socket, collab_space_pages_count: 0)}
   end
 
-  def handle_event(
-        "enable_all_page_collab_spaces",
-        %{
-          "section_resource" => %{
-            "collab_space_config" => collab_space_config
-          }
-        },
-        socket
-      ) do
-    {total_page_count, _section_resources} =
-      Collaboration.enable_all_page_collab_spaces_for_section(
-        socket.assigns.slug,
-        %CollabSpaceConfig{
-          status: :enabled,
-          threaded: Oli.Utils.string_to_boolean(collab_space_config["threaded"]),
-          auto_accept: Oli.Utils.string_to_boolean(collab_space_config["auto_accept"]),
-          show_full_history:
-            Oli.Utils.string_to_boolean(collab_space_config["show_full_history"]),
-          anonymous_posting:
-            Oli.Utils.string_to_boolean(collab_space_config["anonymous_posting"]),
-          participation_min_replies:
-            String.to_integer(collab_space_config["participation_min_replies"]),
-          participation_min_posts:
-            String.to_integer(collab_space_config["participation_min_posts"])
-        }
-      )
+  # Delivery pages are configured by instructors (users) or admins (authors); project pages
+  # by authors. An admin is recorded as the admin author, not as the section's hidden
+  # instructor that admin delivery requests sign in as, as `OliWeb.Sections.Mount` does.
+  defp audit_context(socket) do
+    actor =
+      case {socket.assigns.is_delivery, socket.assigns[:current_author]} do
+        {false, author} -> author
+        {true, author} -> delivery_actor(socket.assigns[:current_user], author)
+      end
 
-    {:noreply, assign(socket, collab_space_pages_count: total_page_count)}
+    Context.for_actor(actor, source: :ui)
   end
 
-  def handle_event(
-        "enable_all_page_collab_spaces",
-        %{
-          "revision" => %{
-            "collab_space_config" => collab_space_config
-          }
-        },
-        socket
-      ) do
-    {total_page_count, _revisions} =
-      Collaboration.enable_all_page_collab_spaces_for_project(
-        socket.assigns.slug,
-        %CollabSpaceConfig{
-          status: :enabled,
-          threaded: Oli.Utils.string_to_boolean(collab_space_config["threaded"]),
-          auto_accept: Oli.Utils.string_to_boolean(collab_space_config["auto_accept"]),
-          show_full_history:
-            Oli.Utils.string_to_boolean(collab_space_config["show_full_history"]),
-          anonymous_posting:
-            Oli.Utils.string_to_boolean(collab_space_config["anonymous_posting"]),
-          participation_min_replies:
-            String.to_integer(collab_space_config["participation_min_replies"]),
-          participation_min_posts:
-            String.to_integer(collab_space_config["participation_min_posts"])
-        }
-      )
-
-    {:noreply, assign(socket, collab_space_pages_count: total_page_count)}
+  defp delivery_actor(user, author) do
+    case Oli.Accounts.at_least_content_admin?(author) do
+      true -> author
+      false -> user || author
+    end
   end
 
   # first argument is a flag that specifies whether it is delivery or not, to accordingly
   # update the revision or the section_resource configuration
   defp upsert_collab_space(true, action, attrs, socket) do
     socket = clear_flash(socket)
-    section = socket.assigns.parent_entity
-    page_resource_id = socket.assigns.page_resource.id
 
-    case Oli.Delivery.Sections.get_section_resource(section.id, page_resource_id)
-         |> Oli.Delivery.Sections.update_section_resource(%{collab_space_config: attrs}) do
-      {:ok, section_resource} ->
-        set_contains_discussions(section, section_resource)
-
+    case SectionsAudited.update_page_discussions(
+           audit_context(socket),
+           socket.assigns.parent_entity,
+           socket.assigns.page_resource.id,
+           attrs
+         ) do
+      {:ok, %{section: section, section_resource: section_resource}} ->
         socket = put_flash(socket, :info, "Notes successfully #{action}.")
         collab_space_config = section_resource.collab_space_config
 
@@ -444,7 +463,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
            form: to_form(SectionResource.changeset(section_resource, %{})),
            collab_space_status: get_status(collab_space_config),
            collab_space_config: collab_space_config,
-           parent_entity: Oli.Repo.reload(section)
+           parent_entity: section
          )}
 
       {:error, _} ->
@@ -456,19 +475,14 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   defp upsert_collab_space(_, action, attrs, socket) do
     socket = clear_flash(socket)
 
-    case Collaboration.upsert_collaborative_space(
-           attrs,
+    case AuthoringAudited.update_project_page_discussions(
+           audit_context(socket),
            socket.assigns.parent_entity,
            socket.assigns.page_revision.slug,
-           socket.assigns.author_id
+           attrs,
+           socket.assigns.current_author
          ) do
-      {:ok,
-       %{
-         project: _project,
-         publication: _publication,
-         page_resource: _page_resource,
-         next_page_revision: next_page_revision
-       }} ->
+      {:ok, %{next_page_revision: next_page_revision}} ->
         socket = put_flash(socket, :info, "Notes successfully #{action}.")
         collab_space_config = next_page_revision.collab_space_config
 
@@ -485,14 +499,6 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         {:noreply, socket}
     end
   end
-
-  defp set_contains_discussions(section, %{collab_space_config: %{status: :enabled}}),
-    do: Oli.Delivery.Sections.update_section(section, %{contains_discussions: true})
-
-  defp set_contains_discussions(section, %{collab_space_config: %{status: :disabled}}),
-    do: Oli.Delivery.Sections.update_section(section, %{contains_discussions: false})
-
-  defp set_contains_discussions(_section, %{collab_space_config: %{status: _}}), do: nil
 
   defp get_status(nil), do: :disabled
   defp get_status(%CollabSpaceConfig{status: status}), do: status

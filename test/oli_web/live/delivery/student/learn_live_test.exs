@@ -499,34 +499,34 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     if add_schedule? do
       # schedule start and end date for unit 1 section_resource
       Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2023-10-31 20:00:00Z],
         end_date: ~U[2023-12-31 20:00:00Z]
       })
 
       # schedule start and end date for module 1 section_resource
       Sections.get_section_resource(section.id, module_1_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2023-11-01 20:00:00Z],
         end_date: ~U[2023-11-15 20:00:00Z]
       })
 
       # schedule start and end date for page 4 section_resource
       Sections.get_section_resource(section.id, page_4_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2023-11-02 20:00:00Z],
         end_date: ~U[2023-11-03 20:00:00Z]
       })
 
       # schedule start and end date for page 11 and 12 section_resource
       Sections.get_section_resource(section.id, page_11_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2023-11-02 20:00:00Z],
         end_date: ~U[2023-11-03 20:00:00Z]
       })
 
       Sections.get_section_resource(section.id, page_12_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         scheduling_type: :due_by,
         start_date: ~U[2023-11-02 20:00:00Z],
         end_date: ~U[2023-11-03 20:00:00Z]
@@ -534,12 +534,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # set page 15 to in class activity and page 14 to due by
       Sections.get_section_resource(section.id, page_15_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         scheduling_type: :inclass_activity
       })
 
       Sections.get_section_resource(section.id, page_14_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         scheduling_type: :due_by
       })
     end
@@ -858,7 +858,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       stub_current_time(~U[2024-10-15 20:00:00Z])
 
       {:ok, product} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           type: :blueprint,
           registration_open: true,
           requires_payment: true,
@@ -956,7 +956,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            page_7: practice_page
          } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
@@ -1003,7 +1003,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "slider accessible name omits the unit numbering when it is hidden",
          %{conn: conn, section: section, unit_1: unit_1} do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
@@ -1056,7 +1056,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            module_1: module_1
          } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :gallery))
@@ -2604,7 +2604,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     } do
       # Set page 7 as hidden
       section_resource = Sections.get_section_resource(section.id, page_7.resource_id)
-      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+      put_section_resource_fields(section_resource, %{hidden: !section_resource.hidden})
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
@@ -2673,7 +2673,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section: section
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -2688,7 +2688,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section: section
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -2720,7 +2720,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            page_7: practice_page
          } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
@@ -2747,7 +2747,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            unit_3: unit_3
          } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_2.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_2.resource_id]})
 
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
@@ -3359,7 +3359,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       conn: conn,
       section: section
     } do
-      Sections.update_section(section, %{brand_id: nil})
+      put_section_fields(section, %{brand_id: nil})
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
@@ -3681,7 +3681,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       Oli.Delivery.Sections.get_section_resource(section.id, page_3.resource_id)
 
     {:ok, _} =
-      Oli.Delivery.Sections.update_section_resource(page_3_sr, %{
+      put_section_resource_fields(page_3_sr, %{
         collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
           status: :enabled
         }

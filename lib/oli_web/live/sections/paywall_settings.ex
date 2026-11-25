@@ -19,6 +19,20 @@ defmodule OliWeb.Sections.PaywallSettings do
     ]
   end
 
+  @doc "The section fields this form renders, for the allowlist of the form that embeds it."
+  @spec fields() :: [atom()]
+  def fields do
+    [
+      :requires_payment,
+      :amount,
+      :payment_options,
+      :pay_by_institution,
+      :has_grace_period,
+      :grace_period_days,
+      :grace_period_strategy
+    ]
+  end
+
   attr :form, :any, required: true
   attr :disabled, :boolean, required: true
   attr :show_group, :boolean, default: true

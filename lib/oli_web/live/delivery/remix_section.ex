@@ -68,6 +68,16 @@ defmodule OliWeb.Delivery.RemixSection do
   defp redirect_after_save(:product_creator, %Section{slug: slug}, socket),
     do: Routes.live_path(socket, OliWeb.Products.DetailsView, slug)
 
+  # The account that opened the remix is the actor; `author` is the one draft containers and
+  # template edits are written as.
+  defp save_remix(socket, state, author) do
+    Oli.Delivery.Sections.Audited.save_remix(
+      Oli.Auditing.Context.for_actor(socket.assigns.actor, source: :ui),
+      state,
+      author
+    )
+  end
+
   defp set_breadcrumbs(type, section) do
     type
     |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
@@ -116,6 +126,8 @@ defmodule OliWeb.Delivery.RemixSection do
         Mount.handle_error(socket, {:error, e})
 
       {:admin, current_author, section} ->
+        socket = assign(socket, actor: current_author)
+
         cond do
           section.open_and_free ->
             mount_as_open_and_free(socket, section)
@@ -131,10 +143,10 @@ defmodule OliWeb.Delivery.RemixSection do
         end
 
       {:user, current_user, section} ->
-        mount_as_instructor(socket, section, current_user)
+        mount_as_instructor(assign(socket, actor: current_user), section, current_user)
 
       {:author, current_author, section} ->
-        mount_as_product_creator(socket, section, current_author)
+        mount_as_product_creator(assign(socket, actor: current_author), section, current_author)
     end
   end
 
@@ -552,7 +564,7 @@ defmodule OliWeb.Delivery.RemixSection do
     %{remix_state: state} = socket.assigns
     author = socket.assigns[:current_author]
 
-    case Oli.Delivery.Remix.save(state, author) do
+    case save_remix(socket, state, author) do
       {:ok, section} ->
         # Reload state to reflect the saved hierarchy
         {:ok, new_state} = reload_remix_state(section, socket)
@@ -607,7 +619,7 @@ defmodule OliWeb.Delivery.RemixSection do
     target = socket.assigns.pending_navigation_target || socket.assigns.redirect_after_save
     reason = socket.assigns.unsaved_changes_reason
 
-    case Oli.Delivery.Remix.save(state, author) do
+    case save_remix(socket, state, author) do
       {:ok, section} ->
         {:ok, new_state} = reload_remix_state(section, socket)
 

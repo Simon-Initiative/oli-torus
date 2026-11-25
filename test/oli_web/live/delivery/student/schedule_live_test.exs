@@ -256,55 +256,55 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       unit_2: unit_2_revision
     } = create_not_scheduled_elixir_project(%{})
 
-    {:ok, section} = Sections.update_section(section, %{title: "The best course ever!"})
+    {:ok, section} = put_section_fields(section, %{title: "The best course ever!"})
 
     # schedule start and end date for unit 1 section_resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-10-31 20:00:00Z],
       end_date: ~U[2023-12-31 20:00:00Z]
     })
 
     # schedule start and end date for module 1 section_resource
     Sections.get_section_resource(section.id, module_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-01 20:00:00Z],
       end_date: ~U[2023-11-15 20:00:00Z]
     })
 
     # schedule start and end date for page 1 to 6 section_resource
     Sections.get_section_resource(section.id, page_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-01 20:00:00Z],
       end_date: ~U[2023-11-02 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-02 20:00:00Z],
       end_date: ~U[2023-11-03 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_3_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-03 20:00:00Z],
       end_date: ~U[2023-11-04 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_4_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-04 20:00:00Z],
       end_date: ~U[2023-11-05 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_5_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-05 20:00:00Z],
       end_date: ~U[2023-11-06 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_6_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-07 20:00:00Z],
       end_date: ~U[2023-11-08 20:00:00Z]
     })
@@ -598,7 +598,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
 
     test "can not access when not enrolled to course", %{conn: conn, section: section} do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -653,7 +653,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       page_3: page_3
     } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -789,7 +789,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       Sections.get_section_resource(section.id, page_4_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         review_submission: :disallow
       })
 
@@ -925,7 +925,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       module_1: module_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)

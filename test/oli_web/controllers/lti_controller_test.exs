@@ -536,6 +536,14 @@ defmodule OliWeb.LtiControllerTest do
                 assert resource_id == page.resource_id
                 assert response.resp_cookies["_oli_web_user_remember_me"].max_age == 0
 
+                # The launch syncs the LMS service fields without recording an audit event
+                synced = Oli.Repo.get!(Oli.Delivery.Sections.Section, section.id)
+
+                assert synced.nrps_context_memberships_url ==
+                         Lti_1p3.Tool.Services.NRPS.get_context_memberships_url(claims)
+
+                assert audit_events(:section_settings_changed, section_id: section.id) == []
+
               :ordinary_direct ->
                 assert redirected_to(response) == "/sections/#{section.slug}/page/#{page.slug}"
 

@@ -15,11 +15,13 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponent do
 
   - `id` — unique component ID
   - `section` — a `%Section{}` struct (blueprint or enrollable)
+  - `actor` — the user or author changing the settings, recorded in the Audit Log
   """
 
   use OliWeb, :live_component
 
-  alias Oli.Delivery.Sections
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias OliWeb.Common.Monaco
 
   @impl true
@@ -29,15 +31,20 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponent do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_new(:page_prompt_template, fn -> section.page_prompt_template end)}
+     |> assign_new(:page_prompt_template, fn -> section.page_prompt_template end)
+     |> assign_new(:revert_count, fn -> 0 end)
+     |> assign_new(:reverted, fn -> nil end)}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div id={"ai-assistant-#{@id}"}>
-      <%!-- Toggles --%>
-      <div>
+      <%!-- Toggles; a new id after a failed save renders them again from the saved settings --%>
+      <div
+        id={"#{@id}-toggles-#{@revert_count}"}
+        phx-mounted={@revert_count > 0 && JS.focus(to: "##{@reverted}")}
+      >
         <div class="flex py-2 mb-2">
           <div>Enable AI Assistant</div>
           <.toggle_switch
@@ -121,7 +128,7 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponent do
         section.triggers_enabled
       end
 
-    case Sections.update_section(section, %{
+    case update_dot(socket, %{
            assistant_enabled: !assistant_enabled,
            triggers_enabled: triggers_enabled
          }) do
@@ -130,24 +137,24 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponent do
         send(self(), {:section_updated, updated_section})
         {:noreply, assign(socket, :section, updated_section)}
 
-      {:error, _changeset} ->
+      {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to update AI assistant settings"})
-        {:noreply, socket}
+        {:noreply, revert(socket, "toggle-assistant_checkbox")}
     end
   end
 
   def handle_event("toggle_triggers", _params, socket) do
     section = socket.assigns.section
 
-    case Sections.update_section(section, %{triggers_enabled: !section.triggers_enabled}) do
+    case update_dot(socket, %{triggers_enabled: !section.triggers_enabled}) do
       {:ok, updated_section} ->
         send(self(), {:flash, :info, "AI assistant activation settings updated successfully"})
         send(self(), {:section_updated, updated_section})
         {:noreply, assign(socket, :section, updated_section)}
 
-      {:error, _changeset} ->
+      {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to update activation settings"})
-        {:noreply, socket}
+        {:noreply, revert(socket, "toggle-triggers_checkbox")}
     end
   end
 
@@ -156,19 +163,33 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponent do
   end
 
   def handle_event("save_prompt", _params, socket) do
-    section = socket.assigns.section
-
-    case Sections.update_section(section, %{
-           page_prompt_template: socket.assigns.page_prompt_template
-         }) do
+    case update_dot(socket, %{page_prompt_template: socket.assigns.page_prompt_template}) do
       {:ok, updated_section} ->
         send(self(), {:flash, :info, "Prompt successfully saved"})
         send(self(), {:section_updated, updated_section})
         {:noreply, assign(socket, :section, updated_section)}
 
-      {:error, _changeset} ->
+      {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to save prompt template"})
         {:noreply, socket}
     end
+  end
+
+  defp update_dot(socket, attrs) do
+    SectionsAudited.update_section_dot(
+      Context.for_actor(socket.assigns.actor, source: :ui),
+      socket.assigns.section,
+      attrs,
+      Map.keys(attrs)
+    )
+  end
+
+  # Nothing was saved: a new wrapper id renders the toggles again from the saved settings, and
+  # focus returns to the control that was used.
+  defp revert(socket, control) do
+    assign(socket,
+      revert_count: socket.assigns.revert_count + 1,
+      reverted: "#{socket.assigns.id}-#{control}"
+    )
   end
 end

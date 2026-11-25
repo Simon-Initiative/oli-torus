@@ -9,7 +9,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Lti_1p3.Roles.ContextRoles
 
-  describe "do_update" do
+  describe "update_assessment_settings/5" do
     setup [:setup_data]
 
     test "on password", ctx do
@@ -25,7 +25,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
       resources = %{section: section, user: user, assessments: assessments}
 
       {:ok, result} =
-        AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
+        update_setting(key, assessment_setting_id, new_value, resources)
 
       assert result.applied_changes == %{password: new_value}
       assert result.assessment.resource_id == resource_id
@@ -42,6 +42,16 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
 
       # Password is updated in the Depot
       assert password_from_depot == password_from_repo
+
+      event =
+        assert_audited(:assessment_settings_changed,
+          section_id: section_id,
+          resource_id: resource_id,
+          actor: user,
+          source: :ui
+        )
+
+      assert event.changes == %{"password" => Oli.Auditing.Changes.secret_record()}
     end
 
     test "on late_policy > allow_late_start_and_late_submit", ctx do
@@ -56,12 +66,15 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
       resources = %{section: section, user: user, assessments: assessments}
 
       {:ok, result} =
-        AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
+        update_setting(key, assessment_setting_id, new_value, resources)
 
       assert result.assessment.resource_id == resource_id
       assert result.applied_changes == %{late_start: :allow, late_submit: :allow}
       assert result.assessment.late_start == :allow
       assert result.assessment.late_submit == :allow
+
+      # Late starts and submissions were already allowed: nothing changed, nothing is recorded
+      assert audit_events(:assessment_settings_changed, resource_id: resource_id) == []
     end
 
     test "late_policy > allow_late_submit_but_not_late_start", ctx do
@@ -76,7 +89,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
       resources = %{section: section, user: user, assessments: assessments}
 
       {:ok, result} =
-        AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
+        update_setting(key, assessment_setting_id, new_value, resources)
 
       assert result.assessment.resource_id == resource_id
       assert result.applied_changes == %{late_start: :disallow, late_submit: :allow}
@@ -96,13 +109,35 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
       resources = %{section: section, user: user, assessments: assessments}
 
       {:ok, result} =
-        AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
+        update_setting(key, assessment_setting_id, new_value, resources)
 
       assert result.assessment.resource_id == resource_id
       assert result.applied_changes == %{late_start: :disallow, late_submit: :disallow}
       assert result.assessment.late_start == :disallow
       assert result.assessment.late_submit == :disallow
+
+      # The late policy is recorded as the persisted fields it changed, in one event
+      event = assert_audited(:assessment_settings_changed, resource_id: resource_id)
+
+      assert event.changes == %{
+               "late_start" => %{"operation" => "set", "before" => "allow", "after" => "disallow"},
+               "late_submit" => %{
+                 "operation" => "set",
+                 "before" => "allow",
+                 "after" => "disallow"
+               }
+             }
     end
+  end
+
+  defp update_setting(key, resource_id, value, %{section: section, user: user} = resources) do
+    Oli.Delivery.Settings.Audited.update_assessment_settings(
+      Oli.Auditing.Context.for_actor(user, source: :ui),
+      section,
+      resource_id,
+      %{key => value},
+      %{assessments: resources.assessments}
+    )
   end
 
   defp setup_data(%{}) do
@@ -190,7 +225,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
     } do
       # Update section with custom labels
       customizations = %{unit: "Unidad", module: "Módulo", section: "Sección"}
-      {:ok, updated_section} = Sections.update_section(section, %{customizations: customizations})
+      {:ok, updated_section} = put_section_fields(section, %{customizations: customizations})
 
       student_exceptions = []
       assessments = AssessmentSettings.get_assessments(updated_section, student_exceptions)
@@ -358,7 +393,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
       )
 
     # Update section with root_section_resource_id
-    {:ok, section} = Sections.update_section(section, %{root_section_resource_id: root_sr.id})
+    {:ok, section} = put_section_fields(section, %{root_section_resource_id: root_sr.id})
 
     # Rebuild contained_pages - this needs all section_resources with their children
     # It will query section_resources itself, so we don't need to pass them

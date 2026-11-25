@@ -18,12 +18,13 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
   - `section` — a `%Section{}` struct (blueprint or enrollable)
   - `collab_space_config` — the root container's `%CollabSpaceConfig{}` (or nil)
   - `root_section_resource` — the root container's section_resource record
+  - `actor` — the user or author changing the settings, recorded in the Audit Log
   """
 
   use OliWeb, :live_component
 
-  alias Oli.Delivery.Sections
-  alias Oli.Repo
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
 
   @impl true
   def update(assigns, socket) do
@@ -33,14 +34,20 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:collab_space_status, status)}
+     |> assign(:collab_space_status, status)
+     |> assign_new(:revert_count, fn -> 0 end)
+     |> assign_new(:reverted, fn -> nil end)}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div id={"course-discussions-#{@id}"}>
-      <section>
+      <%!-- A new id after a failed save renders the controls again from the saved settings --%>
+      <section
+        id={"#{@id}-controls-#{@revert_count}"}
+        phx-mounted={@revert_count > 0 && JS.focus(to: "##{@reverted}")}
+      >
         <div class="inline-flex py-2 mb-2 border-b dark:border-gray-700">
           <span>Enable Course Discussions</span>
           <.toggle_switch
@@ -60,6 +67,7 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
           ]}>
             <input
               type="checkbox"
+              id={"#{@id}-auto-accept"}
               checked={@collab_space_config && @collab_space_config.auto_accept}
               disabled={@collab_space_status == :disabled}
               phx-click="toggle_auto_accept"
@@ -75,6 +83,7 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
           ]}>
             <input
               type="checkbox"
+              id={"#{@id}-anonymous-posting"}
               checked={@collab_space_config && @collab_space_config.anonymous_posting}
               disabled={@collab_space_status == :disabled}
               phx-click="toggle_anonymous_posting"
@@ -102,31 +111,14 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
   end
 
   def handle_event("toggle_discussions", _params, socket) do
-    section = socket.assigns.section
-    root_sr = socket.assigns.root_section_resource
-    current_config = socket.assigns.collab_space_config
+    new_status =
+      case socket.assigns.collab_space_status do
+        :enabled -> :disabled
+        _status -> :enabled
+      end
 
-    new_status = if socket.assigns.collab_space_status == :enabled, do: :disabled, else: :enabled
-    contains = new_status == :enabled
-
-    new_config_attrs =
-      (current_config || %{})
-      |> config_to_map()
-      |> Map.put(:status, new_status)
-
-    case Repo.transact(fn ->
-           with {:ok, updated_sr} <-
-                  Sections.update_section_resource(root_sr, %{
-                    collab_space_config: new_config_attrs
-                  }),
-                {:ok, updated_section} <-
-                  Sections.update_section(section, %{contains_discussions: contains}) do
-             {:ok, {updated_sr, updated_section}}
-           else
-             {:error, reason} -> {:error, reason}
-           end
-         end) do
-      {:ok, {updated_sr, updated_section}} ->
+    case update_course_discussions(socket, %{status: new_status}) do
+      {:ok, %{section: updated_section, section_resource: updated_sr}} ->
         send(self(), {:flash, :info, "Course discussions #{new_status}"})
         send(self(), {:section_updated, updated_section})
         send(self(), {:collab_space_config_updated, updated_sr.collab_space_config, updated_sr})
@@ -140,7 +132,7 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
 
       {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to update course discussions"})
-        {:noreply, socket}
+        {:noreply, revert(socket, "toggle-discussions_checkbox")}
     end
   end
 
@@ -161,16 +153,8 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
   # ── Private Helpers ──
 
   defp update_config_field(socket, field, value) do
-    root_sr = socket.assigns.root_section_resource
-    current_config = socket.assigns.collab_space_config
-
-    new_config_attrs =
-      current_config
-      |> config_to_map()
-      |> Map.put(field, value)
-
-    case Sections.update_section_resource(root_sr, %{collab_space_config: new_config_attrs}) do
-      {:ok, updated_sr} ->
+    case update_course_discussions(socket, %{field => value}) do
+      {:ok, %{section_resource: updated_sr}} ->
         send(self(), {:flash, :info, "Discussion settings updated"})
         send(self(), {:collab_space_config_updated, updated_sr.collab_space_config, updated_sr})
 
@@ -179,13 +163,29 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
          |> assign(:root_section_resource, updated_sr)
          |> assign(:collab_space_config, updated_sr.collab_space_config)}
 
-      {:error, _changeset} ->
+      {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to update discussion settings"})
-        {:noreply, socket}
+        {:noreply, revert(socket, field_control(field))}
     end
   end
 
-  defp config_to_map(nil), do: %{}
-  defp config_to_map(%{__struct__: _} = config), do: Map.from_struct(config)
-  defp config_to_map(config) when is_map(config), do: config
+  defp update_course_discussions(socket, config_changes) do
+    SectionsAudited.update_course_discussions(
+      Context.for_actor(socket.assigns.actor, source: :ui),
+      socket.assigns.section,
+      config_changes
+    )
+  end
+
+  # Nothing was saved: a new wrapper id renders the toggles again from the saved settings, and
+  # focus returns to the control that was used.
+  defp revert(socket, control) do
+    assign(socket,
+      revert_count: socket.assigns.revert_count + 1,
+      reverted: "#{socket.assigns.id}-#{control}"
+    )
+  end
+
+  defp field_control(:auto_accept), do: "auto-accept"
+  defp field_control(:anonymous_posting), do: "anonymous-posting"
 end

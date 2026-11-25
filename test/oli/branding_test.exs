@@ -190,7 +190,7 @@ defmodule Oli.BrandingTest do
       section_brand = brand_fixture()
 
       {:ok, section} =
-        Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
+        put_section_fields(section, %{brand_id: section_brand.id})
 
       section = Oli.Delivery.Sections.get_section_by_slug(section.slug)
 
@@ -202,7 +202,7 @@ defmodule Oli.BrandingTest do
       section_brand = brand_fixture()
 
       {:ok, section} =
-        Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
+        put_section_fields(section, %{brand_id: section_brand.id})
 
       section = Oli.Delivery.Sections.get_section_by_slug(section.slug)
 
@@ -214,7 +214,7 @@ defmodule Oli.BrandingTest do
       section_brand = brand_fixture()
 
       {:ok, section} =
-        Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
+        put_section_fields(section, %{brand_id: section_brand.id})
 
       section = Oli.Delivery.Sections.get_section_by_slug(section.slug)
 
@@ -226,7 +226,7 @@ defmodule Oli.BrandingTest do
       section_brand = brand_fixture()
 
       {:ok, section} =
-        Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
+        put_section_fields(section, %{brand_id: section_brand.id})
 
       section = Oli.Delivery.Sections.get_section_by_slug(section.slug)
 
@@ -240,7 +240,7 @@ defmodule Oli.BrandingTest do
       section_brand = brand_fixture(%{logo_dark: nil})
 
       {:ok, section} =
-        Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
+        put_section_fields(section, %{brand_id: section_brand.id})
 
       assert Branding.brand_logo_url_dark(section) ==
                "#{Oli.Utils.get_base_url()}" <> default_brand().logo_dark
@@ -251,7 +251,7 @@ defmodule Oli.BrandingTest do
       section_brand = brand_fixture()
 
       {:ok, section} =
-        Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
+        put_section_fields(section, %{brand_id: section_brand.id})
 
       section = Oli.Delivery.Sections.get_section_by_slug(section.slug)
 

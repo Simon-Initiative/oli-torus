@@ -1,6 +1,7 @@
 defmodule OliWeb.ManageSourceMaterialsLiveTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
+  use Oban.Testing, repo: Oli.Repo
 
   import Oli.Factory
   import Phoenix.LiveViewTest
@@ -148,7 +149,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
       conn: conn,
       section: section
     } do
-      {:ok, product} = Oli.Delivery.Sections.update_section(section, %{type: :blueprint})
+      {:ok, product} = put_section_fields(section, %{type: :blueprint})
       conn = get(conn, live_view_source_materials(product.slug))
 
       assert html_response(conn, 200)
@@ -314,6 +315,13 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
       view
       |> element("button[phx-click='apply_update']")
       |> render_click(%{section: section, publication: new_publication})
+
+      # The job applies the update as the instructor who started it
+      assert [%{args: args}] = all_enqueued(worker: Oli.Delivery.Updates.Worker)
+      assert args["publication_id"] == new_publication.id
+
+      assert %{"actor_type" => "user", "actor_id" => actor_id} = args["audit_context"]
+      assert actor_id == instructor.id
 
       refute has_element?(
                view,

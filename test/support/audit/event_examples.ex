@@ -335,24 +335,6 @@ defmodule Oli.Auditing.EventExamples do
       }
     ]
 
-  defp spec(:assessment_settings_reset),
-    do: [
-      actor: :instructor,
-      entity: {:resource, @resource},
-      scope: [section_id: 301, resource_id: 4512],
-      key: "assessment:4512:settings_reset",
-      changes: %{
-        "max_attempts" => %{
-          "operation" => "reset",
-          "before" => 3,
-          "after" => nil,
-          "effective_before" => 3,
-          "effective_after" => 1,
-          "result_source" => "publication"
-        }
-      }
-    ]
-
   defp spec(:assessment_setting_changed),
     do: [
       actor: :instructor,
@@ -407,8 +389,14 @@ defmodule Oli.Auditing.EventExamples do
       scope: [section_id: 301],
       key: "section:301:dot_settings_changed",
       changes: %{
-        "assistant_enabled" => %{"operation" => "set", "before" => false, "after" => true}
-      }
+        "assistant_enabled" => %{"operation" => "set", "before" => false, "after" => true},
+        "page_prompt_template" => %{
+          "operation" => "set",
+          "before" => nil,
+          "after" => "You are a tutor for this course..."
+        }
+      },
+      details: %{"prompt_truncated" => true}
     ]
 
   defp spec(:activation_settings_changed),
@@ -425,7 +413,7 @@ defmodule Oli.Auditing.EventExamples do
       actor: :instructor,
       entity: {:section, @section},
       scope: [section_id: 301],
-      key: "section:301:ai_recommendation_changed",
+      key: "section:301:instructor_ai_recommendation_changed",
       changes: %{
         "instructor_recommendations_enabled" => %{
           "operation" => "set",
@@ -755,43 +743,6 @@ defmodule Oli.Auditing.EventExamples do
       }
     ]
 
-  defp spec(:blueprint_created),
-    do: [
-      actor: :author,
-      entity: {:blueprint, %{id: 295, title: "Biology Blueprint"}},
-      scope: [section_id: 295, project_id: 88],
-      key: "blueprint:295:created",
-      details: %{"section_title" => "Biology Blueprint", "base_project_id" => 88}
-    ]
-
-  defp spec(:blueprint_deleted),
-    do: [
-      actor: :author,
-      entity: {:blueprint, %{id: 295, title: "Biology Blueprint"}},
-      scope: [section_id: 295],
-      key: "blueprint:295:deleted"
-    ]
-
-  defp spec(:blueprint_archived),
-    do: [
-      actor: :author,
-      entity: {:blueprint, %{id: 295, title: "Biology Blueprint"}},
-      scope: [section_id: 295],
-      key: "blueprint:295:archived",
-      changes: %{"status" => %{"operation" => "set", "before" => "active", "after" => "archived"}}
-    ]
-
-  defp spec(:blueprint_settings_changed),
-    do: [
-      actor: :author,
-      entity: {:blueprint, %{id: 295, title: "Biology Blueprint"}},
-      scope: [section_id: 295],
-      key: "blueprint:295:settings_changed",
-      changes: %{
-        "welcome_title" => %{"operation" => "set", "before" => nil, "after" => "Welcome!"}
-      }
-    ]
-
   # Enrollment and access
 
   defp spec(:invitation_created),
@@ -864,7 +815,7 @@ defmodule Oli.Auditing.EventExamples do
       actor: :instructor,
       entity: {:section, @section},
       scope: [section_id: 301, project_id: 88],
-      key: "section:301:update_policy_changed",
+      key: "section:301:publication_update_policy_changed",
       changes: %{
         "apply_major_updates" => %{"operation" => "set", "before" => false, "after" => true}
       }
@@ -924,23 +875,13 @@ defmodule Oli.Auditing.EventExamples do
   defp spec(:notes_settings_changed),
     do: [
       actor: :instructor,
-      entity: {:resource, @resource},
-      scope: [section_id: 301, resource_id: 4512],
-      key: "resource:4512:notes_settings_changed",
-      changes: %{
-        "status" => %{"operation" => "set", "before" => "disabled", "after" => "enabled"}
-      }
-    ]
-
-  defp spec(:student_support_settings_changed),
-    do: [
-      actor: :instructor,
       entity: {:section, @section},
       scope: [section_id: 301],
-      key: "section:301:student_support_settings_changed",
+      key: "section:301:notes_settings_changed",
       changes: %{
-        "contains_discussions" => %{"operation" => "set", "before" => false, "after" => true}
-      }
+        "status" => %{"operation" => "set", "before" => "disabled", "after" => "enabled"}
+      },
+      details: %{"page_count" => 24}
     ]
 
   # Payments

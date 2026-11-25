@@ -71,6 +71,81 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
        |> create_product()}
     end
 
+    test "duplicating records the copy as a new template", ctx do
+      %{conn: conn, project: project, product: product, author: author} = ctx
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      render_hook(live, "duplicate", %{})
+
+      {path, _flash} = assert_redirect(live)
+      copy = Oli.Delivery.Sections.get_section_by_slug(List.last(String.split(path, "/")))
+
+      event =
+        assert_audited(:product_created, section_id: copy.id, actor: author, source: :ui)
+
+      assert event.details["creation_source"] == "product_copy"
+      assert event.details["blueprint_id"] == product.id
+    end
+
+    test "saving the details records the template settings that changed", ctx do
+      %{conn: conn, project: project, product: product, author: author} = ctx
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      live
+      |> element("#template-details-form")
+      |> render_submit(%{"section" => %{"title" => "Renamed template", "status" => "active"}})
+
+      assert Oli.Delivery.Sections.get_section!(product.id).title == "Renamed template"
+
+      event =
+        assert_audited(:product_settings_changed,
+          section_id: product.id,
+          actor: author,
+          source: :ui
+        )
+
+      assert event.changes["title"] == %{
+               "operation" => "set",
+               "before" => product.title,
+               "after" => "Renamed template"
+             }
+
+      assert Map.keys(event.changes) == ["title"]
+    end
+
+    test "archiving through the status select records a template archival", ctx do
+      %{conn: conn, project: project, product: product, author: author} = ctx
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      live
+      |> element("#template-details-form")
+      |> render_submit(%{"section" => %{"title" => product.title, "status" => "archived"}})
+
+      event =
+        assert_audited(:product_archived, section_id: product.id, actor: author, source: :ui)
+
+      assert event.changes["status"]["after"] == "archived"
+      assert audit_events(:product_settings_changed, section_id: product.id) == []
+    end
+
+    test "a non-admin author's save ignores payment fields", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      live
+      |> element("#template-details-form")
+      |> render_submit(%{
+        "section" => %{"title" => "Paid?", "requires_payment" => "true", "amount" => "50"}
+      })
+
+      updated = Oli.Delivery.Sections.get_section!(product.id)
+      assert {updated.title, updated.requires_payment} == {"Paid?", product.requires_payment}
+    end
+
     test "renders header", ctx do
       %{conn: conn, project: project, product: product} = ctx
 
@@ -123,7 +198,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       %{conn: conn, project: project, product: product} = ctx
 
       {:ok, product} =
-        Oli.Delivery.Sections.update_section(product, %{
+        put_section_fields(product, %{
           cover_image: "https://example.com/template-cover.png"
         })
 
@@ -198,7 +273,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       %{conn: conn, project: project, product: product} = ctx
 
       {:ok, product} =
-        Oli.Delivery.Sections.update_section(product, %{
+        put_section_fields(product, %{
           cover_image: "https://example.com/template-cover.png"
         })
 

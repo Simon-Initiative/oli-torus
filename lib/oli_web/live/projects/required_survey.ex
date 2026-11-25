@@ -3,11 +3,12 @@ defmodule OliWeb.Projects.RequiredSurvey do
   use OliWeb, :verified_routes
 
   alias Oli.Auditing.Context
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Phoenix.LiveView.JS
 
   attr :project, :map, required: true
   attr :author, :map, required: false, doc: "the author editing a project's survey"
+  attr :actor, :map, required: false, doc: "the user or author editing a section's survey"
   attr :enabled, :boolean, required: true
   attr :is_section, :boolean, default: false
   attr :required_survey, :map, default: nil
@@ -55,28 +56,36 @@ defmodule OliWeb.Projects.RequiredSurvey do
   end
 
   def handle_event("set-required-survey", _params, %{assigns: %{is_section: true}} = socket) do
-    if socket.assigns.enabled do
-      case Sections.delete_required_survey(socket.assigns.project) do
-        {:ok, updated_section} ->
-          send(self(), {:flash, :info, "Required survey disabled"})
-          send(self(), {:section_updated, updated_section})
-          {:noreply, assign(socket, enabled: false, project: updated_section)}
+    context = Context.for_actor(socket.assigns.actor, source: :ui)
 
-        {:error, _reason} ->
-          send(self(), {:flash, :error, "Failed to disable required survey"})
-          {:noreply, socket}
-      end
-    else
-      case Sections.create_required_survey(socket.assigns.project) do
-        {:ok, updated_section} ->
-          send(self(), {:flash, :info, "Required survey enabled"})
-          send(self(), {:section_updated, updated_section})
-          {:noreply, assign(socket, enabled: true, project: updated_section)}
+    case socket.assigns.enabled do
+      enabled when enabled in [nil, false] ->
+        case SectionsAudited.create_section_survey(context, socket.assigns.project) do
+          {:ok, updated_section} ->
+            send(self(), {:flash, :info, "Required survey enabled"})
+            send(self(), {:section_updated, updated_section})
+            {:noreply, assign(socket, enabled: true, project: updated_section)}
 
-        {:error, _reason} ->
-          send(self(), {:flash, :error, "Failed to enable required survey"})
-          {:noreply, socket}
-      end
+          {:error, _reason} ->
+            send(self(), {:flash, :error, "Failed to enable required survey"})
+
+            {:noreply,
+             assign(socket, revert_count: Map.get(socket.assigns, :revert_count, 0) + 1)}
+        end
+
+      _enabled ->
+        case SectionsAudited.delete_section_survey(context, socket.assigns.project) do
+          {:ok, updated_section} ->
+            send(self(), {:flash, :info, "Required survey disabled"})
+            send(self(), {:section_updated, updated_section})
+            {:noreply, assign(socket, enabled: false, project: updated_section)}
+
+          {:error, _reason} ->
+            send(self(), {:flash, :error, "Failed to disable required survey"})
+
+            {:noreply,
+             assign(socket, revert_count: Map.get(socket.assigns, :revert_count, 0) + 1)}
+        end
     end
   end
 

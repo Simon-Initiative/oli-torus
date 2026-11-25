@@ -7,7 +7,9 @@ defmodule OliWeb.Api.SchedulingController do
   alias OpenApiSpex.Schema
   alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Sections.Scheduling
+  alias Oli.Auditing.Context
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Accounts
   alias Oli.Resources.Numbering
@@ -169,15 +171,15 @@ defmodule OliWeb.Api.SchedulingController do
     ctx = SessionContext.init(conn)
 
     if can_access_section?(conn, section) do
-      case Scheduling.update(section, updates, ctx.local_tz) do
+      case SectionsAudited.update_schedule(audit_context(conn), section, updates, ctx.local_tz) do
         {:ok, count} ->
           json(conn, %{"result" => "success", "count" => count})
 
         {:error, :missing_update_parameters} ->
           error(conn, 400, "Missing update parameters")
 
-        e ->
-          error(conn, 500, e)
+        {:error, _reason} ->
+          error(conn, 500, "Failed to update the schedule")
       end
     else
       error(conn, 401, "Unauthorized")
@@ -188,17 +190,12 @@ defmodule OliWeb.Api.SchedulingController do
     section = conn.assigns.section
 
     if can_access_section?(conn, section) do
-      case Scheduling.clear(section) do
+      case SectionsAudited.clear_schedule(audit_context(conn), section) do
         {:ok, _} ->
-          Oli.Delivery.DepotCoordinator.clear(
-            Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-            section.id
-          )
-
           json(conn, %{"result" => "success"})
 
-        {:error, error} ->
-          json(conn, %{"result" => "error", "error" => error})
+        {:error, _reason} ->
+          json(conn, %{"result" => "error", "error" => "failed_to_clear_scheduling"})
       end
     else
       error(conn, 401, "Unauthorized")
@@ -208,13 +205,36 @@ defmodule OliWeb.Api.SchedulingController do
   def update_agenda(conn, %{"agenda" => agenda}) do
     section = conn.assigns.section
 
-    case Sections.update_section(section, %{agenda: agenda}) do
-      {:ok, _section} ->
-        json(conn, %{"result" => "success", "agenda" => agenda})
+    case can_access_section?(conn, section) do
+      true ->
+        case SectionsAudited.update_section_settings(
+               audit_context(conn),
+               section,
+               %{agenda: agenda},
+               [:agenda]
+             ) do
+          {:ok, _section} ->
+            json(conn, %{"result" => "success", "agenda" => agenda})
 
-      {:error, _} ->
-        json(conn, %{"result" => "error"})
+          {:error, _} ->
+            json(conn, %{"result" => "error"})
+        end
+
+      false ->
+        error(conn, 401, "Unauthorized")
     end
+  end
+
+  # The account the access check authorized: an admin author first (admin requests also sign
+  # in as the section's hidden instructor), otherwise the user, as `OliWeb.Sections.Mount` does.
+  defp audit_context(conn) do
+    actor =
+      case Accounts.at_least_content_admin?(conn.assigns[:current_author]) do
+        true -> conn.assigns.current_author
+        false -> conn.assigns[:current_user] || conn.assigns[:current_author]
+      end
+
+    Context.for_actor(actor, source: :api)
   end
 
   # Restrict access to enrolled instructors, LMS admins, or system

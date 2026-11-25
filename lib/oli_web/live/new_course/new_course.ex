@@ -7,7 +7,7 @@ defmodule OliWeb.Delivery.NewCourse do
   on_mount OliWeb.LiveSessionPlugs.SetBrand
   on_mount OliWeb.LiveSessionPlugs.SetPreviewMode
 
-  alias Oli.Delivery
+  alias Oli.Auditing.Context
   alias Oli.Delivery.DepotCoordinator
   alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections
@@ -382,18 +382,22 @@ defmodule OliWeb.Delivery.NewCourse do
   defp do_create_section(socket, attrs) do
     %{source: source, section_spec: section_spec} = socket.assigns
 
-    case SectionCreationRequest.new(actor(socket.assigns), source, attrs, section_spec) do
+    actor = actor(socket.assigns)
+
+    case SectionCreationRequest.new(actor, source, attrs, section_spec) do
       {:ok, request} ->
         request = %{
           request
           | copy_options: build_copy_options(source, socket.assigns.copy_options)
         }
 
+        context = Context.for_actor(actor, source: :ui)
+
         liveview_pid = self()
 
         # start an async task to create the section and send the result back to the liveview
         Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
-          case Delivery.create_section(request) do
+          case Sections.Audited.create_section(context, request) do
             {:ok, section_id, section_slug} ->
               send(liveview_pid, {:section_created, section_id, section_slug})
 

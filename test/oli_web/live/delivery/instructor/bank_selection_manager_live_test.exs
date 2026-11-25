@@ -1219,7 +1219,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
     page_section_resource = Sections.get_section_resource(section.id, page_revision.resource_id)
 
     {:ok, _updated_section_resource} =
-      Sections.update_section_resource(page_section_resource, %{
+      put_section_resource_fields(page_section_resource, %{
         graded: true,
         collab_space_config: %CollabSpaceConfig{status: :enabled}
       })

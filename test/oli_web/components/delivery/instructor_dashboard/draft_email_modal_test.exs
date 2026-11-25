@@ -922,10 +922,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
     {:ok, section} = Sections.create_section_resources(section, publication)
 
     hidden_sr = Sections.get_section_resource(section.id, hidden_page_revision.resource_id)
-    Sections.update_section_resource(hidden_sr, %{hidden: true})
+    put_section_resource_fields(hidden_sr, %{hidden: true})
 
     removed_sr = Sections.get_section_resource(section.id, removed_page_revision.resource_id)
-    Sections.update_section_resource(removed_sr, %{removed_from_schedule: true})
+    put_section_resource_fields(removed_sr, %{removed_from_schedule: true})
 
     %{
       section: section,

@@ -189,19 +189,4 @@ defmodule Oli.Auditing.ServiceCommandsTest do
 
   defp events(event_type),
     do: Repo.all(from(e in LogEvent, where: e.event_type == ^event_type, order_by: e.id))
-
-  defp reject_audit_inserts do
-    Repo.query!("""
-    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
-    BEGIN
-      RAISE EXCEPTION 'audit insert rejected by test';
-    END;
-    $$ LANGUAGE plpgsql
-    """)
-
-    Repo.query!("""
-    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
-      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
-    """)
-  end
 end

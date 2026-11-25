@@ -2,7 +2,6 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ProgressTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Gating
   alias Oli.Delivery.Gating.ConditionTypes.{ConditionContext, Progress}
 
   def insert_resource_attempt(resource_access, revision_id, attrs) do
@@ -35,7 +34,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ProgressTest do
       context = ConditionContext.init(user, section)
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :progress,
           data: %{
             resource_id: resource2.id
@@ -58,7 +57,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ProgressTest do
       Core.track_access(resource2.id, section.id, user.id)
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :progress,
           data: %{
             resource_id: resource2.id
@@ -84,7 +83,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ProgressTest do
       insert_resource_attempt(ra, revision2.id, %{})
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :progress,
           data: %{
             resource_id: resource2.id
@@ -114,7 +113,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ProgressTest do
       })
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :progress,
           data: %{
             resource_id: resource2.id,
@@ -145,7 +144,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.ProgressTest do
       })
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :finished,
           data: %{
             resource_id: resource2.id,

@@ -115,7 +115,11 @@ defmodule OliWeb.ProductsLiveTest do
   describe "product overview content settings" do
     setup [:admin_conn, :create_product]
 
-    test "save event updates curriculum numbering visibility", %{conn: conn, product: product} do
+    test "save event updates curriculum numbering visibility", %{
+      conn: conn,
+      product: product,
+      admin: admin
+    } do
       {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
 
       assert view
@@ -131,12 +135,59 @@ defmodule OliWeb.ProductsLiveTest do
       updated_section = Sections.get_section!(product.id)
       refute updated_section.display_curriculum_item_numbering
 
+      event =
+        assert_audited(:product_settings_changed,
+          section_id: product.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.changes["display_curriculum_item_numbering"]["after"] == false
+
       refute view
              |> element("#section_display_curriculum_item_numbering")
              |> render() =~ "checked"
     end
 
-    test "save event updates apply_major_updates", %{conn: conn, product: product} do
+    test "saving the content options keeps the welcome title", %{conn: conn, product: product} do
+      welcome_title = %{"type" => "p", "children" => [%{"text" => "Welcome!"}]}
+      {:ok, product} = put_section_fields(product, %{welcome_title: welcome_title})
+
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      view
+      |> element("form[phx-change='save']")
+      |> render_change(%{"section" => %{"display_curriculum_item_numbering" => "false"}})
+
+      assert Sections.get_section!(product.id).welcome_title == welcome_title
+
+      event = assert_audited(:product_settings_changed, section_id: product.id)
+      assert Map.keys(event.changes) == ["display_curriculum_item_numbering"]
+    end
+
+    test "save ignores fields the template forms do not render", %{conn: conn, product: product} do
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      view
+      |> element("form[phx-change='save']")
+      |> render_change(%{
+        "section" => %{
+          "display_curriculum_item_numbering" => "false",
+          "grade_passback_enabled" => "true",
+          "context_id" => "pushed-context",
+          "assistant_enabled" => "true"
+        }
+      })
+
+      updated_section = Sections.get_section!(product.id)
+      refute updated_section.display_curriculum_item_numbering
+
+      assert {updated_section.grade_passback_enabled, updated_section.context_id,
+              updated_section.assistant_enabled} ==
+               {product.grade_passback_enabled, product.context_id, product.assistant_enabled}
+    end
+
+    test "save event updates apply_major_updates", %{conn: conn, product: product, admin: admin} do
       {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
 
       refute view
@@ -151,6 +202,18 @@ defmodule OliWeb.ProductsLiveTest do
 
       updated_section = Sections.get_section!(product.id)
       assert updated_section.apply_major_updates
+
+      event =
+        assert_audited(:publication_update_policy_changed,
+          section_id: product.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert {event.entity_type, event.changes["apply_major_updates"]["after"]} ==
+               {:product, true}
+
+      assert audit_events(:product_settings_changed, section_id: product.id) == []
 
       assert view
              |> element("#section_display_curriculum_item_numbering")
@@ -190,7 +253,7 @@ defmodule OliWeb.ProductsLiveTest do
       hierarchy: hierarchy
     } do
       {:ok, product} =
-        Sections.update_section(product, %{unnumbered_unit_ids: [hierarchy.unit1_resource.id]})
+        put_section_fields(product, %{unnumbered_unit_ids: [hierarchy.unit1_resource.id]})
 
       {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
 
@@ -247,7 +310,7 @@ defmodule OliWeb.ProductsLiveTest do
     } do
       %{product_with_updates: archived_product} = create_products_with_and_without_updates(admin)
 
-      Oli.Delivery.Sections.update_section!(archived_product, %{status: :archived})
+      put_section_fields!(archived_product, %{status: :archived})
 
       {:ok, view, _html} = live(conn, @live_view_all_products)
 
@@ -309,7 +372,7 @@ defmodule OliWeb.ProductsLiveTest do
       [{_, product_2} | _] = create_product(conn)
 
       {:ok, product_2} =
-        Sections.update_section(product_2, %{
+        put_section_fields(product_2, %{
           amount: Money.new(250, "USD")
         })
 
@@ -546,7 +609,7 @@ defmodule OliWeb.ProductsLiveTest do
              |> render() =~ "disabled"
     end
 
-    test "file is uploaded", %{conn: conn, product: product} do
+    test "file is uploaded", %{conn: conn, product: product, admin: admin} do
       Oli.Test.MockAws
       |> expect(:request, 1, fn %ExAws.Operation.S3{} ->
         {:ok, %{status_code: 200}}
@@ -580,6 +643,15 @@ defmodule OliWeb.ProductsLiveTest do
 
       assert has_element?(view, "#img-preview-gallery")
       assert has_element?(view, "#selected-image-preview #current-product-img")
+
+      event =
+        assert_audited(:product_settings_changed,
+          section_id: product.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert Map.keys(event.changes) == ["cover_image"]
     end
 
     test "canceling an upload restores previous rendered image", %{conn: conn} do
@@ -662,6 +734,21 @@ defmodule OliWeb.ProductsLiveTest do
       assert render(view) =~ "Create Template"
       assert render(view) =~ "This can be changed later"
       assert has_element?(view, "button[type='submit']", "Create")
+
+      view
+      |> form("form[phx-submit='create']",
+        create_product_form: %{"product_title" => "Authored product"}
+      )
+      |> render_submit()
+
+      product = Oli.Delivery.Sections.get_section_by_slug("authored_product")
+
+      assert_audited(:product_created,
+        section_id: product.id,
+        project_id: project.id,
+        actor: author,
+        source: :ui
+      )
     end
   end
 

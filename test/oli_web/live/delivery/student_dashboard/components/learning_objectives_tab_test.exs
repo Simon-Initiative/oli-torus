@@ -266,7 +266,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       obj_revision_1: obj_revision_1,
       obj_revision_2: obj_revision_2
     } do
-      Sections.update_section(section, %{v25_migration: :not_started})
+      put_section_fields(section, %{v25_migration: :not_started})
 
       {:ok, view, _html} =
         live(
@@ -305,7 +305,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       obj_revision_1: obj_revision_1,
       obj_revision_2: obj_revision_2
     } do
-      Sections.update_section(section, %{v25_migration: :not_started})
+      put_section_fields(section, %{v25_migration: :not_started})
 
       {:ok, view, _html} =
         live(
@@ -353,7 +353,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       obj_revision_1: obj_revision_1,
       obj_revision_2: obj_revision_2
     } do
-      Sections.update_section(section, %{v25_migration: :not_started})
+      put_section_fields(section, %{v25_migration: :not_started})
 
       {:ok, view, _html} =
         live(
@@ -518,7 +518,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
     } do
       # Setup section data
       Sections.rebuild_contained_objectives(section)
-      Sections.update_section(section, %{v25_migration: :not_started})
+      put_section_fields(section, %{v25_migration: :not_started})
 
       {:ok, view, _html} =
         live(

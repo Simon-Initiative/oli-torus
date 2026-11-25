@@ -3,7 +3,9 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   use OliWeb.Common.Modal
 
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Auditing.Context
   alias Oli.Delivery.Gating
+  alias Oli.Delivery.Gating.Audited, as: GatingAudited
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.Hierarchy.SelectResourceModal
   alias Oli.Delivery.Hierarchy
@@ -16,6 +18,9 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     <div>nothing</div>
     """
   end
+
+  # The account that opened the page (`actor`, assigned by the LiveView at mount) is the actor.
+  defp audit_context(socket), do: Context.for_actor(socket.assigns.actor, source: :ui)
 
   def init(
         socket,
@@ -577,13 +582,17 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     %{gating_condition: gating_condition} = socket.assigns
 
     socket =
-      case Gating.create_gating_condition_with_index(gating_condition) do
+      case GatingAudited.create_gate(
+             audit_context(socket),
+             socket.assigns.section,
+             gating_condition
+           ) do
         {:ok, _gc} ->
           socket
           |> put_flash(:info, "Gating condition successfully created.")
           |> redirect(to: return_path(socket))
 
-        {:error, %Ecto.Changeset{}} ->
+        {:error, _reason} ->
           put_flash(
             socket,
             :error,
@@ -605,13 +614,18 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     gating_condition = Gating.get_gating_condition!(attrs.id)
 
     socket =
-      case Gating.update_gating_condition_with_index(gating_condition, attrs) do
+      case GatingAudited.update_gate(
+             audit_context(socket),
+             socket.assigns.section,
+             gating_condition,
+             attrs
+           ) do
         {:ok, _gating_condition} ->
           socket
           |> put_flash(:info, "Gating condition successfully updated.")
           |> redirect(to: return_path(socket))
 
-        {:error, %Ecto.Changeset{}} ->
+        {:error, _reason} ->
           put_flash(
             socket,
             :error,
@@ -661,13 +675,17 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     gating_condition = Gating.get_gating_condition!(String.to_integer(id))
 
     socket =
-      case Gating.delete_gating_condition_with_index(gating_condition) do
-        {:ok, _gating_condition, _} ->
+      case GatingAudited.delete_gate(
+             audit_context(socket),
+             socket.assigns.section,
+             gating_condition
+           ) do
+        {:ok, _gating_condition} ->
           socket
           |> put_flash(:info, "Gating condition successfully deleted.")
           |> redirect(to: return_path(socket))
 
-        {:error, %Ecto.Changeset{}} ->
+        {:error, _reason} ->
           put_flash(
             socket,
             :error,

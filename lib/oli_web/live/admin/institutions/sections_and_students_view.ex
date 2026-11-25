@@ -3,6 +3,8 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
 
   import OliWeb.DelegatedEvents
 
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias OliWeb.InstitutionController
   alias Oli.Institutions
   alias OliWeb.Router.Helpers, as: Routes
@@ -11,7 +13,6 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.Table.SortableTableModel
   alias Phoenix.LiveView.JS
-  alias Oli.Repo
 
   @default_params %{
     offset: 0,
@@ -265,9 +266,12 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
   end
 
   def handle_event("submit_modal", %{"institution_id" => institution_id}, socket) do
-    socket.assigns.modal_assigns.changeset
-    |> Section.changeset(%{institution_id: String.to_integer(institution_id)})
-    |> Repo.update()
+    SectionsAudited.update_section_settings(
+      Context.for_actor(socket.assigns.current_author, source: :ui),
+      socket.assigns.modal_assigns.changeset.data,
+      %{institution_id: institution_id},
+      [:institution_id]
+    )
     |> case do
       {:ok, _section} ->
         socket
@@ -275,7 +279,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
         |> put_flash(:info, "Institution updated")
         |> patch_with(%{})
 
-      {:error, _changeset} ->
+      {:error, _reason} ->
         {:noreply,
          socket
          |> assign(modal_assigns: %{show: false})

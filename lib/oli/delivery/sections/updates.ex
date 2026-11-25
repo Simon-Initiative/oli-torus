@@ -1,5 +1,8 @@
 defmodule Oli.Delivery.Sections.Updates do
-  @moduledoc "Applies publication changes while retaining section-owned curriculum and tool choices."
+  @moduledoc """
+  Applies publication changes while retaining section-owned curriculum and tool choices.
+  `Oli.Delivery.Sections.Audited.apply_publication_update/3` runs the update.
+  """
 
   require Logger
   import Ecto.Query, warn: false
@@ -10,7 +13,6 @@ defmodule Oli.Delivery.Sections.Updates do
   alias Oli.Publishing
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.Publications.PublicationDiff
-  alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
@@ -49,70 +51,38 @@ defmodule Oli.Delivery.Sections.Updates do
                                     :feedback_scheduled_date
                                   ]}
 
-  @doc """
-  Serializes projection writes with JIT migration by locking the Section first.
-
-  Gracefully applies the specified publication update to a given section by leaving the existing
-  curriculum and section modifications in-tact while applying the structural changes that
-  occurred between the old and new publication.
-
-  This implementation makes the assumption that a resource_id is unique within a curriculum.
-  That is, a resource can only allowed to be added once in a single location within a curriculum.
-  This makes it simpler to apply changes to the existing curriculum but if necessary, this implementation
-  could be extended to not just apply the changes to the first node found that contains the changed resource,
-  but any/all nodes in the hierarchy which reference the changed resource.
-
-  Missing LTI selections (resource configurations chosen in external tools) are
-  initialized from the applied publication after destination resources and projections
-  are finalized. Initialization failure rolls back the update.
-  """
-  @spec apply_publication_update(%Section{}, integer()) :: {:ok, %Section{}} | {:error, term()}
-  def apply_publication_update(
-        %Section{id: section_id} = section,
-        publication_id
-      ) do
-    Broadcaster.broadcast_update_progress(section.id, publication_id, 0)
-
-    new_publication = Publishing.get_publication!(publication_id)
-    project = Oli.Repo.get(Oli.Authoring.Course.Project, new_publication.project_id)
-    current_publication = Sections.get_current_publication(section_id, project.id)
-
-    result =
-      Oli.Repo.transaction(fn ->
-        SectionResourceMigration.lock_section!(section.id)
-
-        updated_section =
-          case do_update(section, project.id, current_publication, new_publication) do
-            {:ok, _} ->
-              SectionResourceMigration.migrate(section.id)
-              do_post_processing_steps(section)
-
-            e ->
-              Oli.Repo.rollback(e)
-          end
-
-        case PlatformExternalTools.initialize_section_deep_links(section.id, publication_id) do
-          {:ok, _} -> updated_section
-          {:error, reason} -> Repo.rollback(reason)
-        end
-      end)
-
-    case result do
+  @doc false
+  # The update of `Oli.Delivery.Sections.Audited.apply_publication_update/3`, which owns the
+  # transaction and the section lock and reads `current_publication` under that lock.
+  #
+  # Gracefully applies `new_publication` to the section by leaving the existing curriculum and
+  # section modifications intact while applying the structural changes that occurred between
+  # the old and new publication.
+  #
+  # This implementation makes the assumption that a resource_id is unique within a curriculum.
+  # That is, a resource can only allowed to be added once in a single location within a
+  # curriculum. This makes it simpler to apply changes to the existing curriculum but if
+  # necessary, this implementation could be extended to not just apply the changes to the first
+  # node found that contains the changed resource, but any/all nodes in the hierarchy which
+  # reference the changed resource.
+  #
+  # Missing LTI selections (resource configurations chosen in external tools) are initialized
+  # from the applied publication after destination resources and projections are finalized.
+  # Returns `{:ok, updated_section}` or `{:error, reason}`; the caller rolls back on error.
+  def apply_in_transaction(section, project_id, current_publication, new_publication) do
+    case do_update(section, project_id, current_publication, new_publication) do
       {:ok, _} ->
-        Oli.Delivery.Sections.SectionCache.clear(section.slug)
+        SectionResourceMigration.migrate(section.id)
+        updated_section = do_post_processing_steps(section)
 
-        Oli.Delivery.DepotCoordinator.clear_synchronously(
-          Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-          section_id
-        )
+        case PlatformExternalTools.initialize_section_deep_links(section.id, new_publication.id) do
+          {:ok, _} -> {:ok, updated_section}
+          {:error, reason} -> {:error, reason}
+        end
 
-        Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
-
-      _ ->
-        Broadcaster.broadcast_update_progress(section.id, new_publication.id, 0)
+      error ->
+        {:error, error}
     end
-
-    result
   end
 
   defp do_post_processing_steps(section) do

@@ -81,4 +81,54 @@ defmodule Oli.Auditing.ContextTest do
   test "rejects actors that are not persisted accounts" do
     assert_raise FunctionClauseError, fn -> Context.for_actor(%User{id: nil}, source: :ui) end
   end
+
+  describe "job arguments" do
+    test "a job rebuilds the initiator's context as a new operation under the initiator's" do
+      for initiator <- [
+            Context.for_actor(@user, source: :ui),
+            Context.for_actor(@author, source: :ui),
+            Context.for_system(:scheduled_maintenance)
+          ] do
+        # Through JSON, as Oban stores job arguments
+        args = initiator |> Context.to_job_args() |> Jason.encode!() |> Jason.decode!()
+
+        assert {:ok, %Context{} = job} = Context.from_job_args(args)
+
+        assert Map.take(job, [:actor_type, :user_id, :author_id, :system_key, :actor_snapshot]) ==
+                 Map.take(initiator, [
+                   :actor_type,
+                   :user_id,
+                   :author_id,
+                   :system_key,
+                   :actor_snapshot
+                 ])
+
+        assert job.source == :job
+        assert job.parent_operation_id == initiator.operation_id
+        refute job.operation_id == initiator.operation_id
+      end
+    end
+
+    # This test runs without a database, so the rebuild cannot read the account
+    test "a deleted initiator keeps the snapshot taken when the job was enqueued" do
+      args = @user |> Context.for_actor(source: :ui) |> Context.to_job_args()
+
+      assert {:ok, %Context{user_id: 41, actor_snapshot: %{"name" => "Grace Hopper"}}} =
+               Context.from_job_args(args)
+    end
+
+    test "arguments that do not name a known actor are refused" do
+      args = @user |> Context.for_actor(source: :ui) |> Context.to_job_args()
+
+      for invalid <- [
+            %{},
+            Map.put(args, "actor_type", "admin"),
+            Map.put(args, "actor_id", nil),
+            Map.put(args, "operation_id", "not-a-uuid"),
+            %{args | "actor_type" => "system", "system_key" => "unknown_actor"}
+          ] do
+        assert Context.from_job_args(invalid) == :error
+      end
+    end
+  end
 end

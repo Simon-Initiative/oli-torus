@@ -5,7 +5,9 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Updates.{Subscriber, Worker}
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
+  alias Oli.Delivery.Updates.Subscriber
   alias Oli.Publishing
   alias Oli.Publishing.Publications.{Publication, PublicationDiff}
   alias OliWeb.Common.Breadcrumb
@@ -63,7 +65,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {user_type, _, section} ->
+      {user_type, actor, section} ->
         updates = Sections.check_for_available_publication_updates(section)
         updates_in_progress = Sections.check_for_updates_in_progress(section)
         base_project_details = Course.get_project!(section.base_project_id)
@@ -77,6 +79,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
 
         {:ok,
          assign(socket,
+           actor: actor,
            section: section,
            user_type: user_type,
            updates: updates,
@@ -209,9 +212,12 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
       updates_in_progress: updates_in_progress
     } = socket.assigns
 
-    %{"section_slug" => section.slug, "publication_id" => publication_id}
-    |> Worker.new()
-    |> Oban.insert!()
+    {:ok, _job} =
+      SectionsAudited.enqueue_publication_update(
+        Context.for_actor(socket.assigns.actor, source: :ui),
+        section,
+        publication_id
+      )
 
     updates_in_progress = Map.put_new(updates_in_progress, publication_id, true)
 

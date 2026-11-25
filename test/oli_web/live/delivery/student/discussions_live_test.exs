@@ -154,7 +154,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       Oli.Delivery.Sections.get_section_resource(section.id, container_revision.resource_id)
 
     {:ok, _} =
-      Oli.Delivery.Sections.update_section_resource(root_container_sr, %{
+      put_section_resource_fields(root_container_sr, %{
         collab_space_config: build(:collab_space_config, status: :enabled)
       })
 
@@ -208,7 +208,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
 
     test "can not access when not enrolled to course", %{conn: conn, section: section} do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -696,7 +696,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       %{conn: conn, student: student, section: section} = ctx
       Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, student)
-      section = Sections.update_section!(section, %{certificate_enabled: true})
+      section = put_section_fields!(section, %{certificate_enabled: true})
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
 
@@ -723,7 +723,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       %{conn: conn, student: student, section: section, root_container: root_container} = ctx
       Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, student)
-      section = Sections.update_section!(section, %{certificate_enabled: true})
+      section = put_section_fields!(section, %{certificate_enabled: true})
 
       post =
         insert(:post, %{
@@ -786,7 +786,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       assert has_element?(view, "button[data-role=\"new-discussion\"]", "New Discussion")
 
       {:ok, _root_container_sr} =
-        Oli.Delivery.Sections.update_section_resource(root_container_sr, %{
+        put_section_resource_fields(root_container_sr, %{
           collab_space_config: build(:collab_space_config, status: :disabled)
         })
 

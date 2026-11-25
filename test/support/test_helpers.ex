@@ -210,6 +210,76 @@ defmodule Oli.TestHelpers do
   def publish_project_fixture(project, description, author_id),
     do: Oli.Publishing.Audited.publish_project(audit_context(), project, description, author_id)
 
+  @doc """
+  Creates a section from a course builder `request` through `Oli.Delivery.Sections.Audited`,
+  acting as the request's actor (or as the test admin when the actor cannot be loaded, which
+  the command refuses before using the context).
+  """
+  def create_section_from_request(%Oli.Delivery.SectionCreationRequest{} = request) do
+    context =
+      case Oli.Delivery.SectionCreation.load_actor(request.actor) do
+        {:ok, actor} -> Oli.Auditing.Context.for_actor(actor, source: :ui)
+        {:error, _} -> audit_context()
+      end
+
+    Oli.Delivery.Sections.Audited.create_section(context, request)
+  end
+
+  @doc """
+  Test fixture: writes any section fields directly, including settings that only the audited
+  commands write in the application, and records nothing. Returns `{:ok, section}` or
+  `{:error, changeset}`, like `Oli.Delivery.Sections.update_section/2` did before it was
+  restricted.
+  """
+  def put_section_fields(%Oli.Delivery.Sections.Section{} = section, attrs) do
+    section
+    |> Oli.Delivery.Sections.settings_changeset(attrs)
+    |> Oli.Repo.update()
+    |> tap(fn
+      {:ok, updated} ->
+        Oli.Delivery.Sections.SectionCache.clear(updated.slug, [:ordered_container_labels])
+
+      _error ->
+        :ok
+    end)
+  end
+
+  @doc "Same as `put_section_fields/2`, returning the section and raising on an invalid change."
+  def put_section_fields!(section, attrs) do
+    {:ok, section} = put_section_fields(section, attrs)
+    section
+  end
+
+  @doc """
+  Test fixture: writes any section resource fields directly, including the discussion
+  configuration that only the audited commands write in the application, and records nothing.
+  """
+  def put_section_resource_fields(
+        %Oli.Delivery.Sections.SectionResource{} = section_resource,
+        attrs
+      ) do
+    section_resource
+    |> Oli.Delivery.Sections.SectionResource.changeset(attrs)
+    |> Oli.Repo.update()
+  end
+
+  @doc """
+  Test fixture: creates a student exception directly from `attrs` (with `section_id`,
+  `resource_id`, and `user_id`), and records nothing.
+  """
+  def create_student_exception_fixture(attrs) do
+    %Oli.Delivery.Settings.StudentException{}
+    |> Oli.Delivery.Settings.StudentException.changeset(attrs)
+    |> Oli.Repo.insert()
+  end
+
+  @doc "Test fixture: writes student exception fields directly, and records nothing."
+  def put_student_exception_fields(%Oli.Delivery.Settings.StudentException{} = exception, attrs) do
+    exception
+    |> Oli.Delivery.Settings.StudentException.changeset(attrs)
+    |> Oli.Repo.update()
+  end
+
   @doc "Test fixture: copies the project with `project_slug` for `author`."
   def duplicate_project_fixture(project_slug, author, opts \\ []),
     do: Oli.Authoring.Audited.duplicate_project(audit_context(), project_slug, author, opts)
@@ -235,13 +305,68 @@ defmodule Oli.TestHelpers do
     %{objective: objective, objective_revision: revision}
   end
 
+  @doc """
+  Writes the gating index of `section` from its current gates, for test setup that inserted gates
+  with the fixtures. Product code rebuilds the index inside `Oli.Delivery.Gating.Audited`.
+  """
+  def update_resource_gating_index_fixture(%Oli.Delivery.Sections.Section{} = section) do
+    Oli.Delivery.Sections.update_section(section, %{
+      resource_gating_index: Oli.Delivery.Gating.generate_resource_gating_index(section)
+    })
+  end
+
+  @doc """
+  Makes every insert into `audit_log_events` fail for the rest of the test's transaction, through
+  a trigger in `pg_temp`, so a test can check that an audited command writes nothing when its
+  event cannot be recorded.
+  """
+  def reject_audit_inserts do
+    Oli.Repo.query!("""
+    CREATE FUNCTION pg_temp.reject_audit_insert() RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'audit insert rejected by test';
+    END;
+    $$ LANGUAGE plpgsql
+    """)
+
+    Oli.Repo.query!("""
+    CREATE TRIGGER reject_audit_insert BEFORE INSERT ON audit_log_events
+      FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_audit_insert()
+    """)
+  end
+
+  @doc """
+  Inserts a gating condition for test setup (a schedule gate by default), without the section
+  lock, the gating index, or an audit event. Product code writes conditions through
+  `Oli.Delivery.Gating.Audited`.
+  """
   def gating_condition_fixture(attrs \\ %{}) do
     {:ok, gating_condition} =
       attrs
       |> Enum.into(%{type: :schedule, data: %{}})
-      |> Oli.Delivery.Gating.create_gating_condition()
+      |> create_gating_condition_fixture()
 
     gating_condition
+  end
+
+  @doc """
+  Inserts a gating condition from `attrs` for test setup, without the section lock, the gating
+  index, or an audit event. Returns `{:ok, gating_condition}` or `{:error, changeset}`.
+  """
+  def create_gating_condition_fixture(attrs) do
+    %Oli.Delivery.Gating.GatingCondition{}
+    |> Oli.Delivery.Gating.GatingCondition.changeset(attrs)
+    |> Oli.Repo.insert()
+  end
+
+  @doc """
+  Writes `attrs` to a gating condition for test setup, without the section lock, the gating
+  index, or an audit event.
+  """
+  def put_gating_condition_fields(gating_condition, attrs) do
+    gating_condition
+    |> Oli.Delivery.Gating.GatingCondition.changeset(attrs)
+    |> Oli.Repo.update()
   end
 
   def url_from_conn(conn) do
@@ -2862,22 +2987,22 @@ defmodule Oli.TestHelpers do
     sr3 = Sections.get_section_resource(section.id, unreachable_graded_page_1_resource.id)
     sr4 = Sections.get_section_resource(section.id, unreachable_graded_page_2_resource.id)
 
-    Sections.update_section_resource(sr1, %{
+    put_section_resource_fields(sr1, %{
       scheduling_type: :due_by,
       end_date: ~U[2023-01-12 13:30:00Z]
     })
 
-    Sections.update_section_resource(sr2, %{
+    put_section_resource_fields(sr2, %{
       scheduling_type: :due_by,
       end_date: ~U[2023-06-05 14:00:00Z]
     })
 
-    Sections.update_section_resource(sr3, %{
+    put_section_resource_fields(sr3, %{
       numbering_level: 1,
       numbering_index: 9
     })
 
-    Sections.update_section_resource(sr4, %{
+    put_section_resource_fields(sr4, %{
       numbering_level: 1,
       numbering_index: 8
     })

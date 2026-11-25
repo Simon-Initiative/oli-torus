@@ -634,7 +634,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       params = %{filter_by: :not_paid}
 
       {:ok, section_with_payment} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_payment: true,
           amount: Money.new(1000, "USD"),
           has_grace_period: false
@@ -684,7 +684,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       params = %{filter_by: :grace_period}
 
       {:ok, section_with_grace_period} =
-        Sections.update_section(section_with_payment, %{
+        put_section_fields(section_with_payment, %{
           start_date: yesterday(),
           end_date: tomorrow(),
           requires_payment: true,
@@ -726,7 +726,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       %{section: section} = Oli.Seeder.base_project_with_larger_hierarchy()
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_payment: true,
           amount: Money.new(100, "USD"),
           grace_period_days: 1
@@ -1038,7 +1038,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       } = Seeder.base_project_with_larger_hierarchy()
 
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit1_resource.id]})
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
       {:ok, _} = Sections.rebuild_contained_pages(section)

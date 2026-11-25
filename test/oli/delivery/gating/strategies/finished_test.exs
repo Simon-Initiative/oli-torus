@@ -19,7 +19,6 @@ defmodule Oli.Delivery.Gating.ConditionTypes.FinishedTest do
   end
 
   describe "finished condition type" do
-    alias Oli.Delivery.Gating
     alias Oli.Delivery.Gating.ConditionTypes.Finished
 
     setup do
@@ -36,7 +35,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.FinishedTest do
       context = ConditionContext.init(user, section)
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :finished,
           data: %{
             resource_id: resource2.id
@@ -59,7 +58,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.FinishedTest do
       Core.track_access(resource2.id, section.id, user.id)
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :finished,
           data: %{
             resource_id: resource2.id
@@ -84,7 +83,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.FinishedTest do
       insert_resource_attempt(ra, revision2.id, %{})
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :finished,
           data: %{
             resource_id: resource2.id
@@ -115,7 +114,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.FinishedTest do
       })
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :finished,
           data: %{
             resource_id: resource2.id
@@ -146,7 +145,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.FinishedTest do
       })
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :finished,
           data: %{
             resource_id: resource2.id,
@@ -178,7 +177,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.FinishedTest do
       })
 
       {:ok, gating_condition} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :finished,
           data: %{
             resource_id: resource2.id,

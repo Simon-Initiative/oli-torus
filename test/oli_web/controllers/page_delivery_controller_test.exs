@@ -336,7 +336,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -350,7 +350,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     test "handles student access who is not enrolled", %{conn: conn, section: section} do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -367,7 +367,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_payment: true,
           amount: Money.new(100, "USD"),
           has_grace_period: false,
@@ -390,7 +390,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_payment: true,
           amount: Money.new(100, "USD"),
           has_grace_period: false
@@ -414,7 +414,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_payment: true,
           amount: Money.new(100, "USD"),
           has_grace_period: false,
@@ -583,7 +583,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section,
       page_revision: page_revision
     } do
-      {:ok, section} = Sections.update_section(section, %{grade_passback_enabled: true})
+      {:ok, section} = put_section_fields(section, %{grade_passback_enabled: true})
       enroll_as_student(%{section: section, user: user})
 
       attempt = create_attempt(user, section, page_revision, %{lifecycle_state: :active})
@@ -617,7 +617,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       enroll_as_student(%{section: section, user: user})
 
       sr = Sections.get_section_resource(section.id, page_revision.resource_id)
-      Sections.update_section_resource(sr, %{password: "password"})
+      put_section_resource_fields(sr, %{password: "password"})
 
       conn = get(conn, ~p"/sections/#{section.slug}/lesson/#{page_revision.slug}")
 
@@ -822,7 +822,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       # change the start date to tomorrow
       tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
-      Sections.update_section_resource(sr, %{start_date: tomorrow})
+      put_section_resource_fields(sr, %{start_date: tomorrow})
 
       # now start the attempt
       conn =
@@ -861,7 +861,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       sr = Sections.get_section_resource(section.id, page_revision.resource_id)
 
       tomorrow = DateTime.utc_now() |> DateTime.add(-1, :day)
-      Sections.update_section_resource(sr, %{start_date: tomorrow})
+      put_section_resource_fields(sr, %{start_date: tomorrow})
 
       conn = get(conn, ~p"/sections/#{section.slug}/lesson/#{page_revision.slug}")
 
@@ -904,7 +904,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       sr = Sections.get_section_resource(section.id, page_revision.resource_id)
 
       tomorrow = DateTime.utc_now() |> DateTime.add(1, :day)
-      Sections.update_section_resource(sr, %{start_date: tomorrow})
+      put_section_resource_fields(sr, %{start_date: tomorrow})
 
       conn = get(conn, ~p"/sections/#{section.slug}/lesson/#{page_revision.slug}")
       html_response = html_response(conn, 200)
@@ -1408,7 +1408,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
       Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
-      |> Oli.Delivery.Sections.update_section_resource(%{time_limit: 5})
+      |> put_section_resource_fields(%{time_limit: 5})
 
       insert(:resource_access,
         user: user,
@@ -1543,7 +1543,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       stub_current_time(~U[2023-11-04 20:00:00Z])
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -1624,7 +1624,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user = insert(:user)
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_payment: true,
           amount: Money.new(:USD, 100),
           has_grace_period: false,
@@ -1645,7 +1645,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user = insert(:user)
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_payment: true,
           amount: Money.new(100, "USD"),
           has_grace_period: false,
@@ -1668,7 +1668,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user = insert(:user)
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_payment: true,
           amount: Money.new(100, "USD"),
           has_grace_period: false,
@@ -1788,7 +1788,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user = insert(:user)
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           display_curriculum_item_numbering: true,
           customizations: %{unit: "Volume", module: "Chapter", section: "Lesson"}
         })
@@ -1817,7 +1817,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user = insert(:user)
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           display_curriculum_item_numbering: true
         })
 
@@ -1846,7 +1846,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user = insert(:user)
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           display_curriculum_item_numbering: false
         })
 
@@ -2058,7 +2058,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn,
       section: section
     } do
-      {:ok, updated_section} = Sections.update_section(section, %{slug: "test_slug_preview"})
+      {:ok, updated_section} = put_section_fields(section, %{slug: "test_slug_preview"})
 
       conn =
         get(
@@ -2414,7 +2414,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user = insert(:user)
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 

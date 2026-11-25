@@ -5,7 +5,6 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Gating
   alias Lti_1p3.Roles.ContextRoles
 
   describe "maybe_gated_resource plug" do
@@ -40,7 +39,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
           data: %{start_datetime: yesterday(), end_datetime: tomorrow()}
         })
 
-      {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       conn =
         conn
@@ -61,7 +60,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
           data: %{end_datetime: yesterday()}
         })
 
-      {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       conn =
         conn
@@ -93,7 +92,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
       _first_attempt_in_progress =
         create_attempt(user, section, graded_adaptive_page, %{lifecycle_state: :active})
 
-      {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       conn =
         conn
@@ -124,7 +123,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
           data: %{end_datetime: yesterday()}
         })
 
-      {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       conn =
         conn
@@ -151,7 +150,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
           data: %{end_datetime: yesterday()}
         })
 
-      {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       conn =
         conn
@@ -183,7 +182,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
           data: %{end_datetime: yesterday()}
         })
 
-      {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       conn =
         conn
@@ -344,7 +343,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
     # schedule start and end date for unit 1 section resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-10-31 20:00:00Z],
       end_date: ~U[2023-12-31 20:00:00Z]
     })

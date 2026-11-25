@@ -257,10 +257,10 @@ Reproduce any symbol with `rg -n 'SYMBOL\s*\(' lib test`, escaping regex punctua
 ### W22: Payment administration and certificates
 
 - Owning implementation PR: **PR-06**.
-- Actions: Paywall/pricing/discount/payment-code/manual entitlement administration; certificate configuration and administrative grant/revoke.
+- Actions: Paywall/pricing/discount/payment-code/manual entitlement administration; all certificate configuration (the section/product `certificate_enabled` toggle, thresholds, design and logos) and administrative grant/revoke.
 - Requirements: FR-023, FR-024.
 - Domain/storage anchors: `lib/oli/delivery/paywall.ex`, `lib/oli/delivery/certificates.ex`, `lib/oli/delivery/granted_certificates.ex`.
-- Entry-point anchors: `lib/oli_web/live/sections/paywall_settings.ex`, `lib/oli_web/live/projects/transfer_payment_codes.ex`, `lib/oli_web/live/certificates/certificate_settings_live.ex`, `lib/oli_web/controllers/granted_certificates_controller.ex`, `lib/oli/scenarios/directives/certificate_action_handler.ex`.
+- Entry-point anchors: `lib/oli_web/live/sections/paywall_settings.ex`, `lib/oli_web/live/projects/transfer_payment_codes.ex`, `lib/oli_web/live/certificates/certificate_settings_live.ex`, `lib/oli_web/live/certificates/components/thresholds_tab.ex`, `lib/oli_web/live/certificates/components/design_tab.ex`, `lib/oli/scenarios/directives/certificate_handler.ex`, `lib/oli_web/controllers/granted_certificates_controller.ex`, `lib/oli/scenarios/directives/certificate_action_handler.ex`.
 - Existing test anchors: `test/oli/delivery/paywall_test.exs`, `test/oli/delivery/certificates_test.exs`, `test/oli/delivery/granted_certificates_test.exs`, `test/oli_web/controllers/granted_certificates_controller_test.exs`.
 - Lexical matching files: 14 lib / 9 test; symbols: `create_payment_codes`, `transfer_payment_codes`, `create_or_update_discount`, `update_payments_for_enrollment`, `update_certificate`, `update_granted_certificate`. Counts are not runtime calls or exact change sizes.
 - Implementation risk: Shared section settings plus sensitive payment data. Reconsider splitting only if implementation demonstrates excessive size, with owner agreement.

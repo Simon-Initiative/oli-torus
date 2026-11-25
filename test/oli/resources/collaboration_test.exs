@@ -99,7 +99,7 @@ defmodule Oli.Resources.CollaborationTest do
     {:ok, section} = Sections.create_section_resources(section, publication)
 
     Sections.get_section_resource(section.id, page_revision_1.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       collab_space_config: %CollabSpaceConfig{status: :enabled}
     })
 
@@ -107,7 +107,7 @@ defmodule Oli.Resources.CollaborationTest do
   end
 
   describe "collaborative spaces" do
-    test "upsert_collaborative_space/4 with valid data creates a collaborative space" do
+    test "a project page's discussion settings are written as a new revision and recorded" do
       {:ok, %{project: project, page_revision: page_revision, author: author}} =
         create_project_with_collab_space_and_posts()
 
@@ -120,12 +120,22 @@ defmodule Oli.Resources.CollaborationTest do
                 page_resource: _page_resource,
                 next_page_revision: next_page_revision
               }} =
-               Collaboration.upsert_collaborative_space(
-                 attrs,
+               Oli.Authoring.Audited.update_project_page_discussions(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
                  project,
                  page_revision.slug,
-                 author.id
+                 attrs,
+                 author
                )
+
+      event =
+        assert_audited(:discussion_settings_changed,
+          project_id: project.id,
+          resource_id: page_revision.resource_id,
+          actor: author
+        )
+
+      assert Enum.map(event.refs, & &1["role"]) == ["previous", "resulting"]
 
       assert %CollabSpaceConfig{
                auto_accept: auto_accept,
@@ -146,7 +156,7 @@ defmodule Oli.Resources.CollaborationTest do
       assert anonymous_posting == attrs.anonymous_posting
     end
 
-    test "upsert_collaborative_space/4 with valid data updates a collaborative space" do
+    test "a project page's discussion settings are updated" do
       {:ok,
        %{
          project: project,
@@ -171,11 +181,12 @@ defmodule Oli.Resources.CollaborationTest do
                 page_resource: _page_resource,
                 next_page_revision: next_page_revision
               }} =
-               Collaboration.upsert_collaborative_space(
-                 new_attrs,
+               Oli.Authoring.Audited.update_project_page_discussions(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
                  project,
                  page_revision_cs.slug,
-                 author.id
+                 new_attrs,
+                 author
                )
 
       assert %CollabSpaceConfig{
@@ -197,20 +208,22 @@ defmodule Oli.Resources.CollaborationTest do
       assert anonymous_posting == new_attrs.anonymous_posting
     end
 
-    test "upsert_collaborative_space/4 with invalid data rollback changes correctly" do
+    test "a missing project page writes and records nothing" do
       {:ok, %{project: project, author: author}} = create_project_with_collab_space_and_posts()
       slug = "unexisting_slug"
       attrs = params_for(:collab_space_config)
 
-      assert {:error, {:error, {:not_found}}} ==
-               Collaboration.upsert_collaborative_space(
-                 attrs,
+      assert {:error, :not_found} ==
+               Oli.Authoring.Audited.update_project_page_discussions(
+                 Oli.Auditing.Context.for_actor(author, source: :ui),
                  project,
                  slug,
-                 author.id
+                 attrs,
+                 author
                )
 
       refute Resources.get_resource_from_slug(slug)
+      assert audit_events(:discussion_settings_changed, project_id: project.id) == []
     end
 
     test "list_collaborative_spaces_in_section/1 returns correctly when no collab spaces present" do
@@ -367,77 +380,86 @@ defmodule Oli.Resources.CollaborationTest do
                Collaboration.count_collab_spaces_enabled_in_pages_for_section(section.slug)
     end
 
-    test "disable_all_page_collab_spaces_for_project/1 sets all collab spaces to status = disabled" do
-      %{project: %{slug: project_slug}} = build_project_with_one_collab_space()
+    test "disabling discussions on every project page records one project event" do
+      %{project: %{slug: project_slug} = project} = build_project_with_one_collab_space()
 
-      {disabled_count, revisions} =
-        Collaboration.disable_all_page_collab_spaces_for_project(project_slug)
-
-      assert disabled_count == 3
-
-      Enum.each(revisions, fn revision ->
-        assert %CollabSpaceConfig{status: :disabled} = revision.collab_space_config
-      end)
+      assert {:ok, 3} =
+               Oli.Authoring.Audited.set_project_discussions(audit_context(), project, :disabled)
 
       assert {0, 3} ==
                Collaboration.count_collab_spaces_enabled_in_pages_for_project(project_slug)
+
+      event = assert_audited(:discussion_settings_changed, project_id: project.id)
+      assert {event.entity_type, event.details["page_count"]} == {:project, 3}
+
+      assert event.changes["status"] == %{
+               "operation" => "set",
+               "before" => "enabled",
+               "after" => "disabled"
+             }
+
+      # Already disabled everywhere: nothing changes, nothing is recorded
+      assert {:ok, 3} =
+               Oli.Authoring.Audited.set_project_discussions(audit_context(), project, :disabled)
+
+      assert length(audit_events(:discussion_settings_changed, project_id: project.id)) == 1
     end
 
-    test "disable_all_page_collab_spaces_for_section/1 sets all collab spaces to status = disabled" do
+    test "disabling notes on every section page records one section event" do
       section = build_section_with_one_collab_space()
 
-      {disabled_count, section_resources} =
-        Collaboration.disable_all_page_collab_spaces_for_section(section.slug)
-
-      assert disabled_count == 3
-
-      Enum.each(section_resources, fn section_resource ->
-        assert %CollabSpaceConfig{status: :disabled} =
-                 section_resource.collab_space_config
-      end)
+      assert {:ok, 3} =
+               Oli.Delivery.Sections.Audited.set_section_notes(
+                 audit_context(),
+                 section,
+                 :disabled
+               )
 
       assert {0, 3} ==
                Collaboration.count_collab_spaces_enabled_in_pages_for_section(section.slug)
+
+      event = assert_audited(:notes_settings_changed, section_id: section.id)
+      assert {event.entity_id, event.details["page_count"]} == {to_string(section.id), 3}
     end
 
-    test "enable_all_page_collab_spaces_for_project/2 enables all collab spaces with the given config" do
-      %{project: %{slug: project_slug}} = build_project_with_one_collab_space()
+    test "enabling discussions on every project page applies the given config" do
+      %{project: %{slug: project_slug} = project} = build_project_with_one_collab_space()
 
       collab_space_config =
         %CollabSpaceConfig{status: :enabled, threaded: false}
 
-      {enabled_count, revisions} =
-        Collaboration.enable_all_page_collab_spaces_for_project(project_slug, collab_space_config)
-
-      assert enabled_count == 3
-
-      Enum.each(revisions, fn revision ->
-        assert %CollabSpaceConfig{status: :enabled, threaded: false} =
-                 revision.collab_space_config
-      end)
+      assert {:ok, 3} =
+               Oli.Authoring.Audited.set_project_discussions(
+                 audit_context(),
+                 project,
+                 collab_space_config
+               )
 
       assert {3, 3} ==
                Collaboration.count_collab_spaces_enabled_in_pages_for_project(project_slug)
+
+      event = assert_audited(:discussion_settings_changed, project_id: project.id)
+      assert event.changes["threaded"]["after"] == false
     end
 
-    test "enable_all_page_collab_spaces_for_section/2 enables all collab spaces with the given config" do
+    test "enabling notes on every section page applies the given config" do
       section = build_section_with_one_collab_space()
 
       collab_space_config =
         %CollabSpaceConfig{status: :enabled, threaded: false}
 
-      {enabled_count, section_resources} =
-        Collaboration.enable_all_page_collab_spaces_for_section(section.slug, collab_space_config)
-
-      assert enabled_count == 3
-
-      Enum.each(section_resources, fn section_resource ->
-        assert %CollabSpaceConfig{status: :enabled, threaded: false} =
-                 section_resource.collab_space_config
-      end)
+      assert {:ok, 3} =
+               Oli.Delivery.Sections.Audited.set_section_notes(
+                 audit_context(),
+                 section,
+                 collab_space_config
+               )
 
       assert {3, 3} ==
                Collaboration.count_collab_spaces_enabled_in_pages_for_section(section.slug)
+
+      event = assert_audited(:notes_settings_changed, section_id: section.id)
+      assert event.details["page_count"] == 3
     end
   end
 

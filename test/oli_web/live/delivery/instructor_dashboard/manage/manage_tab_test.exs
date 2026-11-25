@@ -101,7 +101,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       section: section,
       conn: conn
     } do
-      {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
+      {:ok, section} = put_section_fields(section, %{certificate_enabled: true})
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
@@ -141,6 +141,57 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
 
       assert has_element?(view, "label", "Template")
       refute has_element?(view, "label", "Product")
+    end
+  end
+
+  describe "instructor deleting the section" do
+    setup [:instructor_conn, :section_with_assessment]
+
+    setup %{instructor: instructor, section: section} do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      :ok
+    end
+
+    test "deletes a section without student data and records it", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
+
+      render_click(view, "show_delete_modal", %{})
+      render_click(view, "delete_section", %{})
+
+      assert_redirect(view, ~p"/sections")
+      assert Sections.get_section!(section.id).status == :deleted
+
+      event =
+        assert_audited(:section_deleted, section_id: section.id, actor: instructor, source: :ui)
+
+      assert event.entity_type == :section
+    end
+
+    test "archives a section with student data and records it", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      insert(:resource_summary, section_id: section.id)
+
+      {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
+
+      render_click(view, "show_delete_modal", %{})
+      render_click(view, "delete_section", %{})
+
+      assert_redirect(view, ~p"/sections")
+      assert Sections.get_section!(section.id).status == :archived
+
+      event =
+        assert_audited(:section_archived, section_id: section.id, actor: instructor, source: :ui)
+
+      assert event.changes["status"]["before"] == "active"
+      assert event.changes["status"]["after"] == "archived"
+      assert audit_events(:section_deleted, section_id: section.id) == []
     end
   end
 

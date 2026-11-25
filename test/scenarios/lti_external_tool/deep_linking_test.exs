@@ -7,7 +7,6 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
   import Mox
 
   alias Lti_1p3.Roles.ContextRoles
-  alias Oli.Delivery
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Lti.PlatformExternalTools
@@ -274,7 +273,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingTest do
     {:ok, request} = Hooks.request(state, "Must not survive", publication)
     before = creation_counts()
 
-    assert {:error, :invalid_lti_deep_link_selection} = Delivery.create_section(request)
+    assert {:error, :invalid_lti_deep_link_selection} = create_section_from_request(request)
     assert creation_counts() == before
   end
 

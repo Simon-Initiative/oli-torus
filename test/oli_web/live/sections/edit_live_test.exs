@@ -107,7 +107,9 @@ defmodule OliWeb.Sections.EditLiveTest do
     setup [:instructor_conn]
 
     test "when working on the edit form - LTI case", %{conn: conn, instructor: instructor} do
-      section = insert(:section, requires_payment: true, type: :enrollable)
+      section =
+        insert(:section, requires_payment: true, amount: Money.new(10, "USD"), type: :enrollable)
+
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
@@ -130,6 +132,72 @@ defmodule OliWeb.Sections.EditLiveTest do
       # Save event shouldn't change section_requires_payment
       assert has_element?(view, "#section_requires_payment[checked]")
       assert Oli.Repo.get(Section, section.id).requires_payment == true
+
+      event =
+        assert_audited(:section_settings_changed,
+          section_id: section.id,
+          actor: instructor,
+          source: :ui
+        )
+
+      assert event.changes["title"]["after"] == "New title"
+      refute Map.has_key?(event.changes, "requires_payment")
+    end
+
+    test "a save ignores fields the form does not render for an instructor", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      section =
+        insert(:section, requires_payment: true, amount: Money.new(10, "USD"), type: :enrollable)
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      view
+      |> element("#section-edit-form")
+      |> render_submit(
+        section: %{
+          title: "New title",
+          requires_payment: "false",
+          grade_passback_enabled: "true",
+          context_id: "pushed-context",
+          blueprint_id: "123",
+          assistant_enabled: "true",
+          registration_open: "true"
+        }
+      )
+
+      updated = Oli.Repo.get(Section, section.id)
+      assert updated.title == "New title"
+
+      assert {updated.requires_payment, updated.grade_passback_enabled, updated.context_id,
+              updated.blueprint_id, updated.assistant_enabled, updated.registration_open} ==
+               {true, section.grade_passback_enabled, section.context_id, section.blueprint_id,
+                section.assistant_enabled, section.registration_open}
+    end
+
+    test "saving custom labels records the change", %{conn: conn, instructor: instructor} do
+      section = insert(:section, type: :enrollable)
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      view
+      |> element("form[phx-submit='save_labels']")
+      |> render_submit(%{"unit" => "Chapter", "module" => "Module", "section" => "Section"})
+
+      assert Oli.Repo.get(Section, section.id).customizations.unit == "Chapter"
+
+      event =
+        assert_audited(:section_settings_changed,
+          section_id: section.id,
+          actor: instructor,
+          source: :ui
+        )
+
+      assert event.changes["customizations"]["after"]["unit"] == "Chapter"
     end
 
     test "when working on the edit form - Open and Free case", %{
@@ -193,6 +261,11 @@ defmodule OliWeb.Sections.EditLiveTest do
 
       refute has_element?(view, "#section_requires_payment[checked]")
       assert Oli.Repo.get(Section, section.id).requires_payment == false
+
+      # Payment settings have their own events, which this form does not record yet
+      refute :section_settings_changed
+             |> audit_events(section_id: section.id)
+             |> Enum.any?(&Map.has_key?(&1.changes, "requires_payment"))
     end
   end
 

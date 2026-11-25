@@ -103,6 +103,7 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       section = Oli.Delivery.Sections.get_section_by(slug: section_slug)
       assert section.id == section_id
       assert section.title == "Automation test section"
+      assert_audited(:section_created, [section_id: section_id] ++ setup_actor)
 
       publication = Repo.one!(from p in Publication, where: p.project_id == ^project.id, limit: 1)
 

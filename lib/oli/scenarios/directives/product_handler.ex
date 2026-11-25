@@ -7,7 +7,7 @@ defmodule Oli.Scenarios.Directives.ProductHandler do
   alias Oli.Scenarios.DirectiveTypes.{ProductDirective, ExecutionState}
   alias Oli.Scenarios.Engine
   alias Oli.Scenarios.Directives.DirectiveAttrs
-  alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Publishing
 
   def handle(
@@ -22,7 +22,8 @@ defmodule Oli.Scenarios.Directives.ProductHandler do
          _publication <- ensure_publication(source_project, state),
          customizations <- extract_customizations(source_project),
          {:ok, blueprint} <-
-           Blueprint.create_blueprint(
+           SectionsAudited.create_product(
+             Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
              source_project.project.slug,
              title || name,
              customizations,

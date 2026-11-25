@@ -678,6 +678,40 @@ defmodule OliWeb.PublishLiveTest do
              }
     end
 
+    test "pushed update jobs carry the publishing author, under the publish operation", %{
+      conn: conn,
+      admin: admin,
+      project: project,
+      publication: active_publication,
+      section1: section1,
+      section2: section2
+    } do
+      insert(:publication, project: project, published: yesterday())
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      render_hook(view, "update_sections", %{
+        "publication" => %{
+          "description" => "Pushed",
+          "active_publication_id" => to_string(active_publication.id),
+          "auto_push_update" => "true",
+          "include_out_of_date_sections" => "true"
+        }
+      })
+
+      published = assert_audited(:project_published, project_id: project.id, actor: admin)
+      jobs = all_enqueued(worker: Oli.Delivery.Updates.Worker)
+
+      assert Enum.sort(Enum.map(jobs, & &1.args["section_slug"])) ==
+               Enum.sort([section1.slug, section2.slug])
+
+      for %{args: %{"audit_context" => audit_context}} <- jobs do
+        assert %{"actor_type" => "author", "actor_id" => actor_id, "operation_id" => operation} =
+                 audit_context
+
+        assert {actor_id, operation} == {admin.id, published.operation_id}
+      end
+    end
+
     test "shows info message when a publication is generated successfully", %{
       conn: conn,
       admin: admin,

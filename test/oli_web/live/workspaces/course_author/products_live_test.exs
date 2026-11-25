@@ -94,7 +94,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
              |> render() =~ "None exist"
     end
 
-    test "create a product", %{conn: conn, project: project} do
+    test "create a product", %{conn: conn, project: project, admin: admin} do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       view
@@ -119,6 +119,18 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
         )
 
       assert flash["info"] == "Template successfully created."
+
+      product = Oli.Delivery.Sections.get_section_by_slug("some_product")
+
+      event =
+        assert_audited(:product_created,
+          section_id: product.id,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.entity_type == :product
     end
 
     test "trigger archived products checkbox", %{conn: conn, project: project} do
@@ -128,7 +140,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
       {:ok, _product_2} = Blueprint.create_blueprint(project.slug, product_title_2, nil)
 
       # Archive product 1
-      Oli.Delivery.Sections.update_section!(product_1, %{status: :archived})
+      put_section_fields!(product_1, %{status: :archived})
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
@@ -237,7 +249,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
       {:ok, _follow_up_publication} =
         Oli.TestHelpers.publish_project_fixture(project, "fresh update", author.id)
 
-      Oli.Delivery.Sections.update_section!(archived_product, %{status: :archived})
+      put_section_fields!(archived_product, %{status: :archived})
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 

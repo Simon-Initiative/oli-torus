@@ -1,16 +1,13 @@
 defmodule Oli.Delivery.Settings.AssessmentSettings do
   import Ecto.Query
 
-  alias Ecto.Multi
   alias Oli.Accounts.Author
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.Enrollment
   alias Oli.Delivery.Settings
-  alias Oli.Delivery.Settings.AutoSubmitCustodian
   alias Oli.Delivery.Sections.SectionResource
-  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Publishing.DeliveryResolver
@@ -42,12 +39,24 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
   def supported_keys, do: @supported_keys
 
   @doc """
-  Updates assessment settings, with authoritative authorization for secure policy changes.
+  Validates a change of the settings of the assessment with `assessment_setting_id` and
+  returns the assessment as the settings page shows it and the section resource fields the
+  change writes, without writing anything. `Oli.Delivery.Settings.Audited` writes them.
 
-  Enabling secure delivery requires a graded page; disabling only requires an existing
-  section resource so policies can be cleared after their targets become ineligible.
+  `attrs` may use `late_policy` (expanded to `late_start` and `late_submit`); a new start or end
+  date moves the other date to keep their distance, and the end date sets the scheduling type.
+  Changing secure delivery requires a settings editor of the section (`user`); enabling it
+  requires a graded page, while disabling only requires an existing section resource so
+  policies can be cleared after their targets become ineligible.
+
+  Options: `:assessments` (the assessments already loaded by the caller), `:ctx` (the session
+  context used to read local dates), and `:include_ungraded` (`true` to also accept a page that
+  is not a graded assessment, whose section resource is then the current state; used by
+  Scenarios to configure practice pages).
   """
-  def update(%Section{} = section, user, assessment_setting_id, attrs, opts \\ %{})
+  @spec prepare_update(Section.t(), struct(), pos_integer(), map(), map()) ::
+          {:ok, map(), map()} | {:error, term()}
+  def prepare_update(%Section{} = section, user, assessment_setting_id, attrs, opts \\ %{})
       when is_map(attrs) do
     attrs =
       case Map.fetch(attrs, "secure_delivery") do
@@ -55,19 +64,10 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
         {:ok, value} -> attrs |> Map.delete("secure_delivery") |> Map.put(:secure_delivery, value)
       end
 
-    assessments = Map.get(opts, :assessments)
-    ctx = Map.get(opts, :ctx)
-
     with :ok <- authorize_secure_change(section, user, assessment_setting_id, attrs),
-         {:ok, assessment} <- fetch_assessment(section, assessment_setting_id, assessments),
-         {:ok, changes} <- normalize_changes(attrs, assessment, ctx),
-         setting_changes <- build_settings_changes(changes, assessment, section.id, user),
-         {:ok, _result} <- persist_update(section, assessment, changes, setting_changes) do
-      {:ok,
-       %{
-         assessment: refresh_assessment(section, assessment_setting_id, assessment, changes),
-         applied_changes: changes
-       }}
+         {:ok, assessment} <- fetch_assessment(section, assessment_setting_id, opts),
+         {:ok, changes} <- normalize_changes(attrs, assessment, Map.get(opts, :ctx)) do
+      {:ok, assessment, changes}
     end
   end
 
@@ -111,53 +111,6 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
   defp settings_editor?(section, user) do
     Sections.is_instructor?(user, section.slug) or
       Sections.is_admin?(Oli.Accounts.preload_platform_roles(user), section.slug)
-  end
-
-  def do_update(:late_policy, asmt_set_id, new_value, resources) do
-    %{section: section, user: user, assessments: asmts} = resources
-
-    update(section, user, asmt_set_id, %{late_policy: new_value}, %{assessments: asmts})
-    |> normalize_update_result()
-  end
-
-  def do_update(key, asmt_set_id, new_value, resources) do
-    %{section: section, user: user, assessments: asmts} = resources
-
-    update(section, user, asmt_set_id, %{key => new_value}, %{assessments: asmts})
-    |> normalize_update_result()
-  end
-
-  defp normalize_update_result({:ok, result}), do: {:ok, result}
-  defp normalize_update_result({:error, reason}), do: reason
-
-  defp updated_section_resource_depot(multi) do
-    Multi.run(multi, :updated_section_resource_depot, fn
-      _repo, %{update_section_resource: section_resource} ->
-        {:ok, SectionResourceDepot.update_section_resource(section_resource)}
-    end)
-  end
-
-  defp get_section_resource(multi, section_id, assessment_setting_id) do
-    Multi.run(multi, :get_section_resource, fn _repo, _changes ->
-      with section_resource = %SectionResource{} <-
-             SectionResourceDepot.get_section_resource(section_id, assessment_setting_id) do
-        {:ok, section_resource}
-      else
-        _nil ->
-          {:error, "Could not find section resource"}
-      end
-    end)
-  end
-
-  defp update_section_resource(%Multi{} = multi, changes, section_id, asmt_set_id) do
-    Multi.update(multi, :update_section_resource, fn %{get_section_resource: section_resource} ->
-      case changes do
-        %{late_submit: :allow} -> AutoSubmitCustodian.cancel(section_id, asmt_set_id, nil)
-        _others -> nil
-      end
-
-      SectionResource.changeset(section_resource, changes)
-    end)
   end
 
   def get_student_exceptions(section_id) do
@@ -287,70 +240,12 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     |> MapSet.member?(resource_id)
   end
 
-  defp get_user_type(%Author{} = _), do: :author
-  defp get_user_type(_), do: :instructor
-
-  defp persist_update(section, assessment, changes, setting_changes) do
-    assessment_setting_id = assessment.resource_id
-
-    multi =
-      Multi.new()
-      |> get_section_resource(section.id, assessment_setting_id)
-      |> update_section_resource(changes, section.id, assessment_setting_id)
-      |> maybe_adjust_auto_submit_after_update(section.id, assessment, changes)
-      |> insert_settings_changes(setting_changes)
-      |> updated_section_resource_depot()
-
-    case Repo.transaction(multi) do
-      {:ok, result} -> {:ok, result}
-      {:error, :update_section_resource, _, _} = error -> error
-      {:error, :get_section_resource, _, _} = error -> error
-      {:error, :settings_changes, _, _} = error -> error
-      {:error, :adjust_auto_submit_after_update, _, _} = error -> error
+  defp fetch_assessment(section, assessment_setting_id, %{} = opts) do
+    case {fetch_assessment(section, assessment_setting_id, Map.get(opts, :assessments)),
+          Map.get(opts, :include_ungraded, false)} do
+      {{:error, {:assessment_not_found, _}}, true} -> fetch_page(section, assessment_setting_id)
+      {result, _include_ungraded} -> result
     end
-  end
-
-  defp maybe_adjust_auto_submit_after_update(
-         %Multi{} = multi,
-         section_id,
-         assessment,
-         %{end_date: new_end_date}
-       ) do
-    Multi.run(multi, :adjust_auto_submit_after_update, fn _repo, _changes ->
-      if assessment.late_submit == :disallow and not is_nil(assessment.end_date) do
-        case AutoSubmitCustodian.adjust(
-               section_id,
-               assessment.resource_id,
-               assessment.end_date,
-               new_end_date,
-               nil
-             ) do
-          {:ok, count} -> {:ok, count}
-          error -> error
-        end
-      else
-        {:ok, 0}
-      end
-    end)
-  end
-
-  defp maybe_adjust_auto_submit_after_update(
-         %Multi{} = multi,
-         _section_id,
-         _assessment,
-         _changes
-       ),
-       do: multi
-
-  defp insert_settings_changes(%Multi{} = multi, []), do: multi
-
-  defp insert_settings_changes(%Multi{} = multi, setting_changes) do
-    Multi.run(multi, :settings_changes, fn _repo, _changes ->
-      case Settings.bulk_insert_settings_changes(setting_changes) do
-        {_count, _rows} = result -> {:ok, result}
-        error -> error
-      end
-    end)
   end
 
   defp fetch_assessment(section, assessment_setting_id, nil) do
@@ -370,6 +265,13 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     end
   end
 
+  defp fetch_page(section, resource_id) do
+    case Repo.get_by(SectionResource, section_id: section.id, resource_id: resource_id) do
+      nil -> {:error, {:assessment_not_found, resource_id}}
+      section_resource -> {:ok, Map.from_struct(section_resource)}
+    end
+  end
+
   defp get_assessment!(section, assessment_setting_id) do
     student_exceptions = get_student_exceptions(section.id)
 
@@ -381,7 +283,12 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     end
   end
 
-  defp refresh_assessment(section, assessment_setting_id, assessment, changes) do
+  @doc """
+  Returns the assessment with `assessment_setting_id` as the settings page shows it after
+  `changes` were written, or `assessment` with `changes` applied if it can no longer be read.
+  """
+  @spec refresh_assessment(Section.t(), pos_integer(), map(), map()) :: map()
+  def refresh_assessment(section, assessment_setting_id, assessment, changes) do
     case fetch_assessment(section, assessment_setting_id, nil) do
       {:ok, refreshed_assessment} -> refreshed_assessment
       {:error, _} -> Map.merge(assessment, changes)
@@ -493,44 +400,4 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     do: Map.put(attrs, :scheduling_type, if(is_nil(end_date), do: :read_by, else: :due_by))
 
   defp normalize_scheduling_type(attrs), do: attrs
-
-  defp build_settings_changes(attrs, assessment) do
-    Enum.map(attrs, fn {key, value} ->
-      %{
-        key: key,
-        new_value: value,
-        old_value: Map.get(assessment, key)
-      }
-    end)
-  end
-
-  defp insert_setting_changes_payload(setting_changes, section_id, user) do
-    date = DateTime.utc_now() |> DateTime.truncate(:second)
-
-    Enum.map(setting_changes, fn %{key: key, new_value: new_value, old_value: old_value} ->
-      %{
-        resource_id: nil,
-        section_id: section_id,
-        user_id: user.id,
-        user_type: get_user_type(user),
-        key: Atom.to_string(key),
-        new_value: stringify_setting_value(new_value),
-        old_value: stringify_setting_value(old_value),
-        inserted_at: date,
-        updated_at: date
-      }
-    end)
-  end
-
-  defp build_settings_changes(attrs, assessment, section_id, user) do
-    attrs
-    |> build_settings_changes(assessment)
-    |> insert_setting_changes_payload(section_id, user)
-    |> Enum.map(fn payload -> Map.put(payload, :resource_id, assessment.resource_id) end)
-  end
-
-  defp stringify_setting_value(nil), do: nil
-  defp stringify_setting_value(%DateTime{} = datetime), do: DateTime.to_iso8601(datetime)
-  defp stringify_setting_value(value) when is_atom(value), do: Atom.to_string(value)
-  defp stringify_setting_value(value), do: "#{value}"
 end

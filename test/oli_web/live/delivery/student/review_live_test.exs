@@ -231,14 +231,14 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
     # schedule start and end date for unit 1 section resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-10-31 20:00:00Z],
       end_date: ~U[2023-12-31 20:00:00Z]
     })
 
     # schedule start and end date for page 2 section resource
     Sections.get_section_resource(section.id, page_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-10 20:00:00Z],
       end_date: ~U[2023-11-14 20:00:00Z]
     })
@@ -399,7 +399,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       page_1: page_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -555,7 +555,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       page_2: page_2
     } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -579,7 +579,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       unit_1: unit_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -901,7 +901,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       # Disallow review submission for this page
       section_resource = Sections.get_section_resource(section.id, page_1.resource_id)
-      Sections.update_section_resource(section_resource, %{review_submission: :disallow})
+      put_section_resource_fields(section_resource, %{review_submission: :disallow})
 
       # Create an attempt for the student
       attempt = create_attempt(student, section, page_1)
@@ -934,7 +934,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       # Disallow review submission for this page
       section_resource = Sections.get_section_resource(section.id, page_1.resource_id)
-      Sections.update_section_resource(section_resource, %{review_submission: :disallow})
+      put_section_resource_fields(section_resource, %{review_submission: :disallow})
 
       # Create an attempt for the student
       attempt = create_attempt(student, section, page_1)

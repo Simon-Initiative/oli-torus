@@ -4,34 +4,47 @@ defmodule Oli.Scenarios.SectionOps do
   Supports the revise operation for modifying section resource properties.
   """
 
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Remix
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
+  alias Oli.Delivery.Settings.Audited, as: SettingsAudited
   alias Oli.Delivery.Settings.AssessmentSettings
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
 
-  def apply_ops!(section, ops) do
+  # Written by `Oli.Delivery.Sections.Audited.update_schedule/4`; the dates are assessment
+  # settings
+  @schedule_keys [:scheduling_type, :manually_scheduled, :removed_from_schedule]
+
+  @doc """
+  Applies `ops` to `section` in order. Settings changes (`change`) are recorded in the Audit Log
+  under `context`.
+  """
+  def apply_ops!(section, ops, %Context{} = context) do
     Enum.reduce(ops, section, fn op, acc_section ->
-      apply_op(op, acc_section)
+      apply_op(op, acc_section, context)
     end)
   end
 
-  defp apply_op(%{"revise" => params}, section) do
+  defp apply_op(%{"revise" => params}, section, context) do
     target = params["target"]
     set_params = params["set"] || %{}
 
-    revise_section_resource!(section, target, set_params)
+    revise_section_resource!(section, target, set_params, context)
   end
 
-  defp apply_op(%{"change" => params}, section) do
-    change_section!(section, params)
+  defp apply_op(%{"change" => params}, section, context) do
+    change_section!(section, params, context)
   end
 
-  defp apply_op(op, _section) do
+  defp apply_op(op, _section, _context) do
     raise "Unsupported section operation: #{inspect(op)}"
   end
 
-  defp revise_section_resource!(section, target, set_params) do
+  defp revise_section_resource!(section, target, set_params, context) do
     # Get the hierarchy to find the target resource
     hierarchy = DeliveryResolver.full_hierarchy(section.slug)
     node = find_node_by_title(hierarchy, target)
@@ -61,29 +74,42 @@ defmodule Oli.Scenarios.SectionOps do
             section
 
           assessment_params ->
+            # The section's hidden instructor passes the secure-delivery editor check.
             {:ok, {actor, _token}} = Sections.fetch_hidden_instructor(section.id)
 
-            case AssessmentSettings.update(
+            case SettingsAudited.update_assessment_settings(
+                   Context.for_actor(actor, source: :scenario),
                    section,
-                   actor,
                    section_resource.resource_id,
-                   Map.new(assessment_params)
+                   Map.new(assessment_params),
+                   %{include_ungraded: true}
                  ) do
               {:ok, _result} ->
-                section
-
-              {:error, {:assessment_not_found, _resource_id}} ->
-                apply_direct_section_resource_updates!(
-                  section_resource,
-                  assessment_params,
-                  target
-                )
-
                 section
 
               {:error, reason} ->
                 raise "Failed to update assessment settings for '#{target}': #{inspect(reason)}"
             end
+        end
+
+      # Visibility is a curriculum change, saved as a remix
+      {hidden_params, other_params} =
+        Enum.split_with(other_params, fn {key, _value} -> key == :hidden end)
+
+      section =
+        case hidden_params do
+          [] -> section
+          [{:hidden, hidden}] -> set_hidden!(section, section_resource, hidden, context)
+        end
+
+      # Scheduling fields are a schedule update
+      {schedule_params, other_params} =
+        Enum.split_with(other_params, fn {key, _value} -> key in @schedule_keys end)
+
+      section =
+        case schedule_params do
+          [] -> section
+          params -> update_schedule!(section, section_resource, Map.new(params), context)
         end
 
       case other_params do
@@ -95,8 +121,11 @@ defmodule Oli.Scenarios.SectionOps do
             {:ok, _updated_resource} ->
               section
 
-            {:error, changeset} ->
-              raise "Failed to update section resource '#{target}': #{inspect(changeset.errors)}"
+            {:error, %Ecto.Changeset{errors: errors}} ->
+              raise "Failed to update section resource '#{target}': #{inspect(errors)}"
+
+            {:error, reason} ->
+              raise "Failed to update section resource '#{target}': #{inspect(reason)}"
           end
       end
     else
@@ -104,13 +133,49 @@ defmodule Oli.Scenarios.SectionOps do
     end
   end
 
-  defp apply_direct_section_resource_updates!(section_resource, params, target) do
-    case Sections.update_section_resource(section_resource, Map.new(params)) do
-      {:ok, _updated_resource} ->
-        :ok
+  defp update_schedule!(section, section_resource, params, context) do
+    # The schedule update writes every scheduling field; the others keep their values. Dates
+    # are written as stored, in UTC.
+    current = Repo.get!(SectionResource, section_resource.id)
 
-      {:error, changeset} ->
-        raise "Failed to update section resource '#{target}': #{inspect(changeset.errors)}"
+    update =
+      %{
+        id: current.id,
+        scheduling_type: current.scheduling_type,
+        start_date: current.start_date,
+        end_date: current.end_date,
+        manually_scheduled: current.manually_scheduled || false,
+        removed_from_schedule: current.removed_from_schedule
+      }
+      |> Map.merge(params)
+      |> Map.update!(:scheduling_type, &to_string/1)
+      |> Map.update!(:start_date, &schedule_date/1)
+      |> Map.update!(:end_date, &schedule_date/1)
+
+    case SectionsAudited.update_schedule(context, section, [update], "Etc/UTC") do
+      {:ok, _count} -> section
+      {:error, reason} -> raise "Failed to update the schedule: #{inspect(reason)}"
+    end
+  end
+
+  defp schedule_date(nil), do: nil
+  defp schedule_date(%DateTime{} = date), do: Calendar.strftime(date, "%Y-%m-%d %H:%M:%S")
+
+  defp set_hidden!(section, %SectionResource{hidden: hidden}, hidden, _context), do: section
+
+  defp set_hidden!(section, %SectionResource{resource_id: resource_id}, _hidden, context) do
+    {:ok, state} = Remix.init_open_and_free(section)
+
+    node =
+      state.hierarchy
+      |> Hierarchy.flatten_hierarchy()
+      |> Enum.find(&(&1.resource_id == resource_id))
+
+    {:ok, state} = Remix.toggle_hidden(state, node.uuid)
+
+    case SectionsAudited.save_remix(context, state, nil) do
+      {:ok, section} -> section
+      {:error, reason} -> raise "Failed to change the visibility: #{inspect(reason)}"
     end
   end
 
@@ -166,22 +231,27 @@ defmodule Oli.Scenarios.SectionOps do
   defp process_value(_key, value) when is_atom(value), do: value
   defp process_value(_key, value), do: value
 
-  defp change_section!(section, params) do
-    # Process the parameters to convert special values
+  # Keys must name existing section fields; the facade rejects fields no settings form writes.
+  defp change_section!(section, params, context) do
     change_params =
-      params
-      |> Enum.map(fn {key, value} ->
-        {String.to_atom(key), process_value(key, value)}
+      Map.new(params, fn {key, value} ->
+        {String.to_existing_atom(key), process_value(key, value)}
       end)
-      |> Enum.into(%{})
 
-    # Update the section using standard changeset
-    case Sections.update_section(section, change_params) do
+    case SectionsAudited.update_section_settings(
+           context,
+           section,
+           change_params,
+           Map.keys(change_params)
+         ) do
       {:ok, updated_section} ->
         updated_section
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         raise "Failed to change section settings: #{inspect(changeset.errors)}"
+
+      {:error, reason} ->
+        raise "Failed to change section settings: #{inspect(reason)}"
     end
   end
 end

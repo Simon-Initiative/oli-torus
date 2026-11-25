@@ -275,6 +275,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
     test "a section's institution can be changed through the edit button", %{
       conn: conn,
+      admin: admin,
       section_1: section_1,
       institution_1: institution_1,
       institution_2: institution_2
@@ -319,6 +320,19 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
       assert view
              |> element("div[role='alert']", "Institution updated")
              |> has_element?()
+
+      event =
+        assert_audited(:section_settings_changed,
+          section_id: section_1.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert event.changes["institution_id"] == %{
+               "operation" => "set",
+               "before" => institution_1.id,
+               "after" => institution_2.id
+             }
 
       # that section is no longer listed (as it now has another institution assigned)
       refute view

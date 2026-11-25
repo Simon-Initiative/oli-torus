@@ -46,7 +46,6 @@ defmodule Oli.Seeder do
   alias Oli.Inventories
   alias Oli.Qa.Reviews
   alias Oli.Activities
-  alias Oli.Delivery.Gating
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Utils.Seeder.StudentAttemptSeed
@@ -1957,17 +1956,25 @@ defmodule Oli.Seeder do
     map
   end
 
-  def create_schedule_gating_condition(start_datetime, end_datetime, resource_id, section_id) do
+  def create_schedule_gating_condition(
+        start_datetime,
+        end_datetime,
+        resource_id,
+        %Oli.Delivery.Sections.Section{} = section
+      ) do
     {:ok, gating_condition} =
-      Gating.create_gating_condition(%{
-        type: :schedule,
-        data: %{
-          start_datetime: start_datetime,
-          end_datetime: end_datetime
-        },
-        resource_id: resource_id,
-        section_id: section_id
-      })
+      Oli.Delivery.Gating.Audited.create_gate(
+        Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+        section,
+        %{
+          type: :schedule,
+          data: %{
+            start_datetime: start_datetime,
+            end_datetime: end_datetime
+          },
+          resource_id: resource_id
+        }
+      )
 
     gating_condition
   end

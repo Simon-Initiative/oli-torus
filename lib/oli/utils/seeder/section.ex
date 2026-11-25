@@ -7,7 +7,6 @@ defmodule Oli.Utils.Seeder.Section do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Enrollment
-  alias Oli.Delivery.Gating
   alias Oli.Utils.DataGenerators.NameGenerator
   alias Oli.Utils.Slug
   alias Oli.Publishing.DeliveryResolver
@@ -191,15 +190,18 @@ defmodule Oli.Utils.Seeder.Section do
     [section, revision] = unpack(seeds, [section, revision])
 
     {:ok, gating_condition} =
-      Gating.create_gating_condition(%{
-        type: :schedule,
-        data: %{
-          start_datetime: start_datetime,
-          end_datetime: end_datetime
-        },
-        resource_id: revision.resource_id,
-        section_id: section.id
-      })
+      Oli.Delivery.Gating.Audited.create_gate(
+        Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+        section,
+        %{
+          type: :schedule,
+          data: %{
+            start_datetime: start_datetime,
+            end_datetime: end_datetime
+          },
+          resource_id: revision.resource_id
+        }
+      )
 
     seeds
     |> tag(tags[:gating_condition_tag], gating_condition)

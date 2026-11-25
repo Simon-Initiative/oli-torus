@@ -108,7 +108,7 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
       {:ok, _enrollment} =
         Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      {:ok, section} = Sections.update_section(section, %{assistant_enabled: true})
+      {:ok, section} = put_section_fields(section, %{assistant_enabled: true})
 
       {:ok, _} =
         Resources.update_revision(revisions.page_revision_2, %{
@@ -121,7 +121,7 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
         Sections.get_section_resource(section.id, revisions.page_revision_2.resource_id)
 
       {:ok, section_resource} =
-        Sections.update_section_resource(section_resource, %{ai_enabled: true})
+        put_section_resource_fields(section_resource, %{ai_enabled: true})
 
       SectionResourceDepot.update_section_resource(section_resource)
 

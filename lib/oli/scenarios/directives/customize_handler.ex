@@ -5,9 +5,9 @@ defmodule Oli.Scenarios.Directives.CustomizeHandler do
 
   alias Oli.Scenarios.DirectiveTypes.{CustomizeDirective, ExecutionState}
   alias Oli.Scenarios.Engine
-  alias Oli.Delivery.{Hierarchy, Sections}
-  alias Oli.Delivery.Sections.SectionCache
-  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.{Hierarchy, Remix}
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
 
   def handle(%CustomizeDirective{to: to, ops: ops}, %ExecutionState{} = state) do
     # First check if it's a product, then check sections
@@ -26,27 +26,21 @@ defmodule Oli.Scenarios.Directives.CustomizeHandler do
 
       section ->
         try do
-          # Get the section's current hierarchy as HierarchyNode structs
-          hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+          # The curriculum is changed as a saved remix, so the change is recorded for the
+          # represented author
+          {:ok, remix_state} = Remix.init_open_and_free(section)
 
-          # Get pinned project publications for the section
-          project_publications = Sections.get_pinned_project_publications(section.id)
+          hierarchy =
+            remix_state.hierarchy
+            |> apply_ops_to_hierarchy(ops, section, state)
+            |> Hierarchy.finalize()
 
-          # Apply operations to the hierarchy
-          updated_hierarchy = apply_ops_to_hierarchy(hierarchy, ops, section, state)
-
-          # Finalize the hierarchy to ensure proper structure
-          finalized_hierarchy = Hierarchy.finalize(updated_hierarchy)
-
-          # Rebuild the section curriculum with the modified hierarchy
-          Sections.rebuild_section_curriculum(section, finalized_hierarchy, project_publications)
-
-          # Clear cache and reload section
-          SectionCache.clear(section.slug)
-          # Small delay to ensure async processing completes
-          Process.sleep(100)
-
-          refreshed_section = Sections.get_section!(section.id)
+          {:ok, refreshed_section} =
+            SectionsAudited.save_remix(
+              Context.for_actor(state.current_author, source: :scenario),
+              %{remix_state | hierarchy: hierarchy},
+              state.current_author
+            )
 
           # Update state with the refreshed section or product
           updated_state =

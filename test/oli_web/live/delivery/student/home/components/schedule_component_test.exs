@@ -227,55 +227,55 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       # schedule start and end date for Unit 1 section_resource
       # schedule start and end date for Unit 1 section_resource
       Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2024-05-05 20:00:00Z],
         end_date: ~U[2024-05-18 20:00:00Z]
       })
 
       # schedule start and end date for Module 1 section_resource
       Sections.get_section_resource(section.id, module_1_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2024-05-05 20:00:00Z],
         end_date: ~U[2024-05-11 20:00:00Z]
       })
 
       # schedule start and end date for Module 2 section_resource
       Sections.get_section_resource(section.id, module_2_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2024-05-12 20:00:00Z],
         end_date: ~U[2024-05-18 20:00:00Z]
       })
 
       # schedule start and end date for Graded 1 section_resource
       Sections.get_section_resource(section.id, graded_1_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2024-05-05 20:00:00Z],
         end_date: ~U[2024-05-06 20:00:00Z]
       })
 
       # schedule start and end date for Graded 2 and Practice 1 section_resources
       Sections.get_section_resource(section.id, graded_2_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2024-05-06 20:00:00Z],
         end_date: ~U[2024-05-07 20:00:00Z]
       })
 
       Sections.get_section_resource(section.id, practice_1_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2024-05-06 20:00:00Z],
         end_date: ~U[2024-05-07 20:00:00Z]
       })
 
       # schedule start and end date for Exploration 1 section_resource
       Sections.get_section_resource(section.id, exploration_1_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2024-05-12 20:00:00Z],
         end_date: ~U[2024-05-14 20:00:00Z]
       })
 
       # schedule start and end date for Practice 2 section_resource
       Sections.get_section_resource(section.id, practice_2_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2024-05-15 20:00:00Z],
         end_date: ~U[2024-05-17 20:00:00Z]
       })
@@ -666,7 +666,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       unit_1_revision: unit_1_revision
     } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1_revision.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1_revision.resource_id]})
 
       grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, false)
 

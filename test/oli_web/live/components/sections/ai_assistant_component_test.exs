@@ -26,6 +26,7 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponentTest do
     test "renders with assistant and triggers OFF", %{conn: conn, product: product} do
       {:ok, view, _html} =
         live_component_isolated(conn, AiAssistantComponent, %{
+          actor: insert(:author),
           id: "ai-test",
           section: product
         })
@@ -43,6 +44,7 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponentTest do
 
       {:ok, view, _html} =
         live_component_isolated(conn, AiAssistantComponent, %{
+          actor: insert(:author),
           id: "ai-test",
           section: product
         })
@@ -57,6 +59,7 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponentTest do
     test "toggle assistant ON persists to database", %{conn: conn, product: product} do
       {:ok, view, _html} =
         live_component_isolated(conn, AiAssistantComponent, %{
+          actor: insert(:author),
           id: "ai-test",
           section: product
         })
@@ -75,13 +78,14 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponentTest do
     test "toggle assistant OFF also disables triggers", %{conn: conn, product: product} do
       # Start with both ON
       {:ok, product} =
-        Oli.Delivery.Sections.update_section(product, %{
+        put_section_fields(product, %{
           assistant_enabled: true,
           triggers_enabled: true
         })
 
       {:ok, view, _html} =
         live_component_isolated(conn, AiAssistantComponent, %{
+          actor: insert(:author),
           id: "ai-test",
           section: product
         })
@@ -106,10 +110,11 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponentTest do
     test "toggle triggers ON independently", %{conn: conn, product: product} do
       # Start with assistant ON, triggers OFF
       {:ok, product} =
-        Oli.Delivery.Sections.update_section(product, %{assistant_enabled: true})
+        put_section_fields(product, %{assistant_enabled: true})
 
       {:ok, view, _html} =
         live_component_isolated(conn, AiAssistantComponent, %{
+          actor: insert(:author),
           id: "ai-test",
           section: product
         })
@@ -129,13 +134,14 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponentTest do
     test "save prompt persists page_prompt_template to database", %{conn: conn, product: product} do
       # Start with assistant ON and an existing prompt
       {:ok, product} =
-        Oli.Delivery.Sections.update_section(product, %{
+        put_section_fields(product, %{
           assistant_enabled: true,
           page_prompt_template: "You are a helpful tutor."
         })
 
       {:ok, view, _html} =
         live_component_isolated(conn, AiAssistantComponent, %{
+          actor: insert(:author),
           id: "ai-test",
           section: product
         })
@@ -157,6 +163,7 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponentTest do
     test "sends :section_updated to parent on toggle", %{conn: conn, product: product} do
       {:ok, view, _html} =
         live_component_isolated(conn, AiAssistantComponent, %{
+          actor: insert(:author),
           id: "ai-test",
           section: product
         })
@@ -183,6 +190,7 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponentTest do
     test "sends :flash to parent on toggle", %{conn: conn, product: product} do
       {:ok, view, _html} =
         live_component_isolated(conn, AiAssistantComponent, %{
+          actor: insert(:author),
           id: "ai-test",
           section: product
         })
@@ -204,6 +212,32 @@ defmodule OliWeb.Live.Components.Sections.AiAssistantComponentTest do
       view |> form("#ai-test-toggle-assistant", %{}) |> render_change()
 
       assert_received {:flash_received, "AI assistant settings updated successfully"}
+    end
+
+    test "records each setting family as the actor", %{conn: conn, product: product} do
+      actor = insert(:author)
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, AiAssistantComponent, %{
+          actor: actor,
+          id: "ai-test",
+          section: product
+        })
+
+      view |> form("#ai-test-toggle-assistant", %{}) |> render_change()
+
+      event =
+        assert_audited(:dot_settings_changed, section_id: product.id, actor: actor, source: :ui)
+
+      assert {event.entity_type, Map.keys(event.changes)} == {:product, ["assistant_enabled"]}
+
+      view |> form("#ai-test-toggle-triggers", %{}) |> render_change()
+
+      assert_audited(:activation_settings_changed,
+        section_id: product.id,
+        actor: actor,
+        source: :ui
+      )
     end
   end
 end

@@ -13,7 +13,6 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Repo
-  alias Oli.Delivery.Gating
 
   defp isolated_live_view_course_content(conn, section_slug, user_id, preview_mode \\ false) do
     live_isolated(conn, CourseContentLive,
@@ -105,7 +104,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
     test "navigates to next level in hierarchy", %{conn: conn, user: user, section: section} do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           customizations: %{unit: "Volume", module: "Chapter", section: "Lesson"}
         })
 
@@ -291,7 +290,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       ## set a student exception
       student_exception_end_date = ~U[2023-10-29 12:00:00Z]
 
-      Oli.Delivery.create_delivery_setting(%{
+      create_student_exception_fixture(%{
         resource_id: p2.published_resource.resource_id,
         section_id: section.id,
         user_id: user.id,
@@ -517,7 +516,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
       # Updates section to not display item numbering
 
-      Sections.update_section(section, %{
+      put_section_fields(section, %{
         display_curriculum_item_numbering: false
       })
 
@@ -611,7 +610,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
   end
 
   defp create_hard_scheduled_date_for_student(section_id, resource_id, student_id, end_date) do
-    Gating.create_gating_condition(%{
+    create_gating_condition_fixture(%{
       type: :schedule,
       resource_id: resource_id,
       section_id: section_id,

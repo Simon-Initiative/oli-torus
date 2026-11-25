@@ -354,56 +354,56 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       container_revision: container_revision
     } = create_not_scheduled_elixir_project(%{})
 
-    {:ok, section} = Sections.update_section(section, %{title: "The best course ever!"})
+    {:ok, section} = put_section_fields(section, %{title: "The best course ever!"})
 
     # schedule start and end date for unit 1 section_resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-10-31 20:00:00Z],
       end_date: ~U[2023-12-31 20:00:00Z]
     })
 
     # schedule start and end date for module 1 section_resource
     Sections.get_section_resource(section.id, module_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-01 20:00:00Z],
       end_date: ~U[2023-11-15 20:00:00Z]
     })
 
     # schedule start and end date for page 1 to 6 section_resource
     Sections.get_section_resource(section.id, page_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-01 20:00:00Z],
       end_date: ~U[2023-11-02 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-02 20:00:00Z],
       end_date: ~U[2023-11-03 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_3_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-03 20:00:00Z],
       end_date: ~U[2023-11-04 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_4_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-04 20:00:00Z],
       end_date: ~U[2023-11-05 20:00:00Z],
       time_limit: 75
     })
 
     Sections.get_section_resource(section.id, page_5_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-05 20:00:00Z],
       end_date: ~U[2023-11-06 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_6_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       start_date: ~U[2023-11-07 20:00:00Z],
       end_date: ~U[2023-11-08 20:00:00Z]
     })
@@ -909,7 +909,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     test "can access when enrolled to course", %{conn: conn, section: section} do
       stub_current_time(~U[2023-11-04 20:00:00Z])
 
-      Sections.update_section(section, %{
+      put_section_fields(section, %{
         agenda: true
       })
 
@@ -927,7 +927,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       stub_current_time(~U[2023-11-04 20:00:00Z])
 
       Sections.get_section_resource(section.id, page_3.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: nil,
         end_date: ~U[2023-11-04 20:00:00Z],
         scheduling_type: :due_by
@@ -946,7 +946,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       stub_current_time(~U[2024-10-15 20:00:00Z])
 
       {:ok, product} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           type: :blueprint,
           registration_open: true,
           requires_payment: true,
@@ -984,7 +984,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     } do
       stub_current_time(~U[2023-11-04 20:00:00Z])
 
-      Sections.update_section(section, %{
+      put_section_fields(section, %{
         agenda: true
       })
 
@@ -1048,7 +1048,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       encouraging_subtitle = "Unlock Your Potential. Start Learning Today!"
 
-      Sections.update_section(section, %{
+      put_section_fields(section, %{
         welcome_title: welcome_title,
         encouraging_subtitle: encouraging_subtitle,
         agenda: true
@@ -1193,7 +1193,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       publication: publication
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           agenda: true,
           display_curriculum_item_numbering: false
         })
@@ -1510,7 +1510,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       section: section,
       page_1: page_1
     } do
-      Sections.update_section(section, %{
+      put_section_fields(section, %{
         agenda: false
       })
 
@@ -1545,7 +1545,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       # Set page 3 as hidden
       section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+      put_section_resource_fields(section_resource, %{hidden: !section_resource.hidden})
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
@@ -1561,7 +1561,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       page_4: page_4
     } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       stub_current_time(~U[2023-11-03 21:00:00Z])
 
@@ -1690,7 +1690,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       page_5: page_5
     } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       stub_current_time(~U[2023-11-03 00:00:00Z])
 
@@ -2000,7 +2000,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       page_5: page_5
     } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       stub_current_time(~U[2023-11-03 00:00:00Z])
 
@@ -2028,7 +2028,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       page_5: page_5
     } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       stub_current_time(~U[2023-11-03 00:00:00Z])
 
@@ -2090,7 +2090,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       # Set page 3 as hidden
       section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+      put_section_resource_fields(section_resource, %{hidden: !section_resource.hidden})
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
@@ -2129,7 +2129,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       # Set page 3 as hidden
       section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+      put_section_resource_fields(section_resource, %{hidden: !section_resource.hidden})
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
@@ -2258,7 +2258,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
         assessments_apply_to: :all
       )
 
-      Sections.update_section(section, %{
+      put_section_fields(section, %{
         certificate_enabled: true
       })
 
@@ -2294,7 +2294,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
          } do
       stub_current_time(~U[2023-11-03 00:00:00Z])
 
-      Sections.update_section(section, %{
+      put_section_fields(section, %{
         certificate_enabled: false
       })
 
@@ -2331,7 +2331,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
         assessments_apply_to: :all
       )
 
-      Sections.update_section(section, %{
+      put_section_fields(section, %{
         certificate_enabled: true
       })
 
@@ -2369,7 +2369,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
           requires_instructor_approval: true
         )
 
-      Sections.update_section(section, %{
+      put_section_fields(section, %{
         certificate_enabled: true
       })
 

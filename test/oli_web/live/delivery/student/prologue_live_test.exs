@@ -376,14 +376,14 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     if add_schedule? do
       # schedule start and end date for unit 1 section resource
       Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2023-10-31 20:00:00Z],
         end_date: ~U[2023-12-31 20:00:00Z]
       })
 
       # schedule start and end date for page 2 section resource
       Sections.get_section_resource(section.id, page_2_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2023-11-10 20:00:00Z],
         end_date: ~U[2023-11-14 20:00:00Z],
         late_submit: :disallow,
@@ -392,9 +392,10 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     end
 
     # enable collaboration spaces for all pages in the section
-    {_total_page_count, _section_resources} =
-      Oli.Resources.Collaboration.enable_all_page_collab_spaces_for_section(
-        section.slug,
+    {:ok, _total_page_count} =
+      Oli.Delivery.Sections.Audited.set_section_notes(
+        audit_context(),
+        section,
         %Oli.Resources.Collaboration.CollabSpaceConfig{
           status: :enabled,
           threaded: true,
@@ -475,7 +476,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
               data: %{end_datetime: yesterday()}
             })
 
-            Oli.Delivery.Gating.update_resource_gating_index(c.section)
+            update_resource_gating_index_fixture(c.section)
 
           false ->
             :ok
@@ -587,7 +588,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       page_1: page_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -631,7 +632,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       section: section,
       page_1: page_1
     } do
-      Sections.update_section(section, %{brand_id: nil})
+      put_section_fields(section, %{brand_id: nil})
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
@@ -661,7 +662,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       page_1: page_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{open_and_free: false, lti_1p3_deployment_id: nil})
+        put_section_fields(section, %{open_and_free: false, lti_1p3_deployment_id: nil})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -781,7 +782,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{max_attempts: 2})
+      put_section_resource_fields(sr, %{max_attempts: 2})
 
       _first_attempt = create_attempt(user, section, page_3)
 
@@ -818,12 +819,12 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{max_attempts: 3})
+      put_section_resource_fields(sr, %{max_attempts: 3})
 
       _first_attempt = create_attempt(user, section, page_3)
 
       sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{batch_scoring: false})
+      put_section_resource_fields(sr, %{batch_scoring: false})
 
       {:ok, view, _html} =
         live(
@@ -886,7 +887,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
       sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{password: "correct_password"})
+      put_section_resource_fields(sr, %{password: "correct_password"})
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
 
@@ -1066,7 +1067,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       _first_attempt = create_attempt(user, section, page_3)
 
       sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{review_submission: :disallow})
+      put_section_resource_fields(sr, %{review_submission: :disallow})
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
 
@@ -1102,7 +1103,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{max_attempts: 2})
+      put_section_resource_fields(sr, %{max_attempts: 2})
 
       _first_attempt = create_attempt(user, section, page_3)
       _second_attempt = create_attempt(user, section, page_3)
@@ -1140,7 +1141,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       page_2: page_2
     } do
       {:ok, section} =
-        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+        put_section_fields(section, %{display_curriculum_item_numbering: false})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -1160,7 +1161,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       unit_1: unit_1
     } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -1798,7 +1799,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
     defp get_and_update_section_resource(section_id, resource_id, updated_params) do
       Sections.get_section_resource(section_id, resource_id)
-      |> Sections.update_section_resource(updated_params)
+      |> put_section_resource_fields(updated_params)
     end
   end
 
@@ -1837,7 +1838,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
           data: %{start_datetime: yesterday(), end_datetime: tomorrow()}
         })
 
-      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
 
@@ -1862,7 +1863,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
           data: %{end_datetime: yesterday()}
         })
 
-      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+      {:ok, section} = update_resource_gating_index_fixture(section)
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
 

@@ -27,9 +27,12 @@ defmodule Oli.Scenarios.Delivery.SecureDeliverySettingsHooks do
     [assessment] = AssessmentSettings.get_assessments(section, [])
 
     {:ok, _} =
-      AssessmentSettings.update(section, instructor, assessment.resource_id, %{
-        secure_delivery: true
-      })
+      Oli.Delivery.Settings.Audited.update_assessment_settings(
+        Oli.Auditing.Context.for_actor(instructor, source: :scenario),
+        section,
+        assessment.resource_id,
+        %{secure_delivery: true}
+      )
 
     assert {:ok, copy} = Blueprint.duplicate(section, %{type: :enrollable})
     assert Sections.get_section_resource(copy.id, assessment.resource_id).secure_delivery

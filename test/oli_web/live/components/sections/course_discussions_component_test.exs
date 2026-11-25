@@ -56,6 +56,7 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
     test "renders with discussions OFF", %{conn: conn, product: product, root_sr: root_sr} do
       {:ok, view, _html} =
         live_component_isolated(conn, CourseDiscussionsComponent, %{
+          actor: insert(:author),
           id: "disc-test",
           section: product,
           collab_space_config: nil,
@@ -79,10 +80,11 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
       }
 
       {:ok, updated_sr} =
-        Sections.update_section_resource(root_sr, %{collab_space_config: Map.from_struct(config)})
+        put_section_resource_fields(root_sr, %{collab_space_config: Map.from_struct(config)})
 
       {:ok, view, _html} =
         live_component_isolated(conn, CourseDiscussionsComponent, %{
+          actor: insert(:author),
           id: "disc-test",
           section: product,
           collab_space_config: updated_sr.collab_space_config,
@@ -108,6 +110,7 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
     } do
       {:ok, view, _html} =
         live_component_isolated(conn, CourseDiscussionsComponent, %{
+          actor: insert(:author),
           id: "disc-test",
           section: product,
           collab_space_config: nil,
@@ -138,13 +141,14 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
       config = %Oli.Resources.Collaboration.CollabSpaceConfig{status: :enabled}
 
       {:ok, updated_sr} =
-        Sections.update_section_resource(root_sr, %{collab_space_config: Map.from_struct(config)})
+        put_section_resource_fields(root_sr, %{collab_space_config: Map.from_struct(config)})
 
       {:ok, product} =
-        Sections.update_section(product, %{contains_discussions: true})
+        put_section_fields(product, %{contains_discussions: true})
 
       {:ok, view, _html} =
         live_component_isolated(conn, CourseDiscussionsComponent, %{
+          actor: insert(:author),
           id: "disc-test",
           section: product,
           collab_space_config: updated_sr.collab_space_config,
@@ -178,10 +182,11 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
       }
 
       {:ok, updated_sr} =
-        Sections.update_section_resource(root_sr, %{collab_space_config: Map.from_struct(config)})
+        put_section_resource_fields(root_sr, %{collab_space_config: Map.from_struct(config)})
 
       {:ok, view, _html} =
         live_component_isolated(conn, CourseDiscussionsComponent, %{
+          actor: insert(:author),
           id: "disc-test",
           section: product,
           collab_space_config: updated_sr.collab_space_config,
@@ -208,10 +213,11 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
       }
 
       {:ok, updated_sr} =
-        Sections.update_section_resource(root_sr, %{collab_space_config: Map.from_struct(config)})
+        put_section_resource_fields(root_sr, %{collab_space_config: Map.from_struct(config)})
 
       {:ok, view, _html} =
         live_component_isolated(conn, CourseDiscussionsComponent, %{
+          actor: insert(:author),
           id: "disc-test",
           section: product,
           collab_space_config: updated_sr.collab_space_config,
@@ -229,6 +235,7 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
     test "error flash when root_section_resource is nil", %{conn: conn, product: product} do
       {:ok, view, _html} =
         live_component_isolated(conn, CourseDiscussionsComponent, %{
+          actor: insert(:author),
           id: "disc-test",
           section: product,
           collab_space_config: nil,
@@ -258,6 +265,7 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
     } do
       {:ok, view, _html} =
         live_component_isolated(conn, CourseDiscussionsComponent, %{
+          actor: insert(:author),
           id: "disc-test",
           section: product,
           collab_space_config: nil,
@@ -286,6 +294,36 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
 
       assert_received :section_updated_received
       assert_received :config_updated_received
+    end
+
+    test "records the course discussion change as the actor", %{
+      conn: conn,
+      product: product,
+      root_sr: root_sr
+    } do
+      actor = insert(:author)
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, CourseDiscussionsComponent, %{
+          actor: actor,
+          id: "disc-test",
+          section: product,
+          collab_space_config: nil,
+          root_section_resource: root_sr
+        })
+
+      view |> form("#disc-test-toggle-discussions", %{}) |> render_change()
+
+      event =
+        assert_audited(:discussion_settings_changed,
+          section_id: product.id,
+          actor: actor,
+          source: :ui
+        )
+
+      assert event.entity_type == :product
+      assert event.changes["status"]["after"] == "enabled"
+      assert event.changes["contains_discussions"]["after"] == true
     end
   end
 end

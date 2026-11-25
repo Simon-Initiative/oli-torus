@@ -7,6 +7,8 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Details.ImageUpload
   alias OliWeb.Sections.{Instructors, Mount}
@@ -313,6 +315,7 @@ defmodule OliWeb.Sections.OverviewView do
         <%= if @show_required_section_config do %>
           <.live_component
             module={RequiredSurvey}
+            actor={@user}
             project={@section}
             enabled={@section.required_survey_resource_id}
             is_section={true}
@@ -333,6 +336,7 @@ defmodule OliWeb.Sections.OverviewView do
       >
         <.live_component
           module={NotesComponent}
+          actor={@user}
           id={"notes-#{@section.id}"}
           section={@section}
           collab_space_pages_count={@collab_space_pages_count}
@@ -345,6 +349,7 @@ defmodule OliWeb.Sections.OverviewView do
       >
         <.live_component
           module={CourseDiscussionsComponent}
+          actor={@user}
           id={"discussions-#{@section.id}"}
           section={@section}
           collab_space_config={@root_collab_space_config}
@@ -478,6 +483,7 @@ defmodule OliWeb.Sections.OverviewView do
         >
           <.live_component
             module={AiAssistantComponent}
+            actor={@user}
             id={"ai-assistant-#{@section.id}"}
             section={@section}
           />
@@ -508,6 +514,7 @@ defmodule OliWeb.Sections.OverviewView do
         >
           <.live_component
             module={InstructorAiRecommendationsComponent}
+            actor={@user}
             id={"instructor-ai-recommendations-#{@section.id}"}
             section={@section}
           />
@@ -647,18 +654,20 @@ defmodule OliWeb.Sections.OverviewView do
            Sections.has_student_data?(socket.assigns.section.slug) do
         {action_function, action} =
           if socket.assigns.section_has_student_data do
-            {&Sections.update_section(&1, %{status: :archived}), "archived"}
+            {&SectionsAudited.archive_section/2, "archived"}
           else
-            {&Sections.update_section(&1, %{status: :deleted}), "deleted"}
+            {&SectionsAudited.delete_section/2, "deleted"}
           end
 
-        case action_function.(socket.assigns.section) do
+        context = Context.for_actor(socket.assigns.user, source: :ui)
+
+        case action_function.(context, socket.assigns.section) do
           {:ok, _section} ->
             socket
             |> put_flash(:info, "Section successfully #{action}.")
             |> redirect(to: ~p"/sections")
 
-          {:error, %Ecto.Changeset{}} ->
+          {:error, _} ->
             put_flash(
               socket,
               :error,
@@ -679,7 +688,12 @@ defmodule OliWeb.Sections.OverviewView do
   def handle_event("update_image", _, socket) do
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
-    case CoverImageUpload.upload(socket, bucket_name, socket.assigns.section) do
+    case CoverImageUpload.upload(
+           socket,
+           bucket_name,
+           socket.assigns.section,
+           Context.for_actor(socket.assigns.user, source: :ui)
+         ) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Section changes saved")
         {:noreply, assign(socket, section: section, changeset: Section.changeset(section, %{}))}

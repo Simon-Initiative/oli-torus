@@ -25,7 +25,6 @@ project_deleted
 project_collaborator_changed
 project_published
 assessment_settings_changed
-assessment_settings_reset
 assessment_setting_changed
 student_exception_created
 student_exception_updated
@@ -59,10 +58,6 @@ product_created
 product_deleted
 product_archived
 product_settings_changed
-blueprint_created
-blueprint_deleted
-blueprint_archived
-blueprint_settings_changed
 invitation_created
 invitation_accepted
 enrollment_changed
@@ -74,7 +69,6 @@ prerequisite_changed
 curriculum_schedule_changed
 discussion_settings_changed
 notes_settings_changed
-student_support_settings_changed
 payment_settings_changed
 pricing_changed
 discount_changed

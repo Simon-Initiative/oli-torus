@@ -6,6 +6,7 @@ defmodule Oli.SectionsTest do
   import Oli.Utils.Seeder.Utils
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
   alias Lti_1p3.Roles.ContextRoles
@@ -530,17 +531,49 @@ defmodule Oli.SectionsTest do
       assert {:error, %Ecto.Changeset{}} = Sections.create_section(@invalid_title)
     end
 
-    test "update_section/2 with valid data updates the section", %{section: section} do
-      assert {:ok, %Section{} = section} = Sections.update_section(section, @update_attrs)
-      assert section.end_date == ~U[2011-05-18 00:00:00Z]
-      assert section.registration_open == false
-      assert section.start_date == ~U[2011-05-18 00:00:00Z]
-      assert section.title == "some updated title"
+    test "update_section/2 writes system-derived and not yet audited fields", %{
+      section: section
+    } do
+      assert {:ok, %Section{} = section} =
+               Sections.update_section(section, %{
+                 context_id: "some updated context_id",
+                 certificate_enabled: true
+               })
+
+      assert {section.context_id, section.certificate_enabled} ==
+               {"some updated context_id", true}
     end
 
-    test "update_section/2 with long title returns error changeset", %{section: section} do
-      assert {:error, %Ecto.Changeset{} = changeset} =
-               Sections.update_section(section, @invalid_title)
+    test "update_section/2 rejects settings recorded in the Audit Log and LMS-supplied fields",
+         %{section: section} do
+      for attrs <- [
+            @update_attrs,
+            %{"title" => "Through raw params"},
+            %{assistant_enabled: true},
+            %{collab_space_config: %{}},
+            %{grade_passback_enabled: true}
+          ] do
+        assert {:error, :protected} = Sections.update_section(section, attrs)
+      end
+
+      assert_raise ArgumentError, fn -> Sections.update_section!(section, %{title: "Raised"}) end
+      assert Sections.get_section!(section.id).title == section.title
+    end
+
+    test "sync_lti_services/2 writes only the LTI service fields", %{section: section} do
+      assert {:ok, synced} =
+               Sections.sync_lti_services(section, %{
+                 grade_passback_enabled: true,
+                 nrps_enabled: true,
+                 title: "Ignored"
+               })
+
+      assert {synced.grade_passback_enabled, synced.nrps_enabled, synced.title} ==
+               {true, true, section.title}
+    end
+
+    test "settings_changeset/2 with long title returns error changeset", %{section: section} do
+      changeset = Sections.settings_changeset(section, @invalid_title)
 
       {error_message, opts} = changeset.errors[:title]
 
@@ -548,17 +581,16 @@ defmodule Oli.SectionsTest do
       assert opts[:count] == 255
     end
 
-    test "update_section/2 with invalid data returns error changeset", %{section: section} do
-      assert {:error, %Ecto.Changeset{}} = Sections.update_section(section, @invalid_attrs)
-      assert section.id == Sections.get_section!(section.id).id
+    test "settings_changeset/2 with invalid data is invalid", %{section: section} do
+      refute Sections.settings_changeset(section, @invalid_attrs).valid?
     end
 
-    test "update_section/2 persists valid unnumbered_unit_ids" do
+    test "update_section_settings/4 persists valid unnumbered_unit_ids" do
       hierarchy = Seeder.base_project_with_larger_hierarchy()
       section = hierarchy.section
 
       assert {:ok, %Section{} = updated_section} =
-               Sections.update_section(section, %{
+               update_settings(section, %{
                  unnumbered_unit_ids: [hierarchy.unit2_resource.id, hierarchy.unit1_resource.id]
                })
 
@@ -592,11 +624,11 @@ defmodule Oli.SectionsTest do
              ]
     end
 
-    test "update_section/2 rejects unnumbered_unit_ids for non-top-level containers" do
+    test "update_section_settings/4 rejects unnumbered_unit_ids for non-top-level containers" do
       hierarchy = Seeder.base_project_with_larger_hierarchy()
 
       assert {:error, %Ecto.Changeset{} = changeset} =
-               Sections.update_section(hierarchy.section, %{
+               update_settings(hierarchy.section, %{
                  unnumbered_unit_ids: [hierarchy.mod1_resource.id]
                })
 
@@ -604,12 +636,12 @@ defmodule Oli.SectionsTest do
                changeset.errors[:unnumbered_unit_ids]
     end
 
-    test "update_section/2 rejects unnumbered_unit_ids from another course" do
+    test "update_section_settings/4 rejects unnumbered_unit_ids from another course" do
       hierarchy = Seeder.base_project_with_larger_hierarchy()
       other_hierarchy = Seeder.base_project_with_larger_hierarchy()
 
       assert {:error, %Ecto.Changeset{} = changeset} =
-               Sections.update_section(hierarchy.section, %{
+               update_settings(hierarchy.section, %{
                  unnumbered_unit_ids: [other_hierarchy.unit1_resource.id]
                })
 
@@ -626,11 +658,6 @@ defmodule Oli.SectionsTest do
         |> Enum.map(& &1.title)
 
       assert unit_titles == ["Unit 1", "Unit 2"]
-    end
-
-    test "soft_delete_section/1 marks the section as deleted", %{section: section} do
-      assert {:ok, %Section{}} = Sections.soft_delete_section(section)
-      assert Sections.get_section!(section.id).status == :deleted
     end
 
     test "delete_section/1 deletes the section", %{section: section} do
@@ -1213,7 +1240,11 @@ defmodule Oli.SectionsTest do
         Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # apply the new publication update to the section
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        latest_publication.id
+      )
 
       assert Repo.reload(section).section_resource_migration_version ==
                Oli.Delivery.Sections.SectionResourceMigration.current_version()
@@ -1320,7 +1351,11 @@ defmodule Oli.SectionsTest do
       {:ok, page_removed_publication} =
         Oli.TestHelpers.publish_project_fixture(project, "remove page from curriculum", author.id)
 
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, page_removed_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        page_removed_publication.id
+      )
 
       after_removal_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
       assert Enum.map(after_removal_hierarchy.children, & &1.resource_id) == [page1.id, page3.id]
@@ -1363,7 +1398,8 @@ defmodule Oli.SectionsTest do
       {:ok, page_reintroduced_publication} =
         Oli.TestHelpers.publish_project_fixture(project, "restore page to curriculum", author.id)
 
-      Oli.Delivery.Sections.Updates.apply_publication_update(
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
         section,
         page_reintroduced_publication.id
       )
@@ -1407,7 +1443,7 @@ defmodule Oli.SectionsTest do
       {:ok, remix_state} = Remix.init(section, author)
       page1_uuid = Enum.find(remix_state.active.children, &(&1.resource_id == page1.id)).uuid
       {:ok, remix_state} = Remix.remove(remix_state, page1_uuid)
-      {:ok, _section} = Remix.save(remix_state, author)
+      {:ok, _section} = SectionsAudited.save_remix(audit_context(), remix_state, author)
 
       remixed_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
       assert Enum.map(remixed_hierarchy.children, & &1.resource_id) == [page2.id]
@@ -1428,7 +1464,11 @@ defmodule Oli.SectionsTest do
       {:ok, latest_publication} =
         Oli.TestHelpers.publish_project_fixture(project, "add unrelated page", author.id)
 
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        latest_publication.id
+      )
 
       assert Repo.reload(section).section_resource_migration_version ==
                Oli.Delivery.Sections.SectionResourceMigration.current_version()
@@ -1560,7 +1600,11 @@ defmodule Oli.SectionsTest do
       assert latest_publication.minor == 1
 
       # apply the new publication update to the section
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        latest_publication.id
+      )
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -1627,7 +1671,7 @@ defmodule Oli.SectionsTest do
       page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
 
       {:ok, _} =
-        Oli.Delivery.Sections.update_section_resource(page1_sr, %{
+        put_section_resource_fields(page1_sr, %{
           scoring_strategy_id: 2,
           scheduling_type: :due_by,
           manually_scheduled: true,
@@ -1745,7 +1789,11 @@ defmodule Oli.SectionsTest do
         Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # apply the new publication update to the product
-      Oli.Delivery.Sections.Updates.apply_publication_update(product, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        product,
+        latest_publication.id
+      )
 
       # reload latest hierarchy
       product_hierarchy = DeliveryResolver.full_hierarchy(product.slug)
@@ -1772,7 +1820,11 @@ defmodule Oli.SectionsTest do
       assert product_section_resources |> Enum.count() == 3
 
       # apply the new publication update to the section
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        latest_publication.id
+      )
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -1868,7 +1920,7 @@ defmodule Oli.SectionsTest do
         %{product: product} =
         Oli.Utils.Seeder.Project.create_product(%{}, "Product 1", project, product_tag: :product)
 
-      Oli.Delivery.Sections.update_section(product, %{apply_major_updates: true})
+      put_section_fields(product, %{apply_major_updates: true})
 
       %{section: section} =
         Oli.Utils.Seeder.Section.create_section_from_product(
@@ -1889,7 +1941,7 @@ defmodule Oli.SectionsTest do
       page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
 
       {:ok, _} =
-        Oli.Delivery.Sections.update_section_resource(page1_sr, %{
+        put_section_resource_fields(page1_sr, %{
           scoring_strategy_id: 2,
           scheduling_type: :due_by,
           manually_scheduled: true,
@@ -2004,7 +2056,11 @@ defmodule Oli.SectionsTest do
         Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # apply the new publication update to the section
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        latest_publication.id
+      )
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -2115,7 +2171,7 @@ defmodule Oli.SectionsTest do
       page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
 
       {:ok, _} =
-        Oli.Delivery.Sections.update_section_resource(page1_sr, %{
+        put_section_resource_fields(page1_sr, %{
           scoring_strategy_id: 2,
           scheduling_type: :due_by,
           manually_scheduled: true,
@@ -2230,7 +2286,11 @@ defmodule Oli.SectionsTest do
         Oli.TestHelpers.publish_project_fixture(project, "some changes", author.id)
 
       # apply the new publication update to the section
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        latest_publication.id
+      )
 
       # reload latest hierarchy
       section_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -2760,5 +2820,14 @@ defmodule Oli.SectionsTest do
     test "returns false if roles list is empty" do
       assert Oli.Delivery.Sections.contains_instructor_role?([]) == false
     end
+  end
+
+  defp update_settings(section, attrs) do
+    Oli.Delivery.Sections.Audited.update_section_settings(
+      audit_context(),
+      section,
+      attrs,
+      Map.keys(attrs)
+    )
   end
 end

@@ -3,7 +3,8 @@ defmodule Oli.Delivery.Remix do
   Remix domain module that owns non-UI business logic and state transitions.
 
   - Auth-agnostic: callers must pass authorized inputs (section + actor).
-  - Exposes pure functions for state evolution and a single `save/1` to persist.
+  - Exposes pure functions for state evolution; `Oli.Delivery.Sections.Audited.save_remix/3`
+    persists them.
   - LiveView delegates to this module for Remix behavior.
 
   References:
@@ -23,7 +24,6 @@ defmodule Oli.Delivery.Remix do
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Groups.{Community, CommunityVisibility}
-  alias Oli.Lti.PlatformExternalTools
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Publishing.DeliveryResolver
@@ -983,7 +983,7 @@ defmodule Oli.Delivery.Remix do
   Create a new container in the active node's children.
 
   Builds an in-memory draft HierarchyNode with a deterministic negative resource_id.
-  No database writes occur — the draft is materialized to real records during save/2.
+  No database writes occur — the draft is materialized to real records when the remix is saved.
 
   Returns updated %State{} with the new container in the hierarchy.
   """
@@ -1012,7 +1012,7 @@ defmodule Oli.Delivery.Remix do
 
   @doc """
   Update editable blueprint-container fields in the in-memory hierarchy.
-  Persistence happens during save/2.
+  Persistence happens when the remix is saved.
   """
   @spec update_container_options(State.t(), String.t(), map()) ::
           {:ok, State.t()} | {:error, term()}
@@ -1040,59 +1040,13 @@ defmodule Oli.Delivery.Remix do
     end
   end
 
-  @doc """
-  Persist the current hierarchy and pinned publications for the section.
-  Materializes any draft containers (negative resource_id) before rebuilding.
-  Inherits missing tool selections (resource configurations chosen within external
-  tools, including their URL, custom parameters and optional title/description)
-  for retained added pages from their chosen sources, in the same transaction as
-  the curriculum and publication mappings.
-  The author parameter identifies who is performing the save (used for revision authorship).
-  Returns `{:ok, %Section{}}` or `{:error, reason}`.
-  """
-  @spec save(State.t(), Author.t() | nil) :: {:ok, Section.t()} | {:error, term()}
-  def save(%State{} = state, author \\ nil) do
-    %Section{base_project: base_project} = section = Repo.preload(state.section, :base_project)
-
-    Repo.transaction(fn ->
-      with {:ok, hierarchy} <-
-             ContainerCreation.materialize(state.hierarchy, base_project, author),
-           {:ok, hierarchy} <-
-             persist_blueprint_container_edits(
-               hierarchy,
-               state.previous_hierarchy,
-               section,
-               base_project,
-               author
-             ),
-           {:ok, _} <-
-             rebuild_section_curriculum(
-               section,
-               Hierarchy.finalize(hierarchy),
-               state.pinned_project_publications
-             ),
-           {:ok, _} <-
-             PlatformExternalTools.initialize_remixed_deep_links(
-               section.id,
-               remixed_activity_sources(hierarchy, state.material_sources)
-             ) do
-        section.id
-      else
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
-    end)
-    |> case do
-      {:ok, section_id} -> {:ok, Sections.get_section!(section_id)}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  # Groups activity IDs referenced by retained added pages by their recorded origin.
+  @doc false
+  # Groups activity IDs referenced by retained added pages by their recorded origin, for the
+  # save of `Oli.Delivery.Sections.Audited.save_remix/3`.
   # Uses the same first-occurrence hierarchy deduplication as curriculum rebuilding,
   # ignoring removed nodes, existing pages and non-page content. Shared activities
   # keep their first recorded origin so initialization can run in bulk per source.
-  defp remixed_activity_sources(hierarchy, material_sources) do
+  def remixed_activity_sources(hierarchy, material_sources) do
     page_type = Oli.Resources.ResourceType.id_for_page()
 
     hierarchy
@@ -1120,13 +1074,17 @@ defmodule Oli.Delivery.Remix do
 
   defp container_revision?(_), do: false
 
-  defp persist_blueprint_container_edits(
-         %HierarchyNode{} = hierarchy,
-         %HierarchyNode{} = previous_hierarchy,
-         %Section{} = _section,
-         base_project,
-         %Author{id: author_id}
-       ) do
+  @doc false
+  # Writes the title and intro edits of template containers as new revisions in the base
+  # project, for the save of `Oli.Delivery.Sections.Audited.save_remix/3`. Requires an author
+  # when there are edits.
+  def persist_blueprint_container_edits(
+        %HierarchyNode{} = hierarchy,
+        %HierarchyNode{} = previous_hierarchy,
+        %Section{} = _section,
+        base_project,
+        %Author{id: author_id}
+      ) do
     previous_by_resource_id =
       previous_hierarchy
       |> Hierarchy.flatten_hierarchy()
@@ -1178,13 +1136,13 @@ defmodule Oli.Delivery.Remix do
     end
   end
 
-  defp persist_blueprint_container_edits(
-         %HierarchyNode{} = hierarchy,
-         %HierarchyNode{} = previous_hierarchy,
-         _section,
-         _base_project,
-         nil
-       ) do
+  def persist_blueprint_container_edits(
+        %HierarchyNode{} = hierarchy,
+        %HierarchyNode{} = previous_hierarchy,
+        _section,
+        _base_project,
+        nil
+      ) do
     previous_by_resource_id =
       previous_hierarchy
       |> Hierarchy.flatten_hierarchy()
@@ -1264,19 +1222,5 @@ defmodule Oli.Delivery.Remix do
         :graded
       ])
     )
-  end
-
-  defp rebuild_section_curriculum(
-         %Section{} = section,
-         %HierarchyNode{} = hierarchy,
-         pinned_project_publications
-       ) do
-    case Sections.rebuild_section_curriculum(section, hierarchy, pinned_project_publications) do
-      {:ok, _} = ok ->
-        ok
-
-      {:error, _operation, reason, _changes} ->
-        {:error, reason}
-    end
   end
 end

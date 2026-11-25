@@ -391,7 +391,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       section: section
     } do
       {:ok, updated_section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_payment: true,
           amount: Money.new(1000, "USD")
         })

@@ -7,7 +7,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
   alias Oli.Delivery.TemplatePreview
-  alias Oli.Delivery.Sections.{Blueprint, Section}
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.Inventories
   alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
   alias OliWeb.Common.Confirm
@@ -268,6 +270,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         <div class="md:col-span-8">
           <.live_component
             module={AiAssistantComponent}
+            actor={@author}
             id={"ai-assistant-#{@product.id}"}
             section={@product}
           />
@@ -284,6 +287,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         <div class="md:col-span-8">
           <.live_component
             module={NotesComponent}
+            actor={@author}
             id={"notes-#{@product.id}"}
             section={@product}
             collab_space_pages_count={@collab_space_pages_count}
@@ -302,6 +306,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         <div class="md:col-span-8">
           <.live_component
             module={CourseDiscussionsComponent}
+            actor={@author}
             id={"discussions-#{@product.id}"}
             section={@product}
             collab_space_config={@root_collab_space_config}
@@ -321,6 +326,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
           <%= if @show_required_section_config do %>
             <.live_component
               module={RequiredSurvey}
+              actor={@author}
               project={@product}
               enabled={@product.required_survey_resource_id}
               is_section={true}
@@ -455,7 +461,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   end
 
   def handle_event("duplicate", _, socket) do
-    case Blueprint.duplicate(socket.assigns.product) do
+    case SectionsAudited.duplicate_product(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           socket.assigns.product
+         ) do
       {:ok, duplicate} ->
         {:noreply,
          redirect(socket,
@@ -476,7 +485,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
       |> filter_paywall_params(socket.assigns.is_admin)
       |> decode_welcome_title()
 
-    case Sections.update_section(socket.assigns.product, params) do
+    case SectionsAudited.update_section_settings(
+           Context.for_actor(socket.assigns.current_author, source: :ui),
+           socket.assigns.product,
+           params,
+           Edit.form_fields(socket.assigns.is_admin)
+         ) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Template changes saved")
 
@@ -485,6 +499,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
       {:error, %Ecto.Changeset{} = changeset} ->
         socket = put_flash(socket, :error, "Couldn't update template title")
         {:noreply, assign(socket, changeset: changeset)}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Couldn't update template")
+         |> assign(changeset: Section.changeset(socket.assigns.product, %{}))}
     end
   end
 
@@ -495,7 +515,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   def handle_event("update_image", _, socket) do
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
-    case CoverImageUpload.upload(socket, bucket_name, socket.assigns.product) do
+    case CoverImageUpload.upload(
+           socket,
+           bucket_name,
+           socket.assigns.product,
+           Context.for_actor(socket.assigns.current_author, source: :ui)
+         ) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Template changes saved")
         {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
@@ -602,9 +627,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   defp decode_welcome_title(%{"welcome_title" => wt} = project_params) when wt in [nil, ""],
     do: project_params
 
-  defp decode_welcome_title(project_params) do
-    Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
-  end
+  # A form without the welcome title (such as the content options) leaves it unchanged.
+  defp decode_welcome_title(%{"welcome_title" => welcome_title} = project_params)
+       when is_binary(welcome_title),
+       do: %{project_params | "welcome_title" => Poison.decode!(welcome_title)}
+
+  defp decode_welcome_title(project_params), do: project_params
 
   defp preview_error_message(:missing_delivery_identity) do
     "Preview requires an available delivery identity"

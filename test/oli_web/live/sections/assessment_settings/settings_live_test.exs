@@ -4,7 +4,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
   import Phoenix.LiveViewTest
   import Oli.Factory
-  import Ecto.Query, only: [from: 2]
 
   alias Oli.Delivery.{Settings, Sections}
   alias Oli.Delivery
@@ -375,14 +374,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     ])
 
     Sections.get_section_resource(section.id, page_4_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       scheduling_type: :due_by,
       start_date: ~U[2024-12-18 20:00:00Z],
       end_date: ~U[2024-12-25 20:00:00Z]
     })
 
     Sections.get_section_resource(section.id, page_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
+    |> put_section_resource_fields(%{
       scheduling_type: :due_by,
       start_date: ~U[2024-12-20 20:00:00Z],
       end_date: ~U[2024-12-22 20:00:00Z]
@@ -848,9 +847,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       Application.put_env(:oli, :supports_secure_delivery, true)
       # A policy established through the domain API is not copied by bulk apply.
       assert {:ok, _} =
-               Settings.AssessmentSettings.update(section, user, page.resource_id, %{
-                 secure_delivery: true
-               })
+               Oli.Delivery.Settings.Audited.update_assessment_settings(
+                 Oli.Auditing.Context.for_actor(user, source: :ui),
+                 section,
+                 page.resource_id,
+                 %{secure_delivery: true}
+               )
 
       {:ok, view, _} = live(conn, route)
 
@@ -865,13 +867,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert Sections.get_section_resource(section.id, page.resource_id).secure_delivery
       refute Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
 
-      refute Repo.exists?(
-               from change in Settings.SettingsChanges,
-                 where:
-                   change.section_id == ^section.id and
-                     change.resource_id == ^other_page.resource_id and
-                     change.key == "secure_delivery"
-             )
+      refute :assessment_settings_changed
+             |> audit_events(resource_id: other_page.resource_id)
+             |> Enum.any?(&Map.has_key?(&1.changes, "secure_delivery"))
     end
 
     test "secure column follows runtime capability and edits persist", %{
@@ -932,13 +930,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       refute Sections.get_section_resource(section.id, other_page.resource_id).secure_delivery
 
-      refute Repo.exists?(
-               from change in Settings.SettingsChanges,
-                 where:
-                   change.section_id == ^section.id and
-                     change.resource_id == ^other_page.resource_id and
-                     change.key == "secure_delivery"
-             )
+      refute :assessment_settings_changed
+             |> audit_events(resource_id: other_page.resource_id)
+             |> Enum.any?(&Map.has_key?(&1.changes, "secure_delivery"))
 
       # Bulk apply redirects, so mount the destination before testing a stale control.
       {:ok, view, _} = live(conn, route)
@@ -1023,7 +1017,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
            unit_1: unit_1
          } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
@@ -1050,7 +1044,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       # set a password to page 1
       page_1_section_resource = Sections.get_section_resource(section.id, page_1.resource_id)
 
-      Sections.update_section_resource(page_1_section_resource, %{
+      put_section_resource_fields(page_1_section_resource, %{
         password: "a_very_strong_password!"
       })
 
@@ -1114,7 +1108,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       section_resource = Sections.get_section_resource(section.id, page_1.resource_id)
 
-      Sections.update_section_resource(section_resource, %{
+      put_section_resource_fields(section_resource, %{
         batch_scoring: false,
         replacement_strategy: :dynamic,
         retake_mode: :targeted,
@@ -1427,7 +1421,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       # Reset start and end dates for all assessments
       for page <- [page_1, page_2, page_3, page_4] do
         Sections.get_section_resource(section.id, page.resource.id)
-        |> Sections.update_section_resource(%{
+        |> put_section_resource_fields(%{
           start_date: nil,
           end_date: nil
         })
@@ -1550,7 +1544,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       for page <- [page_1, page_2, page_4] do
         section.id
         |> Sections.get_section_resource(page.resource.id)
-        |> Sections.update_section_resource(%{
+        |> put_section_resource_fields(%{
           batch_scoring: false,
           replacement_strategy: :none,
           allow_hints: false
@@ -1559,7 +1553,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       section.id
       |> Sections.get_section_resource(page_3.resource.id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         batch_scoring: true,
         replacement_strategy: :dynamic,
         allow_hints: true
@@ -1634,7 +1628,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     } do
       section.id
       |> Sections.get_section_resource(page_1.resource.id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         batch_scoring: false,
         replacement_strategy: :none,
         allow_hints: false
@@ -1642,7 +1636,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       section.id
       |> Sections.get_section_resource(page_3.resource.id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         batch_scoring: true,
         replacement_strategy: :dynamic,
         allow_hints: true
@@ -2274,6 +2268,40 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert updated_form_id != form_id
     end
 
+    test "a scheduled date that cannot be recorded closes the modal and keeps the saved mode",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["feedback_mode-#{page_1.resource.id}"],
+        "feedback_mode-#{page_1.resource.id}" => "scheduled"
+      })
+
+      reject_audit_inserts()
+
+      ExUnit.CaptureLog.capture_log(fn ->
+        view
+        |> form(~s{form[phx-submit=submit_scheduled_date]})
+        |> render_submit(%{
+          "section_resource" => %{"feedback_scheduled_date" => "2023-05-29T21:50"}
+        })
+      end)
+
+      refute has_element?(view, ~s{form[phx-submit=submit_scheduled_date]})
+
+      page_1_assessment_settings =
+        get_assessments(section.slug, [])
+        |> Enum.find(&(&1.resource_id == page_1.resource.id))
+
+      assert page_1_assessment_settings.feedback_mode == :allow
+    end
+
     test "feedback_mode value is not set to :scheduled when the modal is cancelled and the modal closes",
          %{
            conn: conn,
@@ -2357,7 +2385,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
            page_1: page_1
          } do
       Sections.get_section_resource(section.id, page_1.resource.id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2023-10-10 16:00:00Z],
         end_date: ~U[2023-10-11 17:00:00Z],
         scheduling_type: :due_by
@@ -2401,7 +2429,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       end_date = ~U[2023-10-11 17:00:00Z]
 
       Sections.get_section_resource(section.id, page_1.resource.id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: nil,
         end_date: end_date,
         scheduling_type: :due_by
@@ -2440,12 +2468,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
            page_2: page_2
          } do
       Sections.get_section_resource(section.id, page_1.resource.id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2023-10-10 16:00:00Z]
       })
 
       Sections.get_section_resource(section.id, page_2.resource.id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: nil
       })
 
@@ -2499,7 +2527,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
            page_1: page_1
          } do
       Sections.get_section_resource(section.id, page_1.resource.id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: ~U[2023-10-10 16:00:00Z],
         end_date: ~U[2023-10-11 17:00:00Z],
         scheduling_type: :due_by
@@ -2543,7 +2571,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       start_date = ~U[2023-10-11 17:00:00Z]
 
       Sections.get_section_resource(section.id, page_1.resource.id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         start_date: start_date,
         end_date: nil,
         scheduling_type: :due_by
@@ -2582,13 +2610,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
            page_2: page_2
          } do
       Sections.get_section_resource(section.id, page_1.resource.id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         end_date: ~U[2023-10-10 16:00:00Z],
         scheduling_type: :due_by
       })
 
       Sections.get_section_resource(section.id, page_2.resource.id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         end_date: ~U[2023-10-10 16:00:00Z],
         scheduling_type: :read_by
       })
@@ -2604,13 +2632,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
     test "changing an assessment setting persists that action in the database", %{
       conn: conn,
+      user: user,
       section: section,
       page_1: page_1
     } do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
-      ## Checks that there is no setting change for late_submit
-      assert Settings.fetch_all_settings_changes() == []
+      assert audit_events(:assessment_settings_changed, section_id: section.id) == []
 
       ## Changes the late_submit setting to disallow
       view
@@ -2620,8 +2648,15 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         "late_submit-#{page_1.resource.id}" => "disallow"
       })
 
-      ## Checks that there is a setting change for late_submit
-      assert Settings.fetch_all_settings_changes() |> hd |> Map.get(:new_value) == "disallow"
+      event =
+        assert_audited(:assessment_settings_changed,
+          section_id: section.id,
+          resource_id: page_1.resource.id,
+          actor: user,
+          source: :ui
+        )
+
+      assert event.changes["late_submit"]["after"] == "disallow"
 
       ## Changes the late_submit setting back to allow
       view
@@ -2631,37 +2666,39 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         "late_submit-#{page_1.resource.id}" => "allow"
       })
 
-      ## Checks that now there are 2 setting changes for late_submit (one for disallow and one for allow)
-      assert Settings.fetch_all_settings_changes()
-             |> length() == 2
+      assert [_disallow, allow] =
+               audit_events(:assessment_settings_changed, resource_id: page_1.resource.id)
 
-      ## Checks that the last setting change for late_submit is allow
-      assert Settings.fetch_all_settings_changes()
-             |> Enum.sort_by(& &1.id, :desc)
-             |> hd
-             |> Map.get(:new_value) == "allow"
+      assert allow.changes["late_submit"] == %{
+               "operation" => "set",
+               "before" => "disallow",
+               "after" => "allow"
+             }
     end
 
     test "bulk apply settings persist all changes in the database", ctx do
-      %{conn: conn, section: section, page_1: page_1, page_2: page_2, page_3: page_3} = ctx
+      %{
+        conn: conn,
+        user: user,
+        section: section,
+        page_1: page_1,
+        page_2: page_2,
+        page_3: page_3,
+        page_4: page_4
+      } = ctx
+
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
-      ## Checks that there is no setting change for password
-      assert Settings.fetch_all_settings_changes() == []
+      assert audit_events(:assessment_settings_changed, section_id: section.id) == []
 
       # we change page 3 password setting to "asdf"
       set_password(view, page_3.resource_id, "asdf")
 
-      changes = Settings.fetch_all_settings_changes()
-      change_for_page_3 = hd(changes)
-      assert length(changes) == 1
-      assert change_for_page_3.resource_id == page_3.resource.id
-      assert change_for_page_3.key == "password"
-      assert change_for_page_3.new_value == "asdf"
-      assert change_for_page_3.old_value == nil
+      change_for_page_3 =
+        assert_audited(:assessment_settings_changed, resource_id: page_3.resource.id)
 
-      refute change_for_page_3.resource_id == page_1.resource.id
-      refute change_for_page_3.resource_id == page_2.resource.id
+      # The password is recorded only as a redaction marker
+      assert change_for_page_3.changes == %{"password" => Oli.Auditing.Changes.secret_record()}
 
       # and bulk apply that change to all other assessments
       view
@@ -2672,11 +2709,19 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> form(~s{form[phx-submit=confirm_bulk_apply]})
       |> render_submit(%{})
 
-      changes = Settings.fetch_all_settings_changes()
+      # One event per assessment that changed, each recording the copied password as redacted
+      for page <- [page_1, page_2, page_4] do
+        event =
+          assert_audited(:assessment_settings_changed,
+            resource_id: page.resource.id,
+            actor: user,
+            source: :ui
+          )
 
-      ## Since we did a bulk apply and previously changed a setting for page 3, we should have 43 changes in our settings changes table.
-      ## That is, 14 changes for each of the remaining resources (Page 1, Page 2, Page 4) and 1 done above.
-      assert length(changes) == 43
+        assert event.changes["password"] == Oli.Auditing.Changes.secret_record()
+      end
+
+      assert length(audit_events(:assessment_settings_changed, section_id: section.id)) == 4
     end
 
     test "bulk apply dropdown displays assessments sorted by numbering_index", %{
@@ -2729,8 +2774,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     } do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
-      ## Checks that there is no setting change for allow_hints
-      assert Settings.fetch_all_settings_changes() == []
+      assert audit_events(:assessment_settings_changed, section_id: section.id) == []
 
       ## Changes the allow_hints setting to allow
       view
@@ -2740,9 +2784,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         "allow_hints-#{page_1.resource.id}" => true
       })
 
-      ## Checks that there is a setting change for allow_hints
-      assert Settings.fetch_all_settings_changes() |> hd |> Map.get(:new_value) == "true"
-
       ## Changes the allow_hints setting back to disallow
       view
       |> form(~s{form[for="settings_table"]})
@@ -2751,14 +2792,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         "allow_hints-#{page_1.resource.id}" => false
       })
 
-      ## Checks that now there are 2 setting changes for allow_hints (one for disallow and one for allow)
-      assert Settings.fetch_all_settings_changes() |> length() == 2
+      assert [allowed, disallowed] =
+               audit_events(:assessment_settings_changed, resource_id: page_1.resource.id)
 
-      ## Checks that the last setting change for allow_hints is disallow
-      assert Settings.fetch_all_settings_changes()
-             |> Enum.sort_by(& &1.id, :desc)
-             |> hd
-             |> Map.get(:new_value) == "false"
+      assert allowed.changes["allow_hints"]["after"] == true
+      assert disallowed.changes["allow_hints"]["after"] == false
     end
   end
 
@@ -2820,7 +2858,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
            unit_1: unit_1
          } do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
 
       {:ok, view, _html} =
         live(conn, live_view_overview_route(section.slug, "student_exceptions", "all"))
@@ -2857,6 +2895,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
     test "a student exception can be removed", %{
       conn: conn,
+      user: user,
       section: section,
       page_1: page_1,
       student_1: student_1
@@ -2911,6 +2950,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                "#flash[role='alert']",
                "Student Exception/s removed!"
              )
+
+      assert_audited(:student_exception_deleted,
+        section_id: section.id,
+        resource_id: page_1.resource.id,
+        affected_user_id: student_1.id,
+        actor: user,
+        source: :ui
+      )
 
       assert table_as_list_of_maps(view, :student_exceptions) == []
       assert render(view) =~ "None exist"
@@ -2975,6 +3022,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     test "a student exception can be added",
          %{
            conn: conn,
+           user: user,
            section: section,
            page_1: page_1,
            student_1: student_1
@@ -3010,6 +3058,18 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert [se_1] = table_as_list_of_maps(view, :student_exceptions)
       assert se_1.student =~ Utils.name_and_email(student_1)
       refute render(view) =~ "None exist"
+
+      # An exception created without overrides is recorded with no field changes
+      event =
+        assert_audited(:student_exception_created,
+          section_id: section.id,
+          resource_id: page_1.resource.id,
+          affected_user_id: student_1.id,
+          actor: user,
+          source: :ui
+        )
+
+      assert event.changes == %{}
     end
 
     test "malformed student id does not crash when adding a student exception",
@@ -3113,6 +3173,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     test "a student exception value can be set",
          %{
            conn: conn,
+           user: user,
            section: section,
            page_1: page_1,
            student_1: student_1
@@ -3144,6 +3205,16 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert updated_student_exception_1.scoring_strategy_id == "Best"
       assert student_exception_1.student == updated_student_exception_1.student
+
+      event =
+        assert_audited(:student_exception_updated,
+          section_id: section.id,
+          affected_user_id: student_1.id,
+          actor: user,
+          source: :ui
+        )
+
+      assert event.changes["scoring_strategy_id"]["after"] == 2
     end
 
     test "the current exceptions count works correctly",
@@ -3319,7 +3390,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         resource_id: page_1.resource.id,
         user_id: student_1.id
       })
-      |> Delivery.update_delivery_setting(%{
+      |> put_student_exception_fields(%{
         start_date: ~U[2023-10-10 16:00:00Z],
         end_date: ~U[2023-10-11 17:00:00Z],
         scheduling_type: :due_by
@@ -3376,7 +3447,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         resource_id: page_1.resource.id,
         user_id: student_1.id
       })
-      |> Delivery.update_delivery_setting(%{
+      |> put_student_exception_fields(%{
         start_date: nil,
         end_date: end_date,
         scheduling_type: :due_by
@@ -3426,7 +3497,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         resource_id: page_1.resource.id,
         user_id: student_1.id
       })
-      |> Delivery.update_delivery_setting(%{
+      |> put_student_exception_fields(%{
         start_date: ~U[2023-10-10 16:00:00Z]
       })
 
@@ -3506,7 +3577,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         resource_id: page_1.resource.id,
         user_id: student_1.id
       })
-      |> Delivery.update_delivery_setting(%{
+      |> put_student_exception_fields(%{
         start_date: ~U[2023-10-10 16:00:00Z],
         end_date: ~U[2023-10-11 17:00:00Z],
         scheduling_type: :due_by
@@ -3563,7 +3634,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         resource_id: page_1.resource.id,
         user_id: student_1.id
       })
-      |> Delivery.update_delivery_setting(%{
+      |> put_student_exception_fields(%{
         start_date: start_date,
         end_date: nil,
         scheduling_type: :due_by

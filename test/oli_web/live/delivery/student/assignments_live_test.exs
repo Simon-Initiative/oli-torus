@@ -153,21 +153,21 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
 
     if add_schedule? do
       Sections.get_section_resource(section.id, page_1_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         scheduling_type: :due_by,
         start_date: ~U[2023-11-02 20:00:00Z],
         end_date: ~U[2023-11-03 20:00:00Z]
       })
 
       Sections.get_section_resource(section.id, page_2_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         scheduling_type: :due_by,
         start_date: ~U[2023-11-04 20:00:00Z],
         end_date: ~U[2023-11-05 20:00:00Z]
       })
 
       Sections.get_section_resource(section.id, page_3_revision.resource_id)
-      |> Sections.update_section_resource(%{
+      |> put_section_resource_fields(%{
         scheduling_type: :due_by,
         start_date: ~U[2023-11-06 20:00:00Z],
         end_date: ~U[2023-11-07 20:00:00Z]
@@ -369,7 +369,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
 
     test "can not access when not enrolled to course", %{conn: conn, section: section} do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 

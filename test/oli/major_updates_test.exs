@@ -161,7 +161,11 @@ defmodule Oli.MajorUpdatesTest do
 
       # APPLY THE MAJOR UPDATE: This is where the bug should manifest
       # The apply_publication_update should preserve the remixed source container, but the bug causes it to be removed
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, major_publication.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        major_publication.id
+      )
 
       # VERIFY THE BUG: Check if the remixed container was incorrectly removed
       final_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -249,7 +253,11 @@ defmodule Oli.MajorUpdatesTest do
         )
 
       # STEP 3: Apply source update → new activity gets children: nil (the bug trigger)
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, source_update_pub.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        source_update_pub.id
+      )
 
       new_activity_sr =
         Repo.get_by(Oli.Delivery.Sections.SectionResource,
@@ -300,7 +308,11 @@ defmodule Oli.MajorUpdatesTest do
         )
 
       # STEP 5: Apply base project major update → crashes without fix, succeeds with fix
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, dest_major_pub.id)
+      Oli.Delivery.Sections.Audited.apply_publication_update(
+        audit_context(),
+        section,
+        dest_major_pub.id
+      )
 
       # Verify remixed content is preserved
       final_hierarchy = DeliveryResolver.full_hierarchy(section.slug)

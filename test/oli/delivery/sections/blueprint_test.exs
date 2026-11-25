@@ -63,7 +63,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       # Update page's section_resource
       {:ok, sr_page_blueprint} =
         get_section_resource_by_resource(page_resource)
-        |> Oli.Delivery.Sections.update_section_resource(@updates)
+        |> put_section_resource_fields(@updates)
 
       section_params =
         Map.merge(Map.take(blueprint, @keys_to_take), %{type: :enrollable, open_and_free: true})
@@ -200,7 +200,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
           resource_id: page.id
         )
 
-      {:ok, _} = Sections.update_section_resource(source_page, %{delivery_policy_id: policy.id})
+      {:ok, _} = put_section_resource_fields(source_page, %{delivery_policy_id: policy.id})
       {:ok, duplicate} = Blueprint.duplicate(product)
 
       copied_page =
@@ -272,7 +272,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
     test "duplicates top-level gates but not student exceptions",
          %{product: product, page1: page1} do
       {:ok, gate} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           section_id: product.id,
           resource_id: page1.id,
@@ -286,7 +286,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       user = insert(:user)
 
       {:ok, _exception} =
-        Gating.create_gating_condition(%{
+        create_gating_condition_fixture(%{
           type: :schedule,
           section_id: product.id,
           resource_id: page1.id,
@@ -334,7 +334,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
     test "the duplicate is independent of later source edits", %{product: product} do
       {:ok, duplicate} = Blueprint.duplicate(product)
 
-      {:ok, _} = Sections.update_section(product, %{title: "Renamed Product"})
+      {:ok, _} = put_section_fields(product, %{title: "Renamed Product"})
 
       assert Repo.get(Oli.Delivery.Sections.Section, duplicate.id).title != "Renamed Product"
     end

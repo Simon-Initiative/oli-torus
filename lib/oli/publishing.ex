@@ -1045,7 +1045,17 @@ defmodule Oli.Publishing do
     end
   end
 
+  @doc """
+  Enqueues one job per section and product eligible for the update from
+  `previous_publication` to `new_publication` of `project`, each applying the update through
+  `Oli.Delivery.Sections.Audited.apply_publication_update/3` as the actor of `context` (the
+  publishing author), linked to `context`'s operation.
+
+  Options:
+    * `:constrain_to_latest` - only sections on `previous_publication` (default `true`)
+  """
   def push_publication_update_to_sections(
+        %Oli.Auditing.Context{} = context,
         project,
         previous_publication,
         new_publication,
@@ -1068,10 +1078,8 @@ defmodule Oli.Publishing do
 
       # spawn oban jobs for every section (and product) to execute a course update
       Enum.each(products_and_sections, fn %{section: section} ->
-        %{
-          "section_slug" => section.slug,
-          "publication_id" => new_publication.id
-        }
+        section.slug
+        |> Updates.Worker.args(new_publication.id, context)
         |> Updates.Worker.new()
         |> Oban.insert!()
       end)

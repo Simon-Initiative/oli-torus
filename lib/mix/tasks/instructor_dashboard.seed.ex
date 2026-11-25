@@ -92,10 +92,11 @@ defmodule Mix.Tasks.InstructorDashboard.Seed do
   defp seed_dashboard_fixture(opts) do
     course = build_seed_course()
 
+    # Seed data is not recorded in the Audit Log.
     section =
-      Sections.update_section!(course.section_2, %{
-        title: "Intelligent Dashboard Seed Section"
-      })
+      course.section_2
+      |> Sections.settings_changeset(%{title: "Intelligent Dashboard Seed Section"})
+      |> Repo.update!()
 
     Sections.rebuild_contained_pages(section)
     Sections.rebuild_contained_objectives(section)
@@ -208,15 +209,15 @@ defmodule Mix.Tasks.InstructorDashboard.Seed do
     |> Repo.all()
     |> Enum.with_index(1)
     |> Enum.map(fn {section_resource, index} ->
-      {:ok, updated} =
-        Sections.update_section_resource(section_resource, %{
-          graded: true,
-          title: "Seeded Assessment #{index}",
-          start_date: DateTime.add(DateTime.utc_now(), -14 * 86_400, :second),
-          end_date: DateTime.add(DateTime.utc_now(), index * 86_400, :second)
-        })
-
-      updated
+      # Seed data is not recorded in the Audit Log.
+      section_resource
+      |> SectionResource.changeset(%{
+        graded: true,
+        title: "Seeded Assessment #{index}",
+        start_date: DateTime.add(DateTime.utc_now(), -14 * 86_400, :second),
+        end_date: DateTime.add(DateTime.utc_now(), index * 86_400, :second)
+      })
+      |> Repo.update!()
     end)
   end
 

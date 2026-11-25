@@ -8,7 +8,7 @@ defmodule Oli.Delivery.Remix.State do
   ## Material sources
 
   `material_sources` records where newly added hierarchy nodes came from so
-  `Remix.save/2` can inherit their activities' Deep Link selections (the resource
+  the saved remix can inherit their activities' Deep Link selections (the resource
   configuration chosen within the external tool, including its URL, custom
   parameters and optional title/description). Each entry maps a node's ephemeral
   UUID to either `{:publication, publication_id}` for

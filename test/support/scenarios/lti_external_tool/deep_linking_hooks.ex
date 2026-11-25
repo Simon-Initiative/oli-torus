@@ -11,7 +11,6 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
   import ExUnit.Assertions
 
   alias Oli.Authoring.Locks
-  alias Oli.Delivery
   alias Oli.Delivery.SectionCreationRequest
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionSpecification
@@ -135,7 +134,7 @@ defmodule Oli.Scenarios.LtiExternalTool.DeepLinkingHooks do
   @doc "Creates a course with the same public command used by the creation wizard."
   def create_section(state, name, publication) do
     assert {:ok, request} = request(state, name, publication)
-    assert {:ok, id, _slug} = Delivery.create_section(request)
+    assert {:ok, id, _slug} = Oli.TestHelpers.create_section_from_request(request)
     Engine.put_section(state, name, Sections.get_section!(id))
   end
 

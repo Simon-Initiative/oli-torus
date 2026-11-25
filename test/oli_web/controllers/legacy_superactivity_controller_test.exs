@@ -691,7 +691,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       map: map
     } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      {:ok, section} = Sections.update_section(section, %{grade_passback_enabled: true})
+      {:ok, section} = put_section_fields(section, %{grade_passback_enabled: true})
 
       page_revision =
         map.page.revision
@@ -699,7 +699,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         |> Oli.Repo.update!()
 
       Sections.get_section_resource(section.id, page_revision.resource_id)
-      |> Sections.update_section_resource(%{batch_scoring: true})
+      |> put_section_resource_fields(%{batch_scoring: true})
 
       attempt_map =
         map

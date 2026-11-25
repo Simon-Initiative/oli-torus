@@ -11,6 +11,29 @@ defmodule OliWeb.Products.Details.Edit do
     [{"Active", "active"}, {"Archived", "archived"}]
   end
 
+  @doc """
+  The template fields the details page saves: this form's fields, the content options
+  (`OliWeb.Products.Details.Content`), and the paywall fields when `payment?` is true, that is,
+  when the page lets this user edit payments.
+  """
+  @spec form_fields(boolean()) :: [atom()]
+  def form_fields(payment?) do
+    [
+      :title,
+      :status,
+      :description,
+      :welcome_title,
+      :encouraging_subtitle,
+      :publisher_id,
+      :apply_major_updates,
+      :display_curriculum_item_numbering,
+      :unnumbered_unit_ids
+    ] ++ payment_fields(payment?)
+  end
+
+  defp payment_fields(true), do: OliWeb.Sections.PaywallSettings.fields()
+  defp payment_fields(false), do: []
+
   attr(:product, :any, default: nil)
   attr(:changeset, :any, default: nil)
   attr(:available_brands, :any, default: nil)

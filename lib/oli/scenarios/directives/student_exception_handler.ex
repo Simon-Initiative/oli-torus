@@ -3,7 +3,8 @@ defmodule Oli.Scenarios.Directives.StudentExceptionHandler do
   Handles assessment settings student_exception directives.
   """
 
-  alias Oli.Delivery.Settings.StudentExceptions
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Settings.Audited, as: SettingsAudited
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, StudentExceptionDirective}
   alias Oli.Scenarios.Engine
@@ -12,7 +13,14 @@ defmodule Oli.Scenarios.Directives.StudentExceptionHandler do
     with {:ok, user} <- get_user(state, directive.student),
          {:ok, section} <- get_section(state, directive.section),
          {:ok, page_revision} <- get_page_revision(state, directive.section, directive.page),
-         {:ok, _result} <- apply_action(directive, section, page_revision.resource_id, user.id) do
+         {:ok, _result} <-
+           apply_action(
+             directive,
+             audit_context(state),
+             section,
+             page_revision.resource_id,
+             user.id
+           ) do
       {:ok, state}
     else
       {:error, reason} -> {:error, "Failed to apply student exception: #{reason}"}
@@ -21,16 +29,26 @@ defmodule Oli.Scenarios.Directives.StudentExceptionHandler do
 
   defp apply_action(
          %StudentExceptionDirective{action: :set, set: attrs},
+         context,
          section,
          resource_id,
          user_id
        ) do
-    StudentExceptions.set_exception(section, resource_id, user_id, attrs || %{})
+    SettingsAudited.set_student_exception(context, section, resource_id, user_id, attrs || %{})
   end
 
-  defp apply_action(%StudentExceptionDirective{action: :remove}, section, resource_id, user_id) do
-    StudentExceptions.remove_exception(section, resource_id, user_id)
+  defp apply_action(
+         %StudentExceptionDirective{action: :remove},
+         context,
+         section,
+         resource_id,
+         user_id
+       ) do
+    SettingsAudited.remove_student_exceptions(context, section, resource_id, [user_id])
   end
+
+  # Directives act for the represented author.
+  defp audit_context(state), do: Context.for_actor(state.current_author, source: :scenario)
 
   defp get_user(state, user_name) do
     case Map.get(state.users, user_name) do

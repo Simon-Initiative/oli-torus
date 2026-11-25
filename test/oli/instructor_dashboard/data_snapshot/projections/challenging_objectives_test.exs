@@ -5,7 +5,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
   import Oli.Factory
 
   alias Oli.Dashboard.Snapshot.Contract
-  alias Oli.Delivery.Sections
   alias Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Resources.ResourceType
@@ -261,7 +260,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
     test "guards against cycles in objective hierarchy recursion" do
       %{section: section, unit: unit, parent: parent, child: child} = setup_projection_resources()
 
-      {:ok, child} = Sections.update_section_resource(child, %{children: [child.id]})
+      {:ok, child} = put_section_resource_fields(child, %{children: [child.id]})
       SectionResourceDepot.update_section_resource(child)
 
       snapshot =
@@ -365,7 +364,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
 
     parent =
       if children_on_section_resource? do
-        {:ok, parent} = Sections.update_section_resource(parent, %{children: [child.id]})
+        {:ok, parent} = put_section_resource_fields(parent, %{children: [child.id]})
         parent
       else
         parent

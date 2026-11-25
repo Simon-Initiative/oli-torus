@@ -1424,7 +1424,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     page_section_resource = Sections.get_section_resource(map.section.id, map.page.resource.id)
 
     {:ok, _updated_section_resource} =
-      Sections.update_section_resource(page_section_resource, %{
+      put_section_resource_fields(page_section_resource, %{
         collab_space_config: %CollabSpaceConfig{status: :enabled}
       })
 

@@ -148,7 +148,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.Content do
       page_1_section_resource = Sections.get_section_resource(section.id, page_1_resource_id)
 
       assert {:ok, updated_sr} =
-               Sections.update_section_resource(page_1_section_resource, %{title: updated_title})
+               put_section_resource_fields(page_1_section_resource, %{title: updated_title})
 
       SectionResourceDepot.update_section_resource(updated_sr)
 
@@ -180,7 +180,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.Content do
     test "shows the bare title, with no numbering prefix, for a suppressed top-level unit",
          %{conn: conn, section: section, unit_resource: unit_resource} do
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_resource.id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_resource.id]})
 
       {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
 

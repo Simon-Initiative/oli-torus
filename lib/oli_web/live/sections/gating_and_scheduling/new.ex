@@ -19,28 +19,43 @@ defmodule OliWeb.Sections.GatingAndScheduling.New do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {user_type, _user, section} ->
-        {parent_gate_id, title} =
-          case Map.get(params, "parent_gate_id") do
-            nil -> {nil, "Create Gating Condition"}
-            id -> {id, "Create Student Exception"}
-          end
+      {user_type, actor, section} ->
+        socket = assign(socket, actor: actor)
 
-        ctx = socket.assigns.ctx
-        product_path_base = product_path_base(section, params)
+        # A student exception's gate must belong to this section
+        case parent_gate(section, Map.get(params, "parent_gate_id")) do
+          :not_found ->
+            Mount.handle_error(socket, {:error, :not_found})
 
-        {:ok,
-         GatingConditionStore.init(
-           socket,
-           __MODULE__,
-           section,
-           ctx,
-           title,
-           parent_gate_id,
-           user_type,
-           nil,
-           product_path_base
-         )}
+          parent_gate ->
+            {parent_gate_id, title} =
+              case parent_gate do
+                nil -> {nil, "Create Gating Condition"}
+                gate -> {gate.id, "Create Student Exception"}
+              end
+
+            {:ok,
+             GatingConditionStore.init(
+               socket,
+               __MODULE__,
+               section,
+               socket.assigns.ctx,
+               title,
+               parent_gate_id,
+               user_type,
+               nil,
+               product_path_base(section, params)
+             )}
+        end
+    end
+  end
+
+  defp parent_gate(_section, nil), do: nil
+
+  defp parent_gate(section, id) do
+    case Oli.Delivery.Gating.get_section_gating_condition(section.id, id) do
+      nil -> :not_found
+      gate -> gate
     end
   end
 

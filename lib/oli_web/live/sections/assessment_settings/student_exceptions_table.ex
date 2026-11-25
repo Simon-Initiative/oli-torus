@@ -10,8 +10,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   alias Phoenix.LiveView.JS
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.{Repo, Utils}
-  alias Oli.Delivery.Settings
-  alias Oli.Delivery.Settings.{StudentException, StudentExceptions}
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Settings.Audited, as: SettingsAudited
+  alias Oli.Delivery.Settings.StudentException
 
   @default_params %{
     offset: 0,
@@ -62,6 +63,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
          get_total_exceptions_count(selected_assessment, assigns.student_exceptions),
        params: params,
        section: assigns.section,
+       user: assigns.user,
        ctx: assigns.ctx,
        assessments: assigns.assessments,
        students: assigns.students,
@@ -585,22 +587,30 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         se.user_id in socket.assigns.selected_student_exceptions
       end)
 
-    StudentExceptions.remove_exceptions(
-      socket.assigns.section,
-      socket.assigns.params.selected_assessment_id,
-      socket.assigns.selected_student_exceptions
-    )
+    case SettingsAudited.remove_student_exceptions(
+           audit_context(socket),
+           socket.assigns.section,
+           socket.assigns.params.selected_assessment_id,
+           socket.assigns.selected_student_exceptions
+         ) do
+      {:ok, _count} ->
+        update_liveview_student_exceptions(
+          :deleted,
+          selected_student_exceptions,
+          true
+        )
 
-    update_liveview_student_exceptions(
-      :deleted,
-      selected_student_exceptions,
-      true
-    )
+        {:noreply,
+         socket
+         |> flash_to_liveview(:info, "Student Exception/s removed!")
+         |> assign(modal_assigns: %{show: false}, selected_student_exceptions: [])}
 
-    {:noreply,
-     socket
-     |> flash_to_liveview(:info, "Student Exception/s removed!")
-     |> assign(modal_assigns: %{show: false}, selected_student_exceptions: [])}
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> flash_to_liveview(:error, "ERROR: Student Exception/s could not be removed")
+         |> assign(modal_assigns: %{show: false})}
+    end
   end
 
   def handle_event(
@@ -610,7 +620,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       ) do
     with {:ok, parsed_student_id} <- parse_student_id(student_id),
          result <-
-           StudentExceptions.set_exception(
+           SettingsAudited.set_student_exception(
+             audit_context(socket),
              socket.assigns.section,
              socket.assigns.params.selected_assessment_id,
              parsed_student_id
@@ -681,20 +692,28 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         socket.assigns.ctx
       )
 
-    socket.assigns.modal_assigns.student_exception
-    |> Settings.update_student_exception(
-      %{
-        feedback_scheduled_date: utc_datetime,
-        feedback_mode: :scheduled
-      },
-      [:feedback_scheduled_date]
+    student_exception = socket.assigns.modal_assigns.student_exception
+
+    SettingsAudited.set_student_exception(
+      audit_context(socket),
+      socket.assigns.section,
+      student_exception.resource_id,
+      student_exception.user_id,
+      %{feedback_scheduled_date: utc_datetime, feedback_mode: :scheduled},
+      required: [:feedback_scheduled_date]
     )
     |> case do
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
          assign(socket,
            modal_assigns: Map.merge(socket.assigns.modal_assigns, %{changeset: changeset})
          )}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> flash_to_liveview(:error, "The scheduled feedback date could not be saved")
+         |> assign(modal_assigns: %{show: false})}
 
       {:ok, updated_student_exception} ->
         update_liveview_student_exceptions(
@@ -782,7 +801,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         :end_date -> %{start_date: new_start_date, end_date: new_end_date}
       end
 
-    StudentExceptions.set_exception(
+    SettingsAudited.set_student_exception(
+      audit_context(socket),
       socket.assigns.section,
       selected_setting.resource_id,
       selected_setting.user_id,
@@ -859,7 +879,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         _ -> Map.new([{key, new_value}])
       end
 
-    StudentExceptions.set_exception(
+    SettingsAudited.set_student_exception(
+      audit_context(socket),
       socket.assigns.section,
       socket.assigns.params.selected_assessment_id,
       user_id,
@@ -883,6 +904,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
          |> flash_to_liveview(:info, "Student Exception updated!")}
     end
   end
+
+  # The instructor or admin the view authorized for this section.
+  defp audit_context(socket), do: Context.for_actor(socket.assigns.user, source: :ui)
 
   defp apply_filters(student_exceptions, params) do
     student_exceptions =

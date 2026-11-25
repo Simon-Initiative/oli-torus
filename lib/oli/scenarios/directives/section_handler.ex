@@ -8,8 +8,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
   """
 
   alias Oli.Delivery.Paywall
-  alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Blueprint, PostProcessing}
+  alias Oli.Auditing.Context
+  alias Oli.Delivery.Sections.Audited, as: SectionsAudited
   alias Oli.GenAI.Completions.ServiceConfig
   alias Oli.Publishing
   alias Oli.Repo
@@ -100,7 +100,7 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
         nil ->
           {:ok, pub} =
             Oli.Publishing.Audited.publish_project(
-              Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
+              Context.for_actor(state.current_author, source: :scenario),
               built_project.project,
               "initial",
               state.current_author.id
@@ -117,8 +117,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       |> base_section_attrs(state)
       |> Map.put(:base_project_id, built_project.project.id)
 
-    {:ok, section} = Sections.create_section_from_source(attrs, built_project.project)
-    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, section} =
+      SectionsAudited.create_section_from_publication(
+        Context.for_actor(state.current_author, source: :scenario),
+        publication,
+        attrs
+      )
+
     section
   end
 
@@ -140,20 +145,12 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       |> Map.put(:blueprint_id, product.id)
 
     {:ok, section} =
-      Repo.transaction(fn ->
-        {:ok, section} = Blueprint.duplicate(product, section_params)
-        {:ok, _} = Sections.rebuild_contained_pages(section)
-        {:ok, _} = Sections.rebuild_contained_objectives(section)
-
-        Oli.Auditing.capture(state.current_author, :section_created, section, %{
-          "section_title" => section.title,
-          "type" => Atom.to_string(section.type),
-          "base_project_id" => section.base_project_id,
-          "blueprint_id" => product.id
-        })
-
-        PostProcessing.apply(section, :discussions)
-      end)
+      SectionsAudited.create_section_from_product(
+        Context.for_actor(state.current_author, source: :scenario),
+        product,
+        section_params,
+        post_processing: :discussions
+      )
 
     Repo.preload(section, [:blueprint])
   end
@@ -164,7 +161,7 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
     # Standalone sections still need a backing project/publication for section resources.
     {:ok, %{project: project}} =
       Oli.Authoring.Audited.create_project(
-        Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
+        Context.for_actor(state.current_author, source: :scenario),
         "#{title} Project",
         state.current_author,
         %{description: "Auto-generated project for section #{title}"}
@@ -172,7 +169,7 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
 
     {:ok, publication} =
       Oli.Publishing.Audited.publish_project(
-        Oli.Auditing.Context.for_actor(state.current_author, source: :scenario),
+        Context.for_actor(state.current_author, source: :scenario),
         project,
         "initial",
         state.current_author.id
@@ -183,8 +180,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       |> base_section_attrs(state)
       |> Map.put(:base_project_id, project.id)
 
-    {:ok, section} = Sections.create_section_from_source(section_attrs, project)
-    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, section} =
+      SectionsAudited.create_section_from_publication(
+        Context.for_actor(state.current_author, source: :scenario),
+        publication,
+        section_attrs
+      )
+
     section
   end
 
@@ -212,7 +214,7 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
     Ecto.Multi.new()
     |> Oli.GenAI.Audited.create_multi(
       :feature_config,
-      Oli.Auditing.Context.for_system(:playwright_setup, source: :scenario),
+      Context.for_system(:playwright_setup, source: :scenario),
       {:feature_config, attrs}
     )
     |> Repo.transaction()

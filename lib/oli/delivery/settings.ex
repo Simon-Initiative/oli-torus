@@ -5,7 +5,6 @@ defmodule Oli.Delivery.Settings do
   alias Oli.Resources.Revision
   alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Settings.StudentException
-  alias Oli.Delivery.Settings.SettingsChanges
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
@@ -262,15 +261,6 @@ defmodule Oli.Delivery.Settings do
     |> Repo.all()
   end
 
-  def update_student_exception(
-        %StudentException{} = student_exception,
-        attrs,
-        required_fields \\ []
-      ) do
-    StudentException.changeset(student_exception, attrs, required_fields)
-    |> Repo.update()
-  end
-
   def was_late?(%ResourceAttempt{}, %Combined{late_submit: :disallow}, _now), do: false
 
   def was_late?(
@@ -429,34 +419,4 @@ defmodule Oli.Delivery.Settings do
     do: {:allowed}
 
   def check_password(_, _), do: {:invalid_password}
-
-  @doc """
-  Insert a new settings change record.
-  """
-  @spec insert_settings_change(map()) :: {:ok, SettingsChanges.t()} | {:error, Ecto.Changeset.t()}
-  def insert_settings_change(attrs) do
-    SettingsChanges.changeset(
-      %SettingsChanges{},
-      attrs
-    )
-    |> Repo.insert()
-  end
-
-  @doc """
-  Insert multiple settings change records.
-  """
-  @spec bulk_insert_settings_changes([map()]) ::
-          {:ok, [SettingsChanges.t()]} | {:error, Ecto.Changeset.t()}
-  def bulk_insert_settings_changes(settings_changes) do
-    Repo.insert_all(SettingsChanges, settings_changes)
-  end
-
-  @doc """
-  Fetch all settings changes.
-  """
-  @spec fetch_all_settings_changes() :: [SettingsChanges.t()]
-  def fetch_all_settings_changes(),
-    do:
-      SettingsChanges
-      |> Repo.all()
 end

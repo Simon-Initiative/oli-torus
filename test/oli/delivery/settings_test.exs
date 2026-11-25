@@ -475,26 +475,6 @@ defmodule Oli.Delivery.SettingsTest do
              {:invalid_password}
   end
 
-  test "update_student_exception/3 updates the given exception" do
-    student_exception = insert(:student_exception, %{end_date: ~U[2024-01-10 00:00:00Z]})
-
-    {:ok, updated_student_exception} =
-      Settings.update_student_exception(student_exception, %{end_date: ~U[2024-01-09 00:00:00Z]})
-
-    assert updated_student_exception.end_date == ~U[2024-01-09 00:00:00Z]
-  end
-
-  test "update_student_exception/3 does not update the exception if a required field is not provided" do
-    student_exception = insert(:student_exception, %{end_date: nil})
-
-    assert {:error,
-            %Ecto.Changeset{
-              errors: [end_date: {"can't be blank", [validation: :required]}],
-              valid?: false
-            }} =
-             Settings.update_student_exception(student_exception, %{end_date: nil}, [:end_date])
-  end
-
   test "get_student_exception_setting_for_all_resources/3 returns the student exception setting for all resources" do
     section = insert(:section)
     student = insert(:user)

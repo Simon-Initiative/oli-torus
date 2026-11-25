@@ -113,7 +113,7 @@ defmodule OliWeb.CollaborationLiveTest do
     {:ok, _sr} = Sections.create_section_resources(section, publication)
 
     sr = Sections.get_section_resource(section.id, page_resource_cs.id)
-    Sections.update_section_resource(sr, %{collab_space_config: collab_space_config})
+    put_section_resource_fields(sr, %{collab_space_config: collab_space_config})
 
     Sections.enroll(user.id, section.id, [
       Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
@@ -201,7 +201,7 @@ defmodule OliWeb.CollaborationLiveTest do
       conn: conn,
       section: section
     } do
-      {:ok, section} = Sections.update_section(section, %{requires_enrollment: true})
+      {:ok, section} = put_section_fields(section, %{requires_enrollment: true})
 
       conn =
         conn
@@ -219,7 +219,7 @@ defmodule OliWeb.CollaborationLiveTest do
       section: section,
       page_revision: page_revision
     } do
-      {:ok, section} = Sections.update_section(section, %{requires_enrollment: true})
+      {:ok, section} = put_section_fields(section, %{requires_enrollment: true})
 
       conn =
         conn
@@ -286,7 +286,7 @@ defmodule OliWeb.CollaborationLiveTest do
            page_revision: page_revision
          } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           requires_enrollment: true
         })
 
@@ -348,6 +348,16 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "button[phx-click='archive']", "Archive")
 
       assert_receive {:updated_collab_space_config, %CollabSpaceConfig{status: :enabled}}
+
+      event =
+        assert_audited(:discussion_settings_changed,
+          section_id: section.id,
+          resource_id: page_revision.resource_id,
+          actor: instructor,
+          source: :ui
+        )
+
+      assert event.changes["status"]["after"] == "enabled"
     end
 
     test "returns the collab space config as enabled when there is config in the page and change status correctly",
@@ -465,6 +475,15 @@ defmodule OliWeb.CollaborationLiveTest do
 
       assert element(view, "div[role='collab_space_page_summary']")
              |> render() =~ "All 2 pages currently have Notes enabled"
+
+      event =
+        assert_audited(:notes_settings_changed,
+          section_id: section.id,
+          actor: instructor,
+          source: :ui
+        )
+
+      assert event.details["page_count"] == 2
     end
 
     test "can disable Collab spaces for all pages in course", %{
@@ -498,6 +517,19 @@ defmodule OliWeb.CollaborationLiveTest do
 
       assert element(view, "div[role='collab_space_page_summary']")
              |> render() =~ "0 pages currently have Notes enabled"
+
+      event =
+        assert_audited(:notes_settings_changed,
+          section_id: section.id,
+          actor: instructor,
+          source: :ui
+        )
+
+      assert event.changes["status"] == %{
+               "operation" => "set",
+               "before" => "enabled",
+               "after" => "disabled"
+             }
     end
   end
 
@@ -505,7 +537,13 @@ defmodule OliWeb.CollaborationLiveTest do
     setup [:admin_conn, :create_project_and_section]
 
     test "returns the collab space config as disabled when no config and change status correctly",
-         %{conn: conn, author: author, project: project, page_revision: page_revision} do
+         %{
+           conn: conn,
+           admin: admin,
+           author: author,
+           project: project,
+           page_revision: page_revision
+         } do
       {:ok, view, _html} =
         live_isolated(
           conn,
@@ -533,6 +571,16 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "button[phx-click='archive']", "Archive")
 
       refute_receive {:updated_collab_space_config, _}
+
+      event =
+        assert_audited(:discussion_settings_changed,
+          project_id: project.id,
+          resource_id: page_revision.resource_id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert Enum.map(event.refs, & &1["role"]) == ["previous", "resulting"]
     end
 
     test "returns the collab space config as enabled when there is config and change status correctly",
@@ -602,6 +650,7 @@ defmodule OliWeb.CollaborationLiveTest do
 
     test "can enable Collab spaces for all pages in course", %{
       conn: conn,
+      admin: admin,
       author: author,
       project: project,
       page_revision_cs: page_revision_cs
@@ -642,6 +691,15 @@ defmodule OliWeb.CollaborationLiveTest do
 
       assert element(view, "div[role='collab_space_page_summary']")
              |> render() =~ "All 2 pages currently have Notes enabled"
+
+      event =
+        assert_audited(:discussion_settings_changed,
+          project_id: project.id,
+          actor: admin,
+          source: :ui
+        )
+
+      assert {event.entity_type, event.details["page_count"]} == {:project, 2}
     end
 
     test "can disable Collab spaces for all pages in course", %{

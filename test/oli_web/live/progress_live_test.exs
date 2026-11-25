@@ -384,7 +384,7 @@ defmodule OliWeb.ProgressLiveTest do
         resource_id: revision.resource.id
       })
 
-    Sections.update_section(section, %{root_section_resource_id: section_resource.id})
+    put_section_fields(section, %{root_section_resource_id: section_resource.id})
 
     insert(:published_resource, %{
       resource: revision.resource,

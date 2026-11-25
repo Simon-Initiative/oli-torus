@@ -776,7 +776,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       )
 
       {:ok, parent_section_resource} =
-        Oli.Delivery.Sections.update_section_resource(parent_section_resource, %{
+        put_section_resource_fields(parent_section_resource, %{
           resource_type_id: objective_type_id,
           children: [sub_objective_section_resource.id],
           related_activities: [activity_a.id]

@@ -3,7 +3,6 @@ defmodule OliWeb.PaymentControllerTest do
 
   import Oli.Factory
 
-  alias Oli.Delivery.Sections
   alias Oli.VendorProperties
 
   describe "guard action" do
@@ -89,7 +88,7 @@ defmodule OliWeb.PaymentControllerTest do
       section: section
     } do
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           payment_options: :deferred
         })
 
@@ -112,7 +111,7 @@ defmodule OliWeb.PaymentControllerTest do
       billing_descriptor = VendorProperties.billing_descriptor()
 
       {:ok, section} =
-        Sections.update_section(section, %{
+        put_section_fields(section, %{
           payment_options: :direct_and_deferred
         })
 

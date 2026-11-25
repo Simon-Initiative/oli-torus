@@ -75,7 +75,7 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         :enrolled
       )
 
-      Oli.Delivery.Sections.update_section!(map.section, %{
+      put_section_fields!(map.section, %{
         triggers_enabled: true,
         assistant_enabled: true
       })
@@ -108,7 +108,7 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         :enrolled
       )
 
-      Oli.Delivery.Sections.update_section!(map.section, %{
+      put_section_fields!(map.section, %{
         triggers_enabled: true,
         assistant_enabled: true
       })
@@ -140,7 +140,7 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         :enrolled
       )
 
-      Oli.Delivery.Sections.update_section!(map.section, %{
+      put_section_fields!(map.section, %{
         triggers_enabled: true,
         assistant_enabled: true
       })
@@ -173,7 +173,7 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         :enrolled
       )
 
-      Oli.Delivery.Sections.update_section!(map.section, %{
+      put_section_fields!(map.section, %{
         triggers_enabled: true,
         assistant_enabled: true
       })
@@ -241,7 +241,7 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         :enrolled
       )
 
-      Oli.Delivery.Sections.update_section!(map.section, %{
+      put_section_fields!(map.section, %{
         triggers_enabled: true,
         assistant_enabled: true
       })
@@ -333,7 +333,7 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         :enrolled
       )
 
-      Oli.Delivery.Sections.update_section!(map.section, %{
+      put_section_fields!(map.section, %{
         triggers_enabled: true,
         assistant_enabled: true
       })
@@ -371,7 +371,7 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         :enrolled
       )
 
-      Oli.Delivery.Sections.update_section!(map.section, %{
+      put_section_fields!(map.section, %{
         triggers_enabled: true,
         assistant_enabled: true
       })
@@ -439,7 +439,7 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         :enrolled
       )
 
-      Oli.Delivery.Sections.update_section!(map.section, %{
+      put_section_fields!(map.section, %{
         triggers_enabled: true,
         assistant_enabled: true
       })

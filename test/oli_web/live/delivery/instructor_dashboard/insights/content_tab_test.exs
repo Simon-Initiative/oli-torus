@@ -286,7 +286,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       } = Seeder.base_project_with_larger_hierarchy()
 
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit1_resource.id]})
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
       {:ok, _} = Sections.rebuild_contained_pages(section)
@@ -407,7 +407,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       {:ok, section} = Sections.create_section_resources(section, publication)
 
       {:ok, section} =
-        Sections.update_section(section, %{unnumbered_unit_ids: [unit_b.resource_id]})
+        put_section_fields(section, %{unnumbered_unit_ids: [unit_b.resource_id]})
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
