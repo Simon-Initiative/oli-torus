@@ -115,7 +115,11 @@ defmodule OliWeb.AuthorAuth do
     |> halt()
   end
 
-  defp install_session(conn, author, token) do
+  @doc """
+  Installs a committed session `token` for `author` in the browser session, renewing the session
+  ID. Used by callers that issue the session inside their own transaction.
+  """
+  def install_session(conn, author, token) do
     conn
     |> renew_session()
     |> put_token_in_session(token)

@@ -226,6 +226,56 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
              )
     end
 
+    test "shows an error message and keeps the tool unchanged when the update cannot be audited",
+         %{conn: conn, platform_instance: pi} do
+      Repo.query!("""
+      CREATE FUNCTION pg_temp.reject_tool_event() RETURNS trigger AS $$
+      BEGIN
+        IF NEW.event_type = 'external_tool_settings_changed' THEN
+          RAISE EXCEPTION 'external tool event rejected by test';
+        END IF;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql
+      """)
+
+      Repo.query!("""
+      CREATE TRIGGER reject_tool_event BEFORE INSERT ON audit_log_events
+        FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_tool_event()
+      """)
+
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+
+      view
+      |> element("button", "Edit Details")
+      |> render_click()
+
+      ExUnit.CaptureLog.capture_log(fn ->
+        view
+        |> form("#tool_form", %{
+          "tool_form" => %{
+            "name" => "Updated Tool",
+            "description" => "An updated external tool",
+            "client_id" => "updated_tool_client_id",
+            "target_link_uri" => "https://example.com/launch_updated",
+            "login_url" => "https://example.com/login_updated",
+            "keyset_url" => "https://example.com/jwks_updated",
+            "redirect_uris" => "https://example.com/redirect_updated",
+            "custom_params" => "param1=value1_updated&param2=value2_updated"
+          }
+        })
+        |> render_submit()
+      end)
+
+      assert has_element?(
+               view,
+               "#flash",
+               "There was an error updating the LTI 1.3 External Tool."
+             )
+
+      assert PlatformExternalTools.get_platform_instance(pi.id).name == "Original Tool"
+    end
+
     test "flash message is cleared when the clear button is clicked", %{
       conn: conn,
       platform_instance: pi
