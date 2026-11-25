@@ -16,6 +16,7 @@ defmodule Oli.AutomationSetup do
   alias Oli.Authoring.MediaLibrary.MediaItem
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Groups.Community
   alias Oli.Repo
   alias Oli.Resources.Resource
 
@@ -23,6 +24,8 @@ defmodule Oli.AutomationSetup do
 
   import Ecto.Query, warn: false
   require Logger
+
+  @automation_community_prefix "Automation test community"
 
   def setup_data(
         project_archive,
@@ -229,6 +232,24 @@ defmodule Oli.AutomationSetup do
     e in Ecto.ConstraintError ->
       Logger.error("Could not delete automation test section: #{Exception.message(e)}")
       %{success: false, message: "Could not delete section"}
+  end
+
+  @doc """
+  Hard deletes the named community and, by cascade, its associations. Only names
+  starting with "#{@automation_community_prefix}" are accepted.
+  """
+  def teardown_community(@automation_community_prefix <> _ = name) do
+    case Repo.delete_all(from(c in Community, where: c.name == ^name)) do
+      {0, _} -> %{success: false, message: "Community not found"}
+      {_count, _} -> %{success: true}
+    end
+  end
+
+  def teardown_community(_name) do
+    %{
+      success: false,
+      message: "Can only delete communities named '#{@automation_community_prefix}...'"
+    }
   end
 
   # student_responses references sections with ON DELETE NO ACTION. Learner
