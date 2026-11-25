@@ -16,6 +16,14 @@ defmodule OliWeb.AuthorAuth do
   @remember_me_cookie "_oli_web_author_remember_me"
   @remember_me_options [sign: true, max_age: @max_age, same_site: "Lax"]
 
+  # Shared by the plugs and their on_mount counterparts so both entry points
+  # show the same message.
+  @admin_required_message "You are not authorized to access this page."
+  @account_admin_required_message "You must be an account admin to access this page."
+  @system_admin_required_message "You must be a system admin to access this page."
+  @email_confirmation_required_message "You must confirm your email to continue."
+  @account_locked_message "Your account has been locked. Please contact support for assistance."
+
   @doc """
   Logs the author in.
   """
@@ -210,6 +218,14 @@ defmodule OliWeb.AuthorAuth do
     * `:redirect_if_author_is_authenticated` - Authenticates the author from the session.
       Redirects to signed_in_path if there's a logged author.
 
+    * `:ensure_admin`, `:ensure_account_admin`, `:ensure_system_admin` - Behave like
+      `:ensure_authenticated` and additionally require a confirmed, unlocked account
+      that holds the given admin role, mirroring `require_authenticated_author/2` and
+      the `require_admin/2`, `require_account_admin/2` and `require_system_admin/2`
+      plugs. Unlike the plugs, they also run on live navigation, so role-restricted
+      LiveViews must use them.
+      Redirects with the same flash messages and paths as those plugs.
+
   ## Examples
 
   Use the `on_mount` lifecycle macro in LiveViews to mount or authenticate
@@ -255,6 +271,71 @@ defmodule OliWeb.AuthorAuth do
     else
       {:cont, socket}
     end
+  end
+
+  def on_mount(:ensure_admin, params, session, socket) do
+    ensure_role(
+      params,
+      session,
+      socket,
+      &Accounts.is_admin?/1,
+      @admin_required_message
+    )
+  end
+
+  def on_mount(:ensure_account_admin, params, session, socket) do
+    ensure_role(
+      params,
+      session,
+      socket,
+      &Accounts.at_least_account_admin?/1,
+      @account_admin_required_message
+    )
+  end
+
+  def on_mount(:ensure_system_admin, params, session, socket) do
+    ensure_role(
+      params,
+      session,
+      socket,
+      &Accounts.is_system_admin?/1,
+      @system_admin_required_message
+    )
+  end
+
+  defp ensure_role(params, session, socket, authorized?, message) do
+    with {:cont, socket} <- on_mount(:ensure_authenticated, params, session, socket),
+         {:cont, socket} <- ensure_account_active(socket) do
+      case authorized?.(socket.assigns.current_author) do
+        true -> {:cont, socket}
+        false -> halt_with_flash(socket, :error, message, ~p"/workspaces/course_author")
+      end
+    end
+  end
+
+  # Mirrors require_confirmed_email/1 and check_account_lock/1, which only run on HTTP
+  # requests. A LiveView cannot renew the session, so it redirects to an HTTP route whose
+  # pipeline clears it.
+  defp ensure_account_active(socket) do
+    case socket.assigns.current_author do
+      %Accounts.Author{email_confirmed_at: nil} ->
+        halt_with_flash(socket, :info, @email_confirmation_required_message, ~p"/authors/confirm")
+
+      %Accounts.Author{locked_at: locked_at} when not is_nil(locked_at) ->
+        halt_with_flash(socket, :error, @account_locked_message, ~p"/authors/log_in")
+
+      _ ->
+        {:cont, socket}
+    end
+  end
+
+  defp halt_with_flash(socket, kind, message, path) do
+    socket =
+      socket
+      |> Phoenix.LiveView.put_flash(kind, message)
+      |> Phoenix.LiveView.redirect(to: path)
+
+    {:halt, socket}
   end
 
   def mount_current_author(socket, session) do
@@ -321,7 +402,7 @@ defmodule OliWeb.AuthorAuth do
         conn
         |> renew_session()
         |> delete_resp_cookie(@remember_me_cookie)
-        |> put_flash(:info, "You must confirm your email to continue.")
+        |> put_flash(:info, @email_confirmation_required_message)
         |> redirect(to: ~p"/authors/confirm")
         |> halt()
 
@@ -342,10 +423,7 @@ defmodule OliWeb.AuthorAuth do
         conn
         |> renew_session()
         |> delete_resp_cookie(@remember_me_cookie)
-        |> put_flash(
-          :error,
-          "Your account has been locked. Please contact support for assistance."
-        )
+        |> put_flash(:error, @account_locked_message)
         |> redirect(to: ~p"/authors/log_in")
         |> halt()
     end
@@ -356,7 +434,7 @@ defmodule OliWeb.AuthorAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You are not authorized to access this page.")
+      |> put_flash(:error, @admin_required_message)
       |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end
@@ -367,7 +445,7 @@ defmodule OliWeb.AuthorAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You must be an account admin to access this page.")
+      |> put_flash(:error, @account_admin_required_message)
       |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end
@@ -389,7 +467,7 @@ defmodule OliWeb.AuthorAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You must be a system admin to access this page.")
+      |> put_flash(:error, @system_admin_required_message)
       |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end
