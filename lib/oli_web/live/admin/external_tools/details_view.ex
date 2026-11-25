@@ -238,6 +238,14 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
            type: :not_found,
            message: "This platform instance no longer exists or couldn’t be found."
          })}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> assign(:custom_flash, %{
+           type: :error,
+           message: "There was an error updating the LTI 1.3 External Tool."
+         })}
     end
   end
 
