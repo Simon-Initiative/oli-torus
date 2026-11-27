@@ -84,7 +84,7 @@ export function extractAccountLink(
   htmlBody: string | null,
   textBody: string | null,
   segment: 'authors' | 'users',
-  action: 'confirm' | 'reset_password',
+  action: 'confirm' | 'reset_password' | 'settings/confirm_email',
 ): string {
   const path = `/${segment}/${action}/`;
   const source = [htmlBody, textBody].filter(Boolean).join(' ');
