@@ -280,7 +280,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             data-step-field={@field}
             data-step-direction="1"
           >
-            <Icons.chevron_up class="h-3 w-3 stroke-current" />
+            <span class="inline-flex" aria-hidden="true">
+              <Icons.chevron_up class="h-3 w-3 stroke-current" />
+            </span>
           </button>
           <button
             type="button"
@@ -290,7 +292,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             data-step-field={@field}
             data-step-direction="-1"
           >
-            <Icons.chevron_down class="h-3 w-3 stroke-current" />
+            <span class="inline-flex" aria-hidden="true">
+              <Icons.chevron_down class="h-3 w-3 stroke-current" />
+            </span>
           </button>
         </div>
       </div>

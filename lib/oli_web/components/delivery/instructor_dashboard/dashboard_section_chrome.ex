@@ -66,6 +66,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DashboardSectionChrome 
               width="20"
               height="20"
               class={@toggle_icon_class}
+              aria-hidden="true"
             />
           </button>
 
@@ -84,7 +85,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DashboardSectionChrome 
           draggable="true"
           data-section-handle
         >
-          <Icons.drag_handle_dots class="text-current" />
+          <Icons.drag_handle_dots class="text-current" aria-hidden="true" />
         </button>
       </header>
 

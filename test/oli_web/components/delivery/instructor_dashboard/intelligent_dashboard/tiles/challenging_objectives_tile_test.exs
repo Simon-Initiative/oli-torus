@@ -47,6 +47,48 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                "class=\"min-w-0 flex-1 text-base font-normal leading-6 text-Text-text-high focus:outline-none\""
     end
 
+    test "hides the icon beside the Challenging Objectives heading from screen readers" do
+      html =
+        render_component(&ChallengingObjectivesTile.tile/1, %{
+          projection: populated_projection(),
+          projection_status: %{status: :ready},
+          projection_identity: "token-1",
+          section_slug: "bio-101"
+        })
+
+      [heading] =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find("div.items-center.gap-2")
+        |> Enum.filter(
+          &(&1 |> Floki.find("h3") |> Floki.text() |> String.trim() == "Challenging Objectives")
+        )
+
+      assert [_icon] = Floki.find(heading, "svg")
+
+      assert [_hidden_icon] =
+               Floki.find(heading, ~s{svg[aria-hidden="true"], [aria-hidden="true"] svg})
+    end
+
+    test "hides the sub-objectives toggle's arrow from screen readers but keeps the toggle's name" do
+      doc =
+        render_component(&ChallengingObjectivesTile.tile/1, %{
+          projection: populated_projection(),
+          projection_status: %{status: :ready},
+          projection_identity: "token-1",
+          section_slug: "bio-101"
+        })
+        |> Floki.parse_document!()
+
+      assert [toggle] =
+               Floki.find(doc, ~s{summary[aria-label="Toggle sub-objectives for Objective A"]})
+
+      assert [_arrow] = Floki.find(toggle, "svg")
+
+      assert [_hidden_arrow] =
+               Floki.find(toggle, ~s{svg[aria-hidden="true"], [aria-hidden="true"] svg})
+    end
+
     test "renders no-data message distinctly from low-proficiency empty state" do
       no_data_html =
         render_component(&ChallengingObjectivesTile.tile/1, %{

@@ -66,6 +66,102 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       refute Map.has_key?(spec["encoding"], "tooltip")
     end
 
+    test "hides the chart from screen readers, whose data the graph key links already announce",
+         %{conn: conn} do
+      buckets =
+        Enum.map(
+          [
+            {"struggling", "Struggling", 10, 0.4},
+            {"on_track", "On Track", 8, 0.32},
+            {"excelling", "Excelling", 5, 0.2},
+            {"not_enough_information", "N/A", 0, 0.0}
+          ],
+          fn {id, label, count, pct} ->
+            %{
+              id: id,
+              label: label,
+              count: count,
+              pct: pct,
+              active_count: count,
+              inactive_count: 0,
+              students: []
+            }
+          end
+        )
+
+      {:ok, _component, html} =
+        live_component_isolated(
+          conn,
+          StudentSupportTile,
+          base_attrs(%{
+            projection: %{projection() | buckets: buckets},
+            tile_state: tile_state(%{selected_bucket_id: "on_track"})
+          })
+        )
+
+      doc = Floki.parse_document!(html)
+
+      key_names =
+        doc
+        |> Floki.find("a[data-bucket-id]")
+        |> Enum.flat_map(&Floki.attribute(&1, "aria-label"))
+
+      assert key_names == [
+               "Struggling, 10 students, 40.0 percent",
+               "On Track, 8 students, 32.0 percent, selected",
+               "Excelling, 5 students, 20.0 percent",
+               "N/A, 0 students, 0.0 percent"
+             ]
+
+      assert [chart] = Floki.find(doc, "#student-support-chart-student_support_tile")
+      assert Floki.attribute(chart, "aria-hidden") == ["true"]
+    end
+
+    test "hides the icon beside the Student Support heading from screen readers", %{conn: conn} do
+      {:ok, _component, html} =
+        live_component_isolated(conn, StudentSupportTile, base_attrs(%{tile_state: tile_state()}))
+
+      [heading] =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find("div.items-center.gap-2")
+        |> Enum.filter(
+          &(&1 |> Floki.find("h3") |> Floki.text() |> String.trim() == "Student Support")
+        )
+
+      assert [_icon] = Floki.find(heading, "svg")
+
+      assert [_hidden_icon] =
+               Floki.find(heading, ~s{svg[aria-hidden="true"], [aria-hidden="true"] svg})
+    end
+
+    test "hides the checkmark inside each selection checkbox from screen readers, checked or not",
+         %{conn: conn} do
+      {:ok, component, html} =
+        live_component_isolated(conn, StudentSupportTile, base_attrs(%{tile_state: tile_state()}))
+
+      checked_html =
+        component
+        |> element("button[aria-label='Select all']")
+        |> render_click()
+
+      for {rendered, checked} <- [{html, "false"}, {checked_html, "true"}] do
+        checkboxes =
+          rendered
+          |> Floki.parse_document!()
+          |> Floki.find(~s{button[role="checkbox"][aria-checked="#{checked}"]})
+
+        assert Enum.any?(checkboxes, &(Floki.attribute(&1, "aria-label") == ["Select Student 1"]))
+
+        for checkbox <- checkboxes do
+          assert [_checkmark] = Floki.find(checkbox, "svg")
+
+          assert [_hidden_checkmark] =
+                   Floki.find(checkbox, ~s{svg[aria-hidden="true"], [aria-hidden="true"] svg})
+        end
+      end
+    end
+
     test "renders parameterized thresholds and inactive copy", %{conn: conn} do
       projection =
         projection()
@@ -121,6 +217,46 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       assert render(component) =~ "value=\"75\""
       assert render(component) =~ "data-student-points=\"true\""
       assert render(component) =~ "fill-[#FF9C54] opacity-[0.30]"
+    end
+
+    test "hides the arrows inside the parameter Increase and Decrease buttons from screen readers but keeps their names",
+         %{conn: conn} do
+      {:ok, component, _html} =
+        live_component_isolated(
+          conn,
+          StudentSupportTile,
+          base_attrs(%{
+            tile_state: tile_state(),
+            show_student_support_parameters_modal: true,
+            student_support_parameters_draft: %{
+              inactivity_days: 30,
+              struggling_progress_low_lt: 35,
+              struggling_progress_high_gt: 90,
+              struggling_proficiency_lte: 30,
+              excelling_progress_gte: 90,
+              excelling_proficiency_gte: 75
+            }
+          })
+        )
+
+      steppers =
+        component
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find(
+          ~s{#student_support_parameters_modal_student_support_tile button[aria-label^="Increase "], #student_support_parameters_modal_student_support_tile button[aria-label^="Decrease "]}
+        )
+
+      labels = Enum.flat_map(steppers, &Floki.attribute(&1, "aria-label"))
+      assert Enum.any?(labels, &String.starts_with?(&1, "Increase "))
+      assert Enum.any?(labels, &String.starts_with?(&1, "Decrease "))
+
+      for stepper <- steppers do
+        assert [_arrow] = Floki.find(stepper, "svg")
+
+        assert [_hidden_arrow] =
+                 Floki.find(stepper, ~s{svg[aria-hidden="true"], [aria-hidden="true"] svg})
+      end
     end
 
     test "search term filters visible students but keeps bucket counts stable", %{conn: conn} do

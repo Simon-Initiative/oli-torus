@@ -34,7 +34,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       <div class="mb-4 flex items-start justify-between gap-4">
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
-            <span class="inline-flex h-5 w-5 items-center justify-center text-Text-text-high">
+            <span
+              class="inline-flex h-5 w-5 items-center justify-center text-Text-text-high"
+              aria-hidden="true"
+            >
               <Icons.progress_arrow />
             </span>
             <h3 class="text-lg font-semibold leading-6 text-Text-text-high">Progress</h3>
@@ -79,7 +82,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       class="inline-flex items-center justify-center rounded-full text-Text-text-low focus:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button"
                       aria-label="Completion threshold help"
                     >
-                      <Icons.info />
+                      <span class="inline-flex" aria-hidden="true">
+                        <Icons.info />
+                      </span>
                     </button>
                     <div class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 hidden w-56 -translate-x-1/2 rounded-sm border border-Border-border-default bg-Surface-surface-background px-3 py-2 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block">
                       Adjust the percentage considered complete for each visible content item.
@@ -94,6 +99,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       width="16"
                       height="16"
                       class="fill-Icon-icon-active transition group-hover:fill-Text-text-button group-open:fill-Icon-icon-active group-open:rotate-180"
+                      aria-hidden="true"
                     />
                   </summary>
                   <div class="absolute right-0 z-20 mt-[1.5px] grid min-w-[113px] gap-0 rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input p-[7px] shadow-[0px_8px_24px_0px_rgba(0,0,0,0.24)]">
@@ -211,6 +217,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
                         <div
                           id={"progress-chart-wrapper-#{@id}"}
+                          aria-hidden="true"
                           phx-hook="ProgressTileChart"
                           data-spec={Jason.encode!(@chart.spec)}
                           data-chart-target={"progress-chart-canvas-#{@id}"}
@@ -261,6 +268,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                                     {item.hover_value_text}
                                   </div>
                                 </div>
+                              <% else %>
+                                <span class="sr-only">{bar_accessible_label(item, @projected)}</span>
                               <% end %>
                             </div>
                           <% end %>
@@ -345,6 +354,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           width="16"
           height="16"
           class={"fill-Icon-icon-active stroke-Icon-icon-active #{@icon_rotation}"}
+          aria-hidden="true"
         />
       </.link>
     <% else %>

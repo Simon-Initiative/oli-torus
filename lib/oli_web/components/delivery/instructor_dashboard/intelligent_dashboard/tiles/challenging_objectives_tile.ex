@@ -29,7 +29,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       <div class="space-y-1.5 px-1 py-1">
         <div class="flex items-center justify-between gap-4">
           <div class="flex items-center gap-2">
-            <Icons.book class="h-5 w-5 shrink-0 stroke-Text-text-high" />
+            <Icons.book class="h-5 w-5 shrink-0 stroke-Text-text-high" aria-hidden="true" />
             <h3 class="text-lg font-semibold leading-6 text-Text-text-high">
               Challenging Objectives
             </h3>
@@ -115,7 +115,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           class="ml-2 inline-flex cursor-pointer list-none items-center gap-2 rounded-full bg-Fill-Buttons-fill-primary px-4 py-1 text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] focus:outline-none focus-visible:ring-2 focus-visible:ring-Fill-Buttons-fill-primary"
         >
           <span>{subobjective_count_label(length(@row.children))}</span>
-          <span>
+          <span aria-hidden="true">
             <Icons.chevron_down class="tile-chevron h-4 w-4 fill-Text-text-white transition-transform" />
           </span>
         </summary>

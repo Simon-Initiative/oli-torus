@@ -95,5 +95,61 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DashboardSectionChromeT
       refute html =~ ~s(id="learning-dashboard-engagement-group-move")
       refute html =~ ~s(data-section-handle)
     end
+
+    test "hides the expand and collapse arrow from screen readers but keeps the toggle's name" do
+      html =
+        render_component(
+          fn assigns ->
+            ~H"""
+            <DashboardSectionChrome.section
+              id="learning-dashboard-engagement-group"
+              section_id="engagement"
+              title="Engagement"
+              expanded={true}
+            >
+              Inner tile content
+            </DashboardSectionChrome.section>
+            """
+          end,
+          %{}
+        )
+
+      [toggle] =
+        html
+        |> Floki.parse_fragment!()
+        |> Floki.find("#learning-dashboard-engagement-group-toggle")
+
+      assert [arrow] = Floki.find(toggle, "svg")
+      assert Floki.attribute(arrow, "aria-hidden") == ["true"]
+      assert Floki.text(Floki.find(toggle, ".sr-only")) == "Collapse Engagement section"
+    end
+
+    test "hides the move handle's dots from screen readers but keeps the handle's name" do
+      html =
+        render_component(
+          fn assigns ->
+            ~H"""
+            <DashboardSectionChrome.section
+              id="learning-dashboard-engagement-group"
+              section_id="engagement"
+              title="Engagement"
+              move_label="Move Engagement card"
+            >
+              Inner tile content
+            </DashboardSectionChrome.section>
+            """
+          end,
+          %{}
+        )
+
+      [handle] =
+        html
+        |> Floki.parse_fragment!()
+        |> Floki.find("#learning-dashboard-engagement-group-move")
+
+      assert Floki.attribute(handle, "aria-label") == ["Move Engagement card"]
+      assert [dots] = Floki.find(handle, "svg")
+      assert Floki.attribute(dots, "aria-hidden") == ["true"]
+    end
   end
 end

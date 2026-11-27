@@ -121,6 +121,7 @@ defmodule OliWeb.Icons do
   end
 
   attr :class, :string, default: "stroke-current"
+  attr :rest, :global
 
   def thumbs_up_ai(assigns) do
     ~H"""
@@ -131,6 +132,7 @@ defmodule OliWeb.Icons do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       class={@class}
+      {@rest}
     >
       <path
         d="M5 8V16C5 16.2652 4.89464 16.5196 4.70711 16.7071C4.51957 16.8946 4.26522 17 4 17H2C1.73478 17 1.48043 16.8946 1.29289 16.7071C1.10536 16.5196 1 16.2652 1 16V9C1 8.73478 1.10536 8.48043 1.29289 8.29289C1.48043 8.10536 1.73478 8 2 8H5ZM5 8C6.06087 8 7.07828 7.57857 7.82843 6.82843C8.57857 6.07828 9 5.06087 9 4V3C9 2.46957 9.21071 1.96086 9.58579 1.58579C9.96086 1.21071 10.4696 1 11 1C11.5304 1 12.0391 1.21071 12.4142 1.58579C12.7893 1.96086 13 2.46957 13 3V8H16C16.5304 8 17.0391 8.21071 17.4142 8.58579C17.7893 8.96086 18 9.46957 18 10L17 15C16.8562 15.6135 16.5834 16.1402 16.2227 16.501C15.8619 16.8617 15.4328 17.0368 15 17H8C7.20435 17 6.44129 16.6839 5.87868 16.1213C5.31607 15.5587 5 14.7956 5 14"
@@ -143,6 +145,7 @@ defmodule OliWeb.Icons do
   end
 
   attr :class, :string, default: "stroke-current"
+  attr :rest, :global
 
   def thumbs_down_ai(assigns) do
     ~H"""
@@ -153,6 +156,7 @@ defmodule OliWeb.Icons do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       class={@class}
+      {@rest}
     >
       <path
         d="M7 12.9999V4.99993C7 4.73472 6.89464 4.48036 6.70711 4.29283C6.51957 4.10529 6.26522 3.99993 6 3.99993H4C3.73478 3.99993 3.48043 4.10529 3.29289 4.29283C3.10536 4.48036 3 4.73472 3 4.99993V11.9999C3 12.2651 3.10536 12.5195 3.29289 12.707C3.48043 12.8946 3.73478 12.9999 4 12.9999H7ZM7 12.9999C8.06087 12.9999 9.07828 13.4214 9.82843 14.1715C10.5786 14.9217 11 15.9391 11 16.9999V17.9999C11 18.5304 11.2107 19.0391 11.5858 19.4141C11.9609 19.7892 12.4696 19.9999 13 19.9999C13.5304 19.9999 14.0391 19.7892 14.4142 19.4141C14.7893 19.0391 15 18.5304 15 17.9999V12.9999H18C18.5304 12.9999 19.0391 12.7892 19.4142 12.4141C19.7893 12.0391 20 11.5304 20 10.9999L19 5.99993C18.8562 5.38646 18.5834 4.85969 18.2227 4.49897C17.8619 4.13825 17.4328 3.96311 17 3.99993H10C9.20435 3.99993 8.44129 4.316 7.87868 4.87861C7.31607 5.44122 7 6.20428 7 6.99993"
@@ -165,6 +169,7 @@ defmodule OliWeb.Icons do
   end
 
   attr :class, :string, default: "stroke-current"
+  attr :rest, :global
 
   def regenerate_ai(assigns) do
     ~H"""
@@ -175,6 +180,7 @@ defmodule OliWeb.Icons do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       class={@class}
+      {@rest}
     >
       <path
         d="M15.9247 6.38915C16.6847 7.66922 17.018 9.15784 16.8762 10.6398C16.7345 12.1217 16.1251 13.5202 15.1361 14.6329C13.9945 15.9222 12.4183 16.7463 10.708 16.9481C8.99778 17.1499 7.27308 16.7152 5.86272 15.727C4.45471 14.7362 3.46121 13.2613 3.07215 11.5841C2.6831 9.90699 2.92577 8.14528 3.75378 6.63579C4.57939 5.12361 5.9322 3.96779 7.55471 3.38832C9.17722 2.80885 10.9561 2.84619 12.5529 3.49322M10.1495 0.784797L13.1112 3.4733L10.4227 6.43505"
@@ -718,10 +724,11 @@ defmodule OliWeb.Icons do
   attr :width, :string, default: "24"
   attr :height, :string, default: "24"
   attr :class, :string, default: "-rotate-90"
+  attr :rest, :global
 
   def chevron_right(assigns) do
     ~H"""
-    <.chevron_down width={@width} height={@height} class={@class} />
+    <.chevron_down width={@width} height={@height} class={@class} {@rest} />
     """
   end
 
@@ -801,6 +808,7 @@ defmodule OliWeb.Icons do
   attr :height, :string, default: "20"
   attr :stroke_width, :string, default: "1.5"
   attr :variant, :string, default: "default"
+  attr :rest, :global
 
   def book(assigns) do
     ~H"""
@@ -811,6 +819,7 @@ defmodule OliWeb.Icons do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       class={@class}
+      {@rest}
     >
       <path
         :if={@variant == "objective"}
@@ -1463,6 +1472,8 @@ defmodule OliWeb.Icons do
   attr :class, :string,
     default: "stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
 
+  attr :rest, :global
+
   def left_chevron(assigns) do
     ~H"""
     <svg
@@ -1472,6 +1483,7 @@ defmodule OliWeb.Icons do
       viewBox="0 0 6 9"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      {@rest}
     >
       <path
         d="M4.46798 7.96686L0.968018 4.4669L4.46798 0.966943"
@@ -2426,6 +2438,7 @@ defmodule OliWeb.Icons do
   end
 
   attr :class, :string, default: "text-Text-text-high"
+  attr :rest, :global
 
   def drag_handle_dots(assigns) do
     ~H"""
@@ -2436,6 +2449,7 @@ defmodule OliWeb.Icons do
       viewBox="0 0 10 16"
       fill="none"
       class={@class}
+      {@rest}
     >
       <g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M1 2C1 2.26522 1.10536 2.51957 1.29289 2.70711C1.48043 2.89464 1.73478 3 2 3C2.26522 3 2.51957 2.89464 2.70711 2.70711C2.89464 2.51957 3 2.26522 3 2C3 1.73478 2.89464 1.48043 2.70711 1.29289C2.51957 1.10536 2.26522 1 2 1C1.73478 1 1.48043 1.10536 1.29289 1.29289C1.10536 1.48043 1 1.73478 1 2Z" />
@@ -2531,6 +2545,7 @@ defmodule OliWeb.Icons do
   end
 
   attr :class, :string, default: "fill-Text-text-high"
+  attr :rest, :global
 
   def person(assigns) do
     ~H"""
@@ -2541,6 +2556,7 @@ defmodule OliWeb.Icons do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       class={@class}
+      {@rest}
     >
       <path
         d="M8 8C6.9 8 5.95833 7.60833 5.175 6.825C4.39167 6.04167 4 5.1 4 4C4 2.9 4.39167 1.95833 5.175 1.175C5.95833 0.391667 6.9 0 8 0C9.1 0 10.0417 0.391667 10.825 1.175C11.6083 1.95833 12 2.9 12 4C12 5.1 11.6083 6.04167 10.825 6.825C10.0417 7.60833 9.1 8 8 8ZM0 16V13.2C0 12.6333 0.145833 12.1125 0.4375 11.6375C0.729167 11.1625 1.11667 10.8 1.6 10.55C2.63333 10.0333 3.68333 9.64583 4.75 9.3875C5.81667 9.12917 6.9 9 8 9C9.1 9 10.1833 9.12917 11.25 9.3875C12.3167 9.64583 13.3667 10.0333 14.4 10.55C14.8833 10.8 15.2708 11.1625 15.5625 11.6375C15.8542 12.1125 16 12.6333 16 13.2V16H0ZM2 14H14V13.2C14 13.0167 13.9542 12.85 13.8625 12.7C13.7708 12.55 13.65 12.4333 13.5 12.35C12.6 11.9 11.6917 11.5625 10.775 11.3375C9.85833 11.1125 8.93333 11 8 11C7.06667 11 6.14167 11.1125 5.225 11.3375C4.30833 11.5625 3.4 11.9 2.5 12.35C2.35 12.4333 2.22917 12.55 2.1375 12.7C2.04583 12.85 2 13.0167 2 13.2V14ZM8 6C8.55 6 9.02083 5.80417 9.4125 5.4125C9.80417 5.02083 10 4.55 10 4C10 3.45 9.80417 2.97917 9.4125 2.5875C9.02083 2.19583 8.55 2 8 2C7.45 2 6.97917 2.19583 6.5875 2.5875C6.19583 2.97917 6 3.45 6 4C6 4.55 6.19583 5.02083 6.5875 5.4125C6.97917 5.80417 7.45 6 8 6Z"

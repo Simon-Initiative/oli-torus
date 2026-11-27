@@ -188,6 +188,81 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AssessmentsTileTest do
 
       refute has_element?(component, "#draft_email_modal_assessments_tile")
     end
+
+    test "tells screen readers whether each assessment card is expanded or collapsed", %{
+      conn: conn
+    } do
+      {:ok, _component, html} =
+        live_component_isolated(conn, AssessmentsTile, %{
+          id: "assessments_tile",
+          ctx: ctx(),
+          projection: projection(),
+          status: "Loading...",
+          section_slug: "demo-section",
+          expanded_assessment_id: 2
+        })
+
+      doc = Floki.parse_document!(html)
+
+      assert Floki.attribute(
+               doc,
+               "button[aria-label='Collapse assessment Quiz 2']",
+               "aria-expanded"
+             ) ==
+               ["true"]
+
+      assert Floki.attribute(
+               doc,
+               "button[aria-label='Expand assessment Quiz 1']",
+               "aria-expanded"
+             ) ==
+               ["false"]
+    end
+
+    test "hides the arrow inside each assessment card button from screen readers, expanded or collapsed",
+         %{conn: conn} do
+      {:ok, _component, html} =
+        live_component_isolated(conn, AssessmentsTile, %{
+          id: "assessments_tile",
+          ctx: ctx(),
+          projection: projection(),
+          status: "Loading...",
+          section_slug: "demo-section",
+          expanded_assessment_id: 2
+        })
+
+      doc = Floki.parse_document!(html)
+
+      arrows =
+        Floki.find(doc, "button[aria-label='Collapse assessment Quiz 2'] svg") ++
+          Floki.find(doc, "button[aria-label='Expand assessment Quiz 1'] svg")
+
+      assert Enum.map(arrows, &Floki.attribute(&1, "aria-hidden")) == [["true"], ["true"]]
+    end
+
+    test "hides the envelope inside the Email Students Not Completed button from screen readers but keeps its text as its name",
+         %{conn: conn} do
+      {:ok, _component, html} =
+        live_component_isolated(conn, AssessmentsTile, %{
+          id: "assessments_tile",
+          ctx: ctx(),
+          projection: projection(),
+          status: "Loading...",
+          section_slug: "demo-section",
+          expanded_assessment_id: 2
+        })
+
+      assert [button] =
+               html
+               |> Floki.parse_document!()
+               |> Floki.find(~s{button[phx-click="open_assessment_email_modal"]})
+
+      assert button |> Floki.text() |> String.trim() == "Email Students Not Completed"
+      assert [_envelope] = Floki.find(button, "svg")
+
+      assert [_hidden_envelope] =
+               Floki.find(button, ~s{svg[aria-hidden="true"], [aria-hidden="true"] svg})
+    end
   end
 
   defp projection do
