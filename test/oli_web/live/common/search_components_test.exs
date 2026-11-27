@@ -91,6 +91,24 @@ defmodule OliWeb.Common.SearchComponentsTest do
       assert Floki.attribute(input, "phx-debounce") == ["300"]
       assert Floki.find(document, "button[aria-label='Clear search.']") != []
     end
+
+    test "gives the reset control the clear_id it is passed, so two filters on a page keep unique ids" do
+      document =
+        render_component(&Filter.render/1,
+          id: "granted-filter",
+          change: "filter_grants",
+          apply: "filter_grants",
+          reset: "reset_grants_filter",
+          clear_id: "reset_grants_filter",
+          query: "chemistry",
+          apply_icon: true,
+          aria_label: "Filter projects with access"
+        )
+        |> Floki.parse_fragment!()
+
+      assert [clear] = Floki.find(document, "button[aria-label='Clear search.']")
+      assert Floki.attribute(clear, "id") == ["reset_grants_filter"]
+    end
   end
 
   describe "TextSearch.render/1" do

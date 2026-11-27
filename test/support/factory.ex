@@ -819,7 +819,8 @@ defmodule Oli.Factory do
       deployment_id: Ecto.UUID.generate(),
       activity_registration: build(:activity_registration),
       platform_instance: build(:platform_instance),
-      status: :enabled
+      status: :enabled,
+      availability: :public
     }
   end
 
