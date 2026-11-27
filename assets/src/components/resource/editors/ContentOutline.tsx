@@ -319,7 +319,7 @@ const OutlineItem = ({
 
     case 'activity-reference':
       const activity = props.activityContexts.get(
-        (props.contentItem as ActivityReference).activitySlug,
+        String((props.contentItem as ActivityReference).activity_id),
       );
 
       if (activity) {

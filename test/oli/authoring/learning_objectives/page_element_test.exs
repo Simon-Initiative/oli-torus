@@ -212,13 +212,13 @@ defmodule Oli.Authoring.LearningObjectives.PageElementTest do
               %{
                 "type" => "activity-reference",
                 "id" => "activity-y",
-                "activitySlug" => revisions.act_revision_y.slug,
+                "activity_id" => revisions.act_revision_y.resource_id,
                 "children" => []
               },
               %{
                 "type" => "activity-reference",
                 "id" => "activity-z",
-                "activitySlug" => revisions.act_revision_z.slug,
+                "activity_id" => revisions.act_revision_z.resource_id,
                 "children" => []
               }
             ]
@@ -322,13 +322,13 @@ defmodule Oli.Authoring.LearningObjectives.PageElementTest do
       %{
         "type" => "activity-reference",
         "id" => "activity-y",
-        "activitySlug" => revisions.act_revision_y.slug,
+        "activity_id" => revisions.act_revision_y.resource_id,
         "children" => []
       },
       %{
         "type" => "activity-reference",
         "id" => "activity-z",
-        "activitySlug" => revisions.act_revision_z.slug,
+        "activity_id" => revisions.act_revision_z.resource_id,
         "children" => []
       }
     ]

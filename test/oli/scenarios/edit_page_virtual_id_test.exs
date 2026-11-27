@@ -60,7 +60,7 @@ defmodule Oli.Scenarios.EditPageVirtualIdTest do
 
       [_prose1, activity_ref, _prose2] = model
       assert activity_ref["type"] == "activity-reference"
-      assert activity_ref["activitySlug"] != nil
+      assert activity_ref["activity_id"] != nil
     end
 
     test "reuses existing activity when editing page again with same virtual_id" do
@@ -136,7 +136,7 @@ defmodule Oli.Scenarios.EditPageVirtualIdTest do
 
       [_prose1, activity_ref, _prose2] = model
       assert activity_ref["type"] == "activity-reference"
-      assert activity_ref["activitySlug"] == activity_revision.resource_id
+      assert activity_ref["activity_id"] == activity_revision.resource_id
     end
 
     test "supports activity_reference with virtual_id" do
@@ -200,7 +200,7 @@ defmodule Oli.Scenarios.EditPageVirtualIdTest do
 
       [_prose, activity_ref] = model
       assert activity_ref["type"] == "activity-reference"
-      assert activity_ref["activitySlug"] == activity_revision.resource_id
+      assert activity_ref["activity_id"] == activity_revision.resource_id
     end
 
     test "handles activities in nested groups" do
@@ -270,8 +270,8 @@ defmodule Oli.Scenarios.EditPageVirtualIdTest do
       assert activity1["type"] == "activity-reference"
       assert activity2["type"] == "activity-reference"
       # Both should reference the same activity
-      assert activity1["activitySlug"] == activity_revision.resource_id
-      assert activity2["activitySlug"] == activity_revision.resource_id
+      assert activity1["activity_id"] == activity_revision.resource_id
+      assert activity2["activity_id"] == activity_revision.resource_id
     end
 
     test "handles activities in surveys" do

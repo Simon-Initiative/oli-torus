@@ -153,6 +153,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
 
     const newSequenceEntry: any = {
       type: 'activity-reference',
+      activity_id: newActivity.resourceId,
       resourceId: newActivity.resourceId,
       activitySlug: newActivity.activitySlug,
       custom: {
@@ -376,6 +377,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
 
     const newSequenceEntry: any = {
       type: 'activity-reference',
+      activity_id: newActivity.resourceId,
       resourceId: newActivity.resourceId,
       activitySlug: newActivity.activitySlug,
       custom: {

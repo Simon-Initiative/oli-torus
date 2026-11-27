@@ -68,7 +68,7 @@ defmodule Oli.TorusDoc.PageWithActivityTest do
       # Second block should be activity reference
       activity_ref = Enum.at(model, 1)
       assert activity_ref["type"] == "activity-reference"
-      assert activity_ref["activitySlug"] != nil
+      assert activity_ref["activity_id"] != nil
 
       # The inline activity should be attached
       assert Map.has_key?(activity_ref, "_inline_activity")
@@ -111,7 +111,7 @@ defmodule Oli.TorusDoc.PageWithActivityTest do
       model = json["content"]["model"]
       activity_ref = Enum.at(model, 1)
       assert activity_ref["type"] == "activity-reference"
-      assert activity_ref["activitySlug"] == "existing_mcq_123"
+      assert activity_ref["activity_id"] == "existing_mcq_123"
       refute Map.has_key?(activity_ref, "_inline_activity")
     end
 
@@ -186,7 +186,7 @@ defmodule Oli.TorusDoc.PageWithActivityTest do
 
       activity_ref = Enum.at(survey_json["children"], 1)
       assert activity_ref["type"] == "activity-reference"
-      assert activity_ref["activitySlug"] == "survey_question_1"
+      assert activity_ref["activity_id"] == "survey_question_1"
     end
 
     test "errors on invalid activity definition" do

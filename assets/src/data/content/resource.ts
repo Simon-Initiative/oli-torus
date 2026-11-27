@@ -376,7 +376,7 @@ export interface LearningObjectivesContent {
 export interface ActivityReference {
   type: 'activity-reference';
   id: string;
-  activitySlug: ActivitySlug;
+  activity_id: ResourceId;
   children: [];
 }
 

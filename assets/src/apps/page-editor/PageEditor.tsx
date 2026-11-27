@@ -169,7 +169,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
     const activityContexts = Immutable.OrderedMap<string, ActivityEditContext>(
       this.props.activityContexts.map((c) => {
-        return [c.activitySlug, c];
+        return [String(c.activityId), c];
       }),
     );
 
@@ -328,7 +328,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
             throw new Error('Finish the current edit before configuring this activity.');
           this.setState({ ltiActivityId: entry.activityId });
           await this.persistence.flushPendingChangesAsync?.(false);
-          await this.activityPersistence[entry.activitySlug].flushPendingChangesAsync?.(false);
+          await this.activityPersistence[String(entry.activityId)].flushPendingChangesAsync?.(
+            false,
+          );
           if (!this.ltiMounted) throw new Error('The editor was closed.');
           return startAuthoringDeepLink(
             this.props.projectSlug,
@@ -349,13 +351,16 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           this.setState((state) => ({
             ltiActivityId: undefined,
             ltiPersistence: 'idle',
-            activityContexts: state.activityContexts.update(entry.activitySlug, (current) => ({
-              ...current!,
-              model: saved.model,
-              title: saved.title,
-              objectives: saved.objectives,
-              tags: saved.tags,
-            })),
+            activityContexts: state.activityContexts.update(
+              String(entry.activityId),
+              (current) => ({
+                ...current!,
+                model: saved.model,
+                title: saved.title,
+                objectives: saved.objectives,
+                tags: saved.tags,
+              }),
+            ),
           }));
           return true;
         }
@@ -435,7 +440,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           (persistence) => this.setState({ persistence }),
         );
 
-        (map as any)[activity.activitySlug] = persistence;
+        (map as any)[String(activity.activityId)] = persistence;
         return map;
       },
       {},
@@ -720,9 +725,11 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           (failure) => this.publishErrorMessage(failure),
           (persistence) => this.setState({ persistence }),
         );
-        this.activityPersistence[a.activitySlug] = persistence;
+        this.activityPersistence[String(a.activityId)] = persistence;
 
-        this.setState({ activityContexts: this.state.activityContexts.set(a.activitySlug, a) });
+        this.setState({
+          activityContexts: this.state.activityContexts.set(String(a.activityId), a),
+        });
       }
     };
 
@@ -757,17 +764,18 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
     const onDuplicateActivity = (origContext: ActivityEditContext) => {
       const editorDesc = props.editorMap[origContext.typeSlug];
-      createCopy(props.projectSlug, editorDesc, origContext, 'embedded', (newContext, atSlug) => {
+      createCopy(props.projectSlug, editorDesc, origContext, 'embedded', (newContext) => {
         const resourceContent: ActivityReference = {
           type: 'activity-reference',
           id: guid(),
-          activitySlug: newContext.activitySlug,
+          activity_id: newContext.activityId,
           children: [],
         };
-        // find index of original activity by slug
+        // Find the original activity reference by resource ID.
         const index = this.state.content.findIndex(
           (c) =>
-            c.type === 'activity-reference' && (c as ActivityReference).activitySlug === atSlug,
+            c.type === 'activity-reference' &&
+            (c as ActivityReference).activity_id === origContext.activityId,
         );
         // insert at original's position
         onAddItem(resourceContent, index, newContext);

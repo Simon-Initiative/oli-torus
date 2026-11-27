@@ -85,10 +85,6 @@ const factoryModels = async () => {
   if (result.meta.requestStatus !== 'fulfilled') throw new Error(result.error?.message);
   const authoring = serialize((edit as jest.Mock).mock.calls[1][2].content);
   const persisted = serialize(authoring);
-  for (const child of persisted.model[0].children) {
-    child.activity_id = Number(child.activitySlug.replace('revision-', ''));
-    delete child.activitySlug;
-  }
   return { empty, authoring, persisted };
 };
 

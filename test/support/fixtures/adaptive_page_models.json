@@ -20,43 +20,43 @@
         "children": [
           {
             "type": "activity-reference",
-            "activitySlug": "revision-1",
             "custom": {
               "sequenceId": "1",
               "sequenceName": "Screen 1",
               "isLayer": true
-            }
+            },
+            "activity_id": 1
           },
           {
             "type": "activity-reference",
-            "activitySlug": "revision-2",
             "custom": {
               "sequenceId": "2",
               "sequenceName": "Screen 2",
               "isBank": true,
               "bankShowCount": 2,
               "bankEndTarget": "next"
-            }
+            },
+            "activity_id": 2
           },
           {
             "type": "activity-reference",
-            "activitySlug": "revision-3",
             "custom": {
               "sequenceId": "3",
               "sequenceName": "Screen 3",
               "layerRef": "2",
               "isLayer": false,
               "isBank": false
-            }
+            },
+            "activity_id": 3
           },
           {
             "type": "activity-reference",
-            "activitySlug": "revision-4",
             "custom": {
               "sequenceId": "4",
               "sequenceName": "Screen 4",
               "layerRef": null
-            }
+            },
+            "activity_id": 4
           }
         ]
       }

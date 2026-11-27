@@ -189,6 +189,7 @@ export const addFlowchartScreen = createAsyncThunk(
 
       const sequenceEntry: any = {
         type: 'activity-reference',
+        activity_id: activity.resourceId,
         resourceId: activity.resourceId,
         activitySlug: activity.activitySlug,
         custom: {
