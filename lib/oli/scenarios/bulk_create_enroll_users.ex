@@ -1,5 +1,10 @@
 defmodule Oli.Scenarios.BulkCreateEnrollUsers do
-  @moduledoc "Creates retry-stable synthetic users and enrolls them through delivery contexts."
+  @moduledoc """
+  Creates retry-stable synthetic users and enrolls them through delivery contexts.
+
+  Synthetic users are always direct-delivery (independent learner) accounts, never LTI
+  accounts. Direct login additionally requires configured preview demo credentials.
+  """
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.User
@@ -109,7 +114,7 @@ defmodule Oli.Scenarios.BulkCreateEnrollUsers do
     |> Enum.reduce_while({:ok, []}, fn {spec, index}, {:ok, users} ->
       attrs = %{
         guest: false,
-        independent_learner: false,
+        independent_learner: true,
         email: spec.email,
         email_verified: true,
         given_name: spec.given_name,

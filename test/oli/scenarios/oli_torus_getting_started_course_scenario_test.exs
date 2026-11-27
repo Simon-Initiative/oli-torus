@@ -1,6 +1,7 @@
 defmodule Oli.Scenarios.OliTorusGettingStartedCourseScenarioTest do
   use Oli.DataCase
 
+  alias Oli.Accounts.User
   alias Oli.Activities.ActivityRegistration
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAccess, ResourceAttempt}
@@ -133,7 +134,7 @@ defmodule Oli.Scenarios.OliTorusGettingStartedCourseScenarioTest do
     assert Repo.reload!(author).password_hash == author.password_hash
 
     for {reference, user} <- result.state.users,
-        match?(%Oli.Accounts.User{}, user) do
+        match?(%User{}, user) do
       assert user.email_confirmed_at
       assert user.email_verified
 
@@ -158,6 +159,10 @@ defmodule Oli.Scenarios.OliTorusGettingStartedCourseScenarioTest do
     end
 
     assert section.requires_enrollment
+
+    seeded_users = for {_reference, %User{} = user} <- result.state.users, do: user
+    assert length(seeded_users) == 17
+    assert Enum.all?(seeded_users, & &1.independent_learner)
 
     assert_course_pages(project)
     assert_authoring_curriculum_loadable(project)

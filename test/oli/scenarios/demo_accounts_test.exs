@@ -119,7 +119,7 @@ defmodule Oli.Scenarios.DemoAccountsTest do
     for name <- ~w(credential_test_instructor_1 credential_test_learner_1) do
       user = result.state.users[name]
       assert user.password_hash == nil
-      refute user.independent_learner
+      assert user.independent_learner
       assert user.email_confirmed_at
     end
   end
@@ -283,7 +283,7 @@ defmodule Oli.Scenarios.DemoAccountsTest do
     learner = continued.state.users["continued_learner_1"]
     assert learner.password_hash == nil
     assert learner.email_confirmed_at == nil
-    refute learner.independent_learner
+    assert learner.independent_learner
   end
 
   defp continue_accounts(state, opts) do
