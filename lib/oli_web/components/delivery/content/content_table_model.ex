@@ -22,7 +22,8 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       },
       %ColumnSpec{
         name: :student_completion,
-        label: HTMLComponents.student_progress_label(%{title: "Student Progress"}),
+        label: "Student Progress",
+        header_info: HTMLComponents.student_progress_info(%{}),
         render_fn: &render_student_completion/3
       },
       %ColumnSpec{

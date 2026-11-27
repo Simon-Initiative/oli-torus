@@ -635,6 +635,9 @@ defmodule OliWeb.Components.Delivery.Students do
           render_top_info={false}
           additional_table_class="instructor_dashboard_table"
           sort={JS.push("paged_table_sort", target: @myself)}
+          sort_button={true}
+          sort_button_class="text-left"
+          table_id="students-table"
           page_change={JS.push("paged_table_page_change", target: @myself)}
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}

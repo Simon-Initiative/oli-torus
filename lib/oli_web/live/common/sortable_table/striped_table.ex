@@ -37,9 +37,10 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
 
     aria_sort =
       case {sort_button?, sorted?, assigns.model.sort_order} do
+        {false, _, _} -> nil
+        {true, false, _} -> "none"
         {true, true, :asc} -> "ascending"
         {true, true, _} -> "descending"
-        _ -> nil
       end
 
     assigns =
@@ -66,20 +67,22 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
       data-sort-column={if @sorted?, do: "true", else: "false"}
       data-sort-order={if @sorted?, do: to_string(@model.sort_order || :desc), else: "desc"}
     >
-      <%= if @sort_button? do %>
-        <button
-          type="button"
-          class="flex items-center gap-1 cursor-pointer"
-          phx-click={@sort}
-          phx-value-sort_by={@column_spec.name}
-        >
+      <div class="flex items-center gap-1">
+        {Map.get(@column_spec, :header_info)}
+        <%= if @sort_button? do %>
+          <button
+            type="button"
+            class={["flex items-center gap-1 cursor-pointer", @sort_button_class]}
+            aria-label={"Sort by #{@column_spec.label}"}
+            phx-click={@sort}
+            phx-value-sort_by={@column_spec.name}
+          >
+            {render_th_content(assigns)}
+          </button>
+        <% else %>
           {render_th_content(assigns)}
-        </button>
-      <% else %>
-        <div class="flex items-center gap-1">
-          {render_th_content(assigns)}
-        </div>
-      <% end %>
+        <% end %>
+      </div>
     </th>
     """
   end
@@ -98,6 +101,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
       <OliWeb.Icons.chevron_down
         width="16"
         height="16"
+        aria-hidden="true"
         class={"inline fill-black dark:fill-white " <> if @sort_direction_cls == "up", do: "", else: "rotate-180 "}
       />
     <% end %>
@@ -196,7 +200,11 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
   attr :sort_button, :boolean,
     default: false,
     doc:
-      "When true, each sortable header renders a <button> that carries the sort click and exposes aria-sort on the sorted column (keyboard accessible). The <th> keeps its data-* and phx-value-sort_by attributes."
+      "When true, each sortable header renders a <button> named \"Sort by <label>\" that carries the sort click (keyboard accessible), and every sortable <th> exposes aria-sort (ascending, descending or none). The <th> keeps its data-* and phx-value-sort_by attributes."
+
+  attr :sort_button_class, :string,
+    default: nil,
+    doc: "Extra classes for each sort <button> (e.g. \"text-left\" to align wrapped labels)."
 
   attr :id, :string,
     default: nil,
@@ -224,7 +232,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                   select: @select,
                   additional_table_class: @additional_table_class,
                   header_bg_class: @header_bg_class,
-                  sort_button: @sort_button
+                  sort_button: @sort_button,
+                  sort_button_class: @sort_button_class
                 },
                 @model.data
               ),

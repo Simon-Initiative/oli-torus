@@ -44,7 +44,10 @@ defmodule OliWeb.Common.Table.ColumnSpec do
             # in more than one table on a page.
             tooltip_id: nil,
             # Render a dedicated support/info icon for the tooltip instead of attaching it to the label
-            tooltip_icon: false
+            tooltip_icon: false,
+            # Optional rendered header content (e.g. an info button) placed before the label. With
+            # `sort_button`, it sits outside the sort button, so it never triggers sorting
+            header_info: nil
 
   def default_sort_fn(:asc, %{name: name}),
     do: fn row1, row2 -> Map.get(row1, name) <= Map.get(row2, name) end

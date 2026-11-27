@@ -490,6 +490,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       refute button_has_class?(view, "filter_modules_button", "bg-Fill-Buttons-fill-primary")
     end
 
+    test "content table sort headers are named buttons that expose the sort state",
+         %{instructor: instructor, conn: conn} do
+      %{section: section} = Seeder.base_project_with_units()
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
+
+      for column <- ["Order", "Units", "Student Progress", "Student Proficiency"] do
+        assert has_element?(view, "th[aria-sort] button[aria-label='Sort by #{column}']")
+      end
+
+      refute has_element?(view, ".instructor_dashboard_table th[phx-click]")
+    end
+
     test "content table gets rendered given a section with only pages",
          %{
            instructor: instructor,

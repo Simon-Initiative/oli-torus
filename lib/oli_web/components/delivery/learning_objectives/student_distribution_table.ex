@@ -340,13 +340,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentDistributionTable
     """
   end
 
-  # Similar intent to `OliWeb.Delivery.InstructorDashboard.HTMLComponents.render_label/1`'s
-  # icon+tooltip, but not reused wholesale (that helper bundles the icon *and* the column
-  # title into one block, while here only the title belongs inside the clickable sort
-  # button) and made keyboard/AT-reachable: a real `<button>` trigger (not a bare `<span>`)
-  # with `aria-describedby`, and a plain `role="tooltip"` `<div>` (not `<dialog>`, which stays
-  # closed to assistive tech without an explicit `.showModal()`/`open`) shown on hover *or*
-  # focus, not hover-only.
+  # Similar intent to `OliWeb.Delivery.InstructorDashboard.HTMLComponents.info_tooltip/1`, but the
+  # tooltip is a plain `role="tooltip"` `<div>`, not a `<dialog>` (which stays closed to assistive
+  # tech without an explicit `.showModal()`/`open`).
   attr :id, :string, required: true
   attr :text, :string, required: true
 
