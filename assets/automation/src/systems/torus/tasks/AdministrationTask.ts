@@ -1,15 +1,18 @@
 import { expect, Page } from '@playwright/test';
 import { MenuDropdownCO } from '@pom/home/MenuDropdownCO';
 import { AdminDashboardPO } from '@pom/dashboard/AdminDashboardPO';
+import { AssociationType, CommunityPO } from '@pom/dashboard/CommunityPO';
 import { step } from '@core/decoration/step';
 
 export class AdministrationTask {
   private readonly menu: MenuDropdownCO;
   private readonly adminP: AdminDashboardPO;
+  private readonly community: CommunityPO;
 
   constructor(private readonly page: Page) {
     this.menu = new MenuDropdownCO(page);
     this.adminP = new AdminDashboardPO(page);
+    this.community = new CommunityPO(page);
   }
 
   /**
@@ -66,5 +69,33 @@ export class AdministrationTask {
     await this.page.goto('/admin/audit_log');
     await expect(this.page).toHaveURL(/\/admin\/audit_log$/);
     await expect(this.page.locator('select[name="event_type"]')).toBeVisible();
+  }
+
+  @step("From the admin panel, open the associated projects and templates of community '{name}'")
+  async openCommunityAssociations(name: string) {
+    await this.page.goto('/admin');
+    await this.adminP.clickInAccess('Manage Communities');
+    await this.community.search(name);
+    await this.community.openCommunityOverview(name);
+    await this.community.openAssociated();
+  }
+
+  @step("Associate the {type} '{title}' with the opened community")
+  async associateWithCommunity(title: string, type: AssociationType) {
+    await this.community.openAddNew();
+    await this.community.search(title);
+    await this.community.select(title, type);
+    await this.community.backToAssociated();
+  }
+
+  @step("Verify '{title}' is associated once as a {type}")
+  async verifyAssociatedOnce(title: string, type: AssociationType) {
+    await this.community.expectAssociatedOnce(title, type);
+  }
+
+  @step("Open the associated {type} '{title}' and verify its page")
+  async openAssociatedRecord(title: string, type: AssociationType, slug: string) {
+    await this.community.openAssociatedLink(title);
+    await this.community.expectRecordOpened(title, type, slug);
   }
 }

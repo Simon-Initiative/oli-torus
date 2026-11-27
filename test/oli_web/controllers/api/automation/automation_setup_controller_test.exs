@@ -11,6 +11,7 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
   alias Oli.Accounts.SystemRole
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
   alias Oli.Resources.Resource
@@ -405,6 +406,80 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
 
       assert Map.has_key?(response, "author_deleted")
       refute Map.has_key?(response, "additional_authors_deleted")
+      refute Map.has_key?(response, "community_deleted")
+    end
+  end
+
+  describe "teardown community_name" do
+    test "hard deletes an automation community together with its associations", %{
+      conn: conn,
+      api_key: api_key,
+      project: project
+    } do
+      community = insert(:community, name: "Automation test community 123")
+      insert(:community_project_visibility, community: community)
+      insert(:community_product_visibility, community: community)
+      insert(:community_user_account, community: community)
+      insert(:community_institution, community: community)
+
+      response = teardown_community(conn, api_key, project, community.name)
+
+      assert response["community_deleted"] == %{"success" => true}
+      refute Repo.get(Community, community.id)
+
+      for schema <- [CommunityVisibility, CommunityAccount, CommunityInstitution] do
+        refute Repo.exists?(from(r in schema, where: r.community_id == ^community.id))
+      end
+    end
+
+    test "refuses a community that was not created for automation", %{
+      conn: conn,
+      api_key: api_key,
+      project: project
+    } do
+      community = insert(:community, name: "Real Community")
+
+      response = teardown_community(conn, api_key, project, community.name)
+
+      assert %{"success" => false, "message" => _} = response["community_deleted"]
+      assert Repo.get(Community, community.id)
+    end
+
+    test "rejects a non-string community_name before deleting anything", %{
+      conn: conn,
+      api_key: api_key,
+      project: project
+    } do
+      author = automation_author()
+
+      conn =
+        conn
+        |> authorized(api_key)
+        |> AutomationSetupController.teardown(
+          teardown_params(project, nil)
+          |> Map.merge(%{
+            "author_email" => author.email,
+            "author_password" => @password,
+            "community_name" => 123
+          })
+        )
+
+      assert conn.status == 400
+      assert Jason.decode!(conn.resp_body) == %{"error" => "community_name must be a string"}
+      assert Accounts.get_author_by_email(author.email)
+    end
+
+    test "reports a missing automation community", %{
+      conn: conn,
+      api_key: api_key,
+      project: project
+    } do
+      response = teardown_community(conn, api_key, project, "Automation test community missing")
+
+      assert response["community_deleted"] == %{
+               "success" => false,
+               "message" => "Community not found"
+             }
     end
   end
 
@@ -416,7 +491,9 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
     assert %{properties: body} = schemas["Automated test data teardown"]
     assert %{properties: response} = schemas["Automated test data teardown response"]
     assert Map.has_key?(body, :additional_authors)
+    assert Map.has_key?(body, :community_name)
     assert Map.has_key?(response, :additional_authors_deleted)
+    assert Map.has_key?(response, :community_deleted)
   end
 
   test "Invalid API key doesn't work", %{
@@ -473,6 +550,17 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
     conn
     |> authorized(api_key)
     |> AutomationSetupController.teardown(teardown_params(project, additional_authors))
+    |> Map.fetch!(:resp_body)
+    |> Jason.decode!()
+  end
+
+  defp teardown_community(conn, api_key, project, community_name) do
+    conn
+    |> authorized(api_key)
+    |> AutomationSetupController.teardown(
+      teardown_params(project, nil)
+      |> Map.put("community_name", community_name)
+    )
     |> Map.fetch!(:resp_body)
     |> Jason.decode!()
   end

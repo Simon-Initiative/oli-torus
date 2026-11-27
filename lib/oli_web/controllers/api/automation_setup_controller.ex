@@ -96,6 +96,11 @@ defmodule OliWeb.Api.AutomationSetupController do
         learner_password: %Schema{type: :string},
         section_slug: %Schema{type: :string},
         project_slug: %Schema{type: :string},
+        community_name: %Schema{
+          type: :string,
+          nullable: true,
+          description: "Optional community to delete; must start with 'Automation test community'"
+        },
         additional_authors: %Schema{
           type: :array,
           nullable: true,
@@ -164,6 +169,7 @@ defmodule OliWeb.Api.AutomationSetupController do
         learner_deleted: teardown_response,
         section_deleted: teardown_response,
         project_deleted: project_teardown_response,
+        community_deleted: teardown_response,
         additional_authors_deleted: %Schema{
           type: :array,
           description: "Present only when additional_authors was a list, in request order",
@@ -302,7 +308,7 @@ defmodule OliWeb.Api.AutomationSetupController do
            {"Teardown Response", "application/json",
             OliWeb.Api.AutomationSetupController.AutomationTeardownResponse},
          400 =>
-           {"Invalid additional_authors", "application/json",
+           {"Invalid additional_authors or community_name", "application/json",
             %Schema{
               type: :object,
               properties: %{error: %Schema{type: :string}},
@@ -322,10 +328,11 @@ defmodule OliWeb.Api.AutomationSetupController do
           "project_slug" => _
         } = params
       ) do
-    case parse_additional_authors(Map.get(params, "additional_authors"), author_email) do
-      {:ok, additional_authors} ->
-        run_teardown(conn, params, additional_authors)
-
+    with {:ok, additional_authors} <-
+           parse_additional_authors(Map.get(params, "additional_authors"), author_email),
+         {:ok, community_name} <- parse_community_name(Map.get(params, "community_name")) do
+      run_teardown(conn, params, additional_authors, community_name)
+    else
       {:error, message} ->
         conn
         |> put_status(:bad_request)
@@ -345,7 +352,8 @@ defmodule OliWeb.Api.AutomationSetupController do
            "section_slug" => section_slug,
            "project_slug" => project_slug
          },
-         additional_authors
+         additional_authors,
+         community_name
        ) do
     teardown_started_at = System.monotonic_time(:millisecond)
 
@@ -372,6 +380,8 @@ defmodule OliWeb.Api.AutomationSetupController do
     section_deleted =
       timed_teardown_step(:section, fn -> AutomationSetup.teardown_section(section_slug) end)
 
+    community_deleted = teardown_community(community_name)
+
     project_deleted =
       timed_teardown_step(:project_enqueue, fn ->
         AutomationSetup.enqueue_project_teardown(project_slug)
@@ -390,11 +400,26 @@ defmodule OliWeb.Api.AutomationSetupController do
       project_deleted: project_deleted
     }
 
+    response = put_community_deleted(response, community_deleted)
+
     case additional_authors_deleted do
       nil -> json(conn, response)
       results -> json(conn, Map.put(response, :additional_authors_deleted, results))
     end
   end
+
+  defp put_community_deleted(response, nil), do: response
+  defp put_community_deleted(response, result), do: Map.put(response, :community_deleted, result)
+
+  defp teardown_community(nil), do: nil
+
+  defp teardown_community(name) do
+    timed_teardown_step(:community, fn -> AutomationSetup.teardown_community(name) end)
+  end
+
+  defp parse_community_name(nil), do: {:ok, nil}
+  defp parse_community_name(name) when is_binary(name), do: {:ok, name}
+  defp parse_community_name(_name), do: {:error, "community_name must be a string"}
 
   defp parse_additional_authors(nil, _author_email), do: {:ok, nil}
 
