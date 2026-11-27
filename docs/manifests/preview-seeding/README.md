@@ -95,8 +95,10 @@ Open the preview through its usual deployment authentication, then use these Tor
 The administrator continues using `ADMIN_PASSWORD`. All newly created demo accounts use
 `PREVIEW_DEMO_USER_PASSWORD` when configured, including `simulated_instructor_1@example.edu`
 and `simulated_learner_1@example.edu` through `simulated_learner_12@example.edu`. Newly seeded
-preview accounts have confirmed emails. The author is a collaborator on the demo project;
-the named instructor and students are enrolled in its direct-delivery section, which appears
+preview accounts have confirmed emails, and every seeded learner and instructor account,
+including the simulated cohort, is a direct-delivery account (never an LTI account). The
+author is a collaborator on the demo project; the named instructor and students are enrolled
+in its direct-delivery section, which appears
 in their instructor or student workspace after login. The section requires enrollment. Named
 students start without simulated progress; the existing generated cohort retains its progress
 and grades.
