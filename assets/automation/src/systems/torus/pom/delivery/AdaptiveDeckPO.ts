@@ -1,4 +1,4 @@
-import { FrameLocator, Locator, Page } from '@playwright/test';
+import { expect, FrameLocator, Locator, Page } from '@playwright/test';
 
 /**
  * Page object for the adaptive lesson "deck" player.
@@ -1483,8 +1483,139 @@ export class AdaptiveDeckPO {
         () => false,
       );
   }
+
+  /**
+   * Click the MCQ option whose text equals `text`, the way a student does.
+   * Unlike selectMcqByText there is no forced fallback: an option the student
+   * cannot click fails here. Failures never print the option's text (answer content).
+   */
+  async clickMcqOption(text: string) {
+    await keySafe('MCQ option could not be selected', async () => {
+      const items = this.page.locator('.mcq-item');
+      const index = await indexOfText(items, normalizeText(text));
+      if (index < 0) throw new KeySafeError('MCQ option from the key is not on this screen');
+
+      const item = items.nth(index);
+      await item.locator('label').first().click(ACTION_TIMEOUT);
+      await expect(item.locator('input').first()).toBeChecked();
+    });
+  }
+
+  /**
+   * Choose each blank of a CAPI fill-in-the-blanks widget through its own menu
+   * button and option, as a student does: unlike fillFrameSelects there is no
+   * programmatic fallback. Failures name the blank's position, never its value.
+   */
+  async chooseWidgetMenuOptions(srcFragment: string, values: Record<string, string>) {
+    const frame = this.page.frameLocator(`iframe[src*="${srcFragment}"]`).first();
+    const entries = Object.entries(values);
+
+    for (let i = 0; i < entries.length; i += 1) {
+      const [id, value] = entries[i];
+      const position = `blank ${i + 1}/${entries.length}`;
+      await keySafe(`${position}: could not be chosen`, async () => {
+        const menuButton = frame.locator(`#${id}-button`);
+        await expect(menuButton).toBeVisible();
+        await menuButton.click(ACTION_TIMEOUT);
+
+        const options = frame.locator(`#${id}-menu li`);
+        const wanted = normalizeText(value);
+        const index = await indexOfText(options, wanted);
+        if (index < 0) throw new KeySafeError(`${position}: the key's value is not offered`);
+        await options.nth(index).click(ACTION_TIMEOUT);
+
+        const select = frame.locator(`#${id}`);
+        const registered = await becomesTrue(async () => {
+          const chosen = await select.evaluate(
+            (el) => (el as HTMLSelectElement).selectedOptions[0]?.textContent || '',
+          );
+          return normalizeText(chosen) === wanted;
+        });
+        if (!registered) throw new KeySafeError(`${position}: did not register`);
+      });
+    }
+  }
+
+  /**
+   * Assert the open feedback panel shows `expected` and that a student can read
+   * it: the panel's content is visible and inside the viewport. Failures name
+   * `label`, never the text (course content).
+   */
+  async expectFeedback(expected: string, label: string) {
+    const content = this.page.locator('#stage-feedback > .content');
+    const wanted = normalizeText(expected);
+    await expect
+      .poll(async () => normalizeText(await content.innerText().catch(() => '')).includes(wanted), {
+        message: `${label}: the feedback shown is the one the key expects`,
+      })
+      .toBe(true);
+    await keySafe(`${label}: the feedback is not visible on screen`, async () => {
+      await expect(content).toBeVisible();
+      await expect(content).toBeInViewport();
+    });
+  }
+
+  /** The footer toggle that opens the lesson's HISTORY panel. */
+  historyToggle(): Locator {
+    return this.page.getByRole('button', { name: 'Show lesson history' });
+  }
+
+  /** The HISTORY panel's control that ends a scored attempt. */
+  submitAttemptButton(): Locator {
+    return this.page.locator('button.theme-history__restart').filter({ hasText: 'Submit Attempt' });
+  }
+
+  /** The confirmation dialog raised by Submit Attempt. */
+  submitAttemptDialog(): Locator {
+    return this.page.locator('.RestartLessonDialog');
+  }
 }
 
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizeText(s: string) {
+  return s.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+/**
+ * Whether `probe` turns true within the expect timeout. The poll's own failure
+ * is dropped because it may quote what the probe read (course content).
+ */
+async function becomesTrue(probe: () => Promise<boolean>): Promise<boolean> {
+  return expect
+    .poll(probe)
+    .toBe(true)
+    .then(
+      () => true,
+      () => false,
+    );
+}
+
+/** Index of the item whose normalized text equals `wanted`, waiting for it to render; -1 if it never does. */
+async function indexOfText(items: Locator, wanted: string): Promise<number> {
+  let index = -1;
+  await becomesTrue(async () => {
+    index = (await items.allInnerTexts()).findIndex((t) => normalizeText(t) === wanted);
+    return index >= 0;
+  });
+  return index;
+}
+
+/** An error whose message is known to carry no course content. */
+class KeySafeError extends Error {}
+
+/**
+ * Run an action on answer-bearing elements. Playwright's own failures preview
+ * the resolved element, text included, so they are replaced by `message` and the
+ * error's name — the original is not kept as a cause.
+ */
+async function keySafe<T>(message: string, action: () => Promise<T>): Promise<T> {
+  try {
+    return await action();
+  } catch (e) {
+    if (e instanceof KeySafeError) throw e;
+    throw new KeySafeError(`${message} (${e instanceof Error ? e.name : 'error'})`);
+  }
 }
