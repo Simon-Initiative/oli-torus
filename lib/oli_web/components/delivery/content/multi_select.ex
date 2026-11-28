@@ -17,8 +17,18 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
 
   def render(assigns) do
     ~H"""
-    <div class={"flex flex-col relative rounded outline outline-1 h-9 #{if @selected_values != %{}, do: "outline-[#006CD9] dark:outline-[#4CA6FF]", else: "outline outline-1 outline-[#ced1d9] dark:outline-[#3B3740]"}"}>
-      <div
+    <div
+      id={"#{@id}-filter-dropdown"}
+      phx-hook="AccessibleFilterDropdown"
+      class={"flex flex-col relative rounded outline outline-1 h-9 #{if @selected_values != %{}, do: "outline-[#006CD9] dark:outline-[#4CA6FF]", else: "outline outline-1 outline-[#ced1d9] dark:outline-[#3B3740]"}"}
+    >
+      <button
+        type="button"
+        data-filter-trigger
+        disabled={@disabled}
+        aria-label={@label}
+        aria-expanded="false"
+        aria-controls={"#{@id}-options-container"}
         phx-click={
           if(!@disabled,
             do:
@@ -48,9 +58,10 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
           </span>
         </div>
         <.toggle_chevron id={@id} map_values={@selected_values} />
-      </div>
+      </button>
       <div class="relative">
         <div
+          data-filter-panel
           class="py-4 px-4 hidden z-50 absolute dark:bg-gray-800 bg-white w-48 border overflow-y-scroll top-1 rounded"
           id={"#{@id}-options-container"}
           phx-click-away={
@@ -85,6 +96,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
                 JS.hide(to: "##{@id}-options-container")
                 |> JS.hide(to: "##{@id}-up-icon")
                 |> JS.show(to: "##{@id}-down-icon")
+                |> JS.focus(to: "##{@id}-selected-options-container")
               }
             >
               Cancel
@@ -96,6 +108,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
                 |> JS.hide(to: "##{@id}-options-container")
                 |> JS.hide(to: "##{@id}-up-icon")
                 |> JS.show(to: "##{@id}-down-icon")
+                |> JS.focus(to: "##{@id}-selected-options-container")
               }
               phx-target={@target}
               phx-value={@selected_ids}
