@@ -57,6 +57,9 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
              current_user_id,
              section_slug
            ) do
+      # Root layouts read the page type from it, so analytics needs no second lookup.
+      conn = assign(conn, :page_revision, page_revision)
+
       attempt_expired? =
         case {lesson_type, page_type, latest_resource_attempt} do
           {:graded, :adaptive_chromeless,

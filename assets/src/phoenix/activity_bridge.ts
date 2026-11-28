@@ -3,8 +3,28 @@ import { ClientEvaluation, PartResponse } from 'components/activities/types';
 import { defaultActivityState } from 'data/activities/utils';
 import * as Persistence from 'data/persistence/activity';
 import { removeEmpty, valueOr } from 'utils/common';
+import { track } from '../analytics/track';
 
 type Continuation = (success: any, error: any) => void;
+
+// Reports the learner action only once the API call has succeeded and `happened` holds for the
+// result.
+const trackingSuccess =
+  (
+    name: 'attempt_submitted' | 'hint_viewed',
+    detail: any,
+    happened: (result: any) => boolean = () => true,
+  ): Continuation =>
+  (result, error) => {
+    const activityType = detail.props?.context?.activityType;
+    if (error === undefined && happened(result) && typeof activityType === 'string') {
+      track({ name, params: { activity_type: activityType } });
+    }
+    detail.continuation(result, error);
+  };
+
+// Once hints are exhausted the API still succeeds, but without a hint to show.
+const hintReturned = (result: any) => !!result?.hint;
 
 type BridgeElement = HTMLElement & { __oliActivityBridgeInitialized?: boolean };
 
@@ -140,7 +160,7 @@ export const initActivityBridge = (elementId: string) => {
         `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}`,
         'PUT',
         { partInputs: e.detail.payload },
-        e.detail.continuation,
+        trackingSuccess('attempt_submitted', e.detail),
         submissionTransform.bind(this, 'actions'),
       );
     },
@@ -188,7 +208,7 @@ export const initActivityBridge = (elementId: string) => {
         `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}`,
         'PUT',
         { response: e.detail.payload },
-        e.detail.continuation,
+        trackingSuccess('attempt_submitted', e.detail),
       );
     },
     false,
@@ -218,7 +238,7 @@ export const initActivityBridge = (elementId: string) => {
         `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}/hint`,
         'GET',
         undefined,
-        e.detail.continuation,
+        trackingSuccess('hint_viewed', e.detail, hintReturned),
       );
     },
     false,
@@ -233,7 +253,7 @@ export const initActivityBridge = (elementId: string) => {
         `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/evaluations`,
         'PUT',
         { evaluations: e.detail.payload },
-        e.detail.continuation,
+        trackingSuccess('attempt_submitted', e.detail),
       );
     },
     false,
